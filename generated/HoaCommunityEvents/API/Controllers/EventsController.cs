@@ -1,6 +1,6 @@
+using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
-using HoaCommunityEvents.Domain.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -32,7 +32,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         return Ok(evt);
     }
 
-    [Authorize(Roles = AppRoles.HoaAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost]
     public async Task<ActionResult<EventDto>> CreateEvent(CreateEventDto dto)
     {
@@ -46,7 +46,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         return CreatedAtAction(nameof(GetEvent), new { id = created.Id }, created);
     }
 
-    [Authorize(Roles = AppRoles.HoaAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<EventDto>> EditEvent(Guid id, EditEventDto dto)
     {
@@ -65,7 +65,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         return Ok(updated);
     }
 
-    [Authorize(Roles = AppRoles.HoaAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPatch("{id:guid}/cancel")]
     public async Task<ActionResult<EventDto>> CancelEvent(Guid id)
     {
@@ -78,7 +78,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         return Ok(updated);
     }
 
-    [Authorize(Roles = AppRoles.HoaAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> DeleteEvent(Guid id)
     {

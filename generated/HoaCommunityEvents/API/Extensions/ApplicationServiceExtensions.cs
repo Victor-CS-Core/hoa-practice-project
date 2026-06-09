@@ -1,9 +1,14 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using HoaCommunityEvents.API.Models;
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.Services;
+using HoaCommunityEvents.Application.Validators;
 using HoaCommunityEvents.Infrastructure.Services;
 using HoaCommunityEvents.Infrastructure.Services.Identity;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 
 namespace HoaCommunityEvents.API.Extensions;
@@ -13,6 +18,27 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers();
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var details = context.ModelState
+                    .Where(kvp => kvp.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
+
+                return new BadRequestObjectResult(new ApiErrorResponse
+                {
+                    Code = "validation_failed",
+                    Message = "Validation failed.",
+                    Details = details,
+                    TraceId = context.HttpContext.TraceIdentifier
+                });
+            };
+        });
         services.AddOpenApi();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>

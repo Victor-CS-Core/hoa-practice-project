@@ -1,3 +1,4 @@
+using HoaCommunityEvents.Domain.Common;
 using HoaCommunityEvents.Domain.Entities;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -56,7 +57,14 @@ public static class IdentityServiceExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(AuthorizationPolicies.AdminOnly, policy =>
+                policy.RequireRole(AppRoles.HoaAdmin));
+
+            options.AddPolicy(AuthorizationPolicies.ResidentOrAdmin, policy =>
+                policy.RequireRole(AppRoles.Resident, AppRoles.HoaAdmin));
+        });
 
         return services;
     }

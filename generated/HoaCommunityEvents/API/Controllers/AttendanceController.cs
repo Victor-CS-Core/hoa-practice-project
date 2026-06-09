@@ -1,13 +1,13 @@
+using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
-using HoaCommunityEvents.Domain.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace HoaCommunityEvents.API.Controllers;
 
-[Authorize]
+[Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]
 public class AttendanceController(IAttendanceService attendanceService) : BaseApiController
 {
     [HttpPost("{eventId:guid}/join")]
@@ -46,7 +46,7 @@ public class AttendanceController(IAttendanceService attendanceService) : BaseAp
         return Ok(new { attendeeCount = result.AttendeeCount });
     }
 
-    [Authorize(Roles = AppRoles.HoaAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpGet("{eventId:guid}")]
     public async Task<ActionResult<IReadOnlyList<AttendeeDto>>> GetAttendees(Guid eventId)
     {

@@ -1,3 +1,4 @@
+using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -5,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HoaCommunityEvents.API.Controllers;
 
-[Authorize]
+[Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]
 public class ProfilesController(IProfileService profileService) : BaseApiController
 {
     [HttpGet("{username}")]

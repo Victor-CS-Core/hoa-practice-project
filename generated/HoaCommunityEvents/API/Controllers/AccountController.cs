@@ -1,3 +1,4 @@
+using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
             : Ok(user);
     }
 
-    [Authorize]
+    [Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]
     [HttpGet("current")]
     public async Task<ActionResult<UserDto>> CurrentUser()
     {
@@ -40,7 +41,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
             : Ok(user);
     }
 
-    [Authorize]
+    [Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]
     [HttpPost("logout")]
     public ActionResult Logout()
     {
