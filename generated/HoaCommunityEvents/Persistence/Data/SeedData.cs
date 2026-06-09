@@ -12,6 +12,7 @@ public static class SeedData
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
+        var dbContext = serviceProvider.GetRequiredService<AppDbContext>();
 
         var roles = new[] { AppRoles.Resident, AppRoles.HoaAdmin };
         foreach (var role in roles)
@@ -28,9 +29,11 @@ public static class SeedData
         var adminDisplayName = configuration["AdminSeed:DisplayName"] ?? "HOA Admin";
 
         var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
+        AppUser adminUser;
+
         if (existingAdmin is null)
         {
-            var admin = new AppUser
+            adminUser = new AppUser
             {
                 Email = adminEmail,
                 UserName = adminUserName,
@@ -39,18 +42,62 @@ public static class SeedData
                 CreatedAt = DateTime.UtcNow
             };
 
-            var createAdmin = await userManager.CreateAsync(admin, adminPassword);
+            var createAdmin = await userManager.CreateAsync(adminUser, adminPassword);
             if (createAdmin.Succeeded)
             {
-                await userManager.AddToRoleAsync(admin, AppRoles.HoaAdmin);
+                await userManager.AddToRoleAsync(adminUser, AppRoles.HoaAdmin);
             }
+        }
+        else
+        {
+            adminUser = existingAdmin;
 
-            return;
+            if (!await userManager.IsInRoleAsync(existingAdmin, AppRoles.HoaAdmin))
+            {
+                await userManager.AddToRoleAsync(existingAdmin, AppRoles.HoaAdmin);
+            }
         }
 
-        if (!await userManager.IsInRoleAsync(existingAdmin, AppRoles.HoaAdmin))
+        if (!dbContext.Events.Any())
         {
-            await userManager.AddToRoleAsync(existingAdmin, AppRoles.HoaAdmin);
+            var now = DateTime.UtcNow;
+            dbContext.Events.AddRange(
+                new Event
+                {
+                    Title = "Community Pool Opening",
+                    Description = "Kick-off event for summer pool season.",
+                    Category = "Pool Event",
+                    LocationWithinCommunity = "Pool Deck",
+                    StartDate = now.AddDays(3),
+                    EndDate = now.AddDays(3).AddHours(2),
+                    HostUserId = adminUser.Id,
+                    Status = "Published"
+                },
+                new Event
+                {
+                    Title = "Neighborhood Cleanup",
+                    Description = "Volunteer cleanup around common areas.",
+                    Category = "Community Cleanup",
+                    LocationWithinCommunity = "Main Entrance",
+                    StartDate = now.AddDays(7),
+                    EndDate = now.AddDays(7).AddHours(3),
+                    HostUserId = adminUser.Id,
+                    Status = "Published"
+                },
+                new Event
+                {
+                    Title = "Monthly Board Meeting",
+                    Description = "Open HOA board meeting with Q and A.",
+                    Category = "Board Meeting",
+                    LocationWithinCommunity = "Clubhouse Hall",
+                    StartDate = now.AddDays(10),
+                    EndDate = now.AddDays(10).AddHours(1),
+                    HostUserId = adminUser.Id,
+                    Status = "Published"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
         }
     }
 }

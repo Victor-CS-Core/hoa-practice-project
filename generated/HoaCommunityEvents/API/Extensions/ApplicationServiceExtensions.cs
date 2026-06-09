@@ -1,5 +1,6 @@
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.Services;
+using HoaCommunityEvents.Infrastructure.Services;
 using HoaCommunityEvents.Infrastructure.Services.Identity;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public static class ApplicationServiceExtensions
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IEventService, EventService>();
 
         return services;
     }

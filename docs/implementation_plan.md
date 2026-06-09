@@ -91,8 +91,8 @@ Agent execution constraints:
 | Slice                                   | Status | Owner  | Depends On       | Est. Hours | Actual Hours | Gate Status | Notes                                                                                                                                                                                              |
 | --------------------------------------- | ------ | ------ | ---------------- | ---------: | -----------: | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Phase 0.5 - Environment and Foundations | [x]    | Victor | None             |        3-5 |          3.0 | Passed      | Solution builds on net10; local SQL Server integrated security wired; EF migration applied and core tables created; TokenKey moved to user-secrets; API startup cleaned and health endpoint added. |
-| Slice A - Authentication                | [~]    | Victor | Phase 0.5        |      10-12 |            0 | Not run     | Ready to begin backend auth service and endpoints.                                                                                                                                                 |
-| Slice B - Event Read                    | [ ]    | Victor | Slice A          |       8-10 |            0 | Not run     | Waiting for Slice A gate.                                                                                                                                                                          |
+| Slice A - Authentication                | [x]    | Victor | Phase 0.5        |      10-12 |          4.5 | Passed      | Backend auth endpoints verified (register/login/current), frontend SPA auth flow + protected routing + MobX auth store implemented, and frontend build/lint passed.                                 |
+| Slice B - Event Read                    | [~]    | Victor | Slice A          |       8-10 |          3.5 | In progress | Event list/detail backend endpoints, sample event seed, frontend routes/pages/hooks, and filter query params implemented; build/lint pass and API list/detail smoke test verified.               |
 | Slice C - Admin Event CRUD              | [ ]    | Victor | Slice B          |      10-12 |            0 | Not run     | Waiting for Slice B gate.                                                                                                                                                                          |
 | Slice D - Attendance and Realtime       | [ ]    | Victor | Slice B, Slice C |       8-10 |            0 | Not run     | Waiting for Slice B and C gates.                                                                                                                                                                   |
 | Slice E - Profile                       | [ ]    | Victor | Slice A          |        6-8 |            0 | Not run     | Waiting for Slice A gate.                                                                                                                                                                          |
@@ -101,7 +101,7 @@ Agent execution constraints:
 ### Gate Checklist
 
 - [x] Phase 0.5 gate passed
-- [ ] Slice A gate passed
+- [x] Slice A gate passed
 - [ ] Slice B gate passed
 - [ ] Slice C gate passed
 - [ ] Slice D gate passed
