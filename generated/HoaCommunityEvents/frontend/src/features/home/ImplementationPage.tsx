@@ -1,4 +1,74 @@
+import { useQuery } from "@tanstack/react-query";
+import { Account, Diagnostics, Events } from "../../app/api/agent";
+
+function StatusLine({
+  title,
+  ok,
+  detail,
+  loading,
+}: {
+  title: string;
+  ok: boolean;
+  detail: string;
+  loading: boolean;
+}) {
+  return (
+    <li>
+      <strong>{title}:</strong> {loading ? "Checking..." : ok ? "PASS" : "FAIL"}
+      <div>{detail}</div>
+    </li>
+  );
+}
+
 export function ImplementationPage() {
+  const hasToken = !!localStorage.getItem("jwt");
+
+  const healthQuery = useQuery({
+    queryKey: ["implementation", "health"],
+    queryFn: () => Diagnostics.health(),
+  });
+
+  const eventsQuery = useQuery({
+    queryKey: ["implementation", "events", "paged"],
+    queryFn: () => Events.list({ page: 1, pageSize: 2, sortBy: "upcoming" }),
+  });
+
+  const currentUserQuery = useQuery({
+    queryKey: ["implementation", "auth", "current"],
+    queryFn: () => Account.current(),
+    enabled: hasToken,
+    retry: false,
+  });
+
+  const validationQuery = useQuery({
+    queryKey: ["implementation", "validation-envelope"],
+    queryFn: () =>
+      Diagnostics.invalidRegister({
+        email: "bad",
+        username: "x",
+        displayName: "",
+        password: "123",
+      }),
+    retry: false,
+  });
+
+  const hasPagedShape = !!(
+    eventsQuery.data &&
+    Array.isArray(eventsQuery.data.items) &&
+    typeof eventsQuery.data.totalCount === "number" &&
+    typeof eventsQuery.data.page === "number" &&
+    typeof eventsQuery.data.pageSize === "number" &&
+    typeof eventsQuery.data.totalPages === "number"
+  );
+
+  const hasValidationEnvelope = !!(
+    validationQuery.data &&
+    validationQuery.data.code === "validation_failed" &&
+    typeof validationQuery.data.message === "string" &&
+    validationQuery.data.details &&
+    typeof validationQuery.data.details === "object"
+  );
+
   return (
     <section>
       <h1>Implementation Status</h1>
@@ -6,6 +76,56 @@ export function ImplementationPage() {
         This page captures the stable API contracts and readiness milestones for
         UI integration.
       </p>
+
+      <h2>Live Contract Checks</h2>
+      <ul>
+        <StatusLine
+          title="Health endpoint"
+          ok={!healthQuery.isError}
+          loading={healthQuery.isLoading}
+          detail={
+            healthQuery.isError
+              ? "Could not reach /health."
+              : `API reachable${healthQuery.data?.status ? ` (${healthQuery.data.status})` : ""}.`
+          }
+        />
+        <StatusLine
+          title="Paged events contract"
+          ok={hasPagedShape}
+          loading={eventsQuery.isLoading}
+          detail={
+            eventsQuery.isError
+              ? "Failed to load event list sample."
+              : hasPagedShape
+                ? `Shape OK. page=${eventsQuery.data?.page}, pageSize=${eventsQuery.data?.pageSize}, totalPages=${eventsQuery.data?.totalPages}.`
+                : "Missing one or more required paging fields."
+          }
+        />
+        <StatusLine
+          title="Validation envelope"
+          ok={hasValidationEnvelope}
+          loading={validationQuery.isLoading}
+          detail={
+            validationQuery.isError
+              ? "Validation check request failed unexpectedly."
+              : hasValidationEnvelope
+                ? "validation_failed envelope and details map detected."
+                : "Expected validation_failed envelope was not returned."
+          }
+        />
+        <StatusLine
+          title="Current-user auth contract"
+          ok={!hasToken || !currentUserQuery.isError}
+          loading={hasToken && currentUserQuery.isLoading}
+          detail={
+            !hasToken
+              ? "Skipped (no JWT in localStorage)."
+              : currentUserQuery.isError
+                ? "Token did not resolve to current user."
+                : `Authenticated as ${currentUserQuery.data?.username ?? "user"}.`
+          }
+        />
+      </ul>
 
       <h2>Completed Foundations</h2>
       <ul>

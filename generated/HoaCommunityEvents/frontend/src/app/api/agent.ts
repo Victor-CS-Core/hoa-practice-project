@@ -42,6 +42,22 @@ const requests = {
     getWithParams: <T>(url: string, params: object) => agent.get<T>(url, { params }).then(responseBody),
 };
 
+type ValidationEnvelope = {
+    code?: string;
+    message?: string;
+    details?: Record<string, string[]>;
+    traceId?: string;
+};
+
+const getApiRoot = () => {
+    if (!baseURL) {
+        return '';
+    }
+
+    const trimmed = baseURL.replace(/\/$/, '');
+    return trimmed.endsWith('/api') ? trimmed.slice(0, -4) : trimmed;
+};
+
 export const Account = {
     login: (values: LoginFormValues) => requests.post<User>('/account/login', values),
     register: (values: RegisterFormValues) => requests.post<User>('/account/register', values),
@@ -66,4 +82,12 @@ export const Attendance = {
 export const Profiles = {
     detail: (username: string) => requests.get<Profile>(`/profiles/${username}`),
     update: (username: string, values: UpdateProfileValues) => requests.put<Profile>(`/profiles/${username}`, values),
+};
+
+export const Diagnostics = {
+    health: () => axios.get<{ status?: string }>(`${getApiRoot()}/health`).then(responseBody),
+    invalidRegister: (values: RegisterFormValues) =>
+        agent.post('/account/register', values)
+            .then(() => null)
+            .catch((error: AxiosError<ValidationEnvelope>) => error.response?.data ?? null),
 };
