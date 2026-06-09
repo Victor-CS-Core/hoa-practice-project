@@ -4,6 +4,7 @@ using HoaCommunityEvents.Infrastructure.Services;
 using HoaCommunityEvents.Infrastructure.Services.Identity;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 
 namespace HoaCommunityEvents.API.Extensions;
 
@@ -13,6 +14,27 @@ public static class ApplicationServiceExtensions
     {
         services.AddControllers();
         services.AddOpenApi();
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "HoaCommunityEvents API",
+                Version = "v1"
+            });
+
+            var bearerScheme = new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Enter JWT token as: Bearer {token}"
+            };
+
+            options.AddSecurityDefinition("Bearer", bearerScheme);
+        });
         services.AddSignalR();
         services.AddCors(options =>
         {

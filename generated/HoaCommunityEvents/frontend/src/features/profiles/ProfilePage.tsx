@@ -38,7 +38,8 @@ export const ProfilePage = observer(function ProfilePage() {
   if (isLoading) return <p>Loading profile...</p>;
   if (isError || !data) return <p>Profile not found.</p>;
 
-  const isOwnProfile = authStore.user.username.toLowerCase() === username.toLowerCase();
+  const isOwnProfile =
+    authStore.user.username.toLowerCase() === username.toLowerCase();
 
   const onSubmit = async (values: UpdateProfileValues) => {
     await updateMutation.mutateAsync({ username, values });
@@ -55,10 +56,19 @@ export const ProfilePage = observer(function ProfilePage() {
       <h2>Profile</h2>
 
       {isEditing ? (
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: "grid", gap: 8, maxWidth: 520 }}>
-          <input placeholder="Display name" {...register("displayName", { required: true })} />
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          style={{ display: "grid", gap: 8, maxWidth: 520 }}
+        >
+          <input
+            placeholder="Display name"
+            {...register("displayName", { required: true })}
+          />
           <textarea placeholder="Bio" {...register("bio")} />
-          <input placeholder="Profile image URL" {...register("profileImageUrl")} />
+          <input
+            placeholder="Profile image URL"
+            {...register("profileImageUrl")}
+          />
           <div style={{ display: "flex", gap: 8 }}>
             <button type="submit">Save</button>
             <button type="button" onClick={() => setIsEditing(false)}>
