@@ -15,6 +15,10 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
         return record.error;
       }
 
+      if (typeof record.message === 'string' && record.message.trim()) {
+        return record.message;
+      }
+
       if (Array.isArray(record.errors) && record.errors.length > 0) {
         const first = record.errors[0];
         if (typeof first === 'string' && first.trim()) {

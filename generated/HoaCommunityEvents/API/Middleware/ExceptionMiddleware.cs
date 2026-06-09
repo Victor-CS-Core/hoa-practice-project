@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using HoaCommunityEvents.API.Models;
 
 namespace HoaCommunityEvents.API.Middleware;
 
@@ -18,10 +19,11 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var payload = new
+            var payload = new ApiErrorResponse
             {
-                error = "An unexpected server error occurred.",
-                traceId = context.TraceIdentifier
+                Code = "internal_error",
+                Message = "An unexpected server error occurred.",
+                TraceId = context.TraceIdentifier
             };
 
             var json = JsonSerializer.Serialize(payload);

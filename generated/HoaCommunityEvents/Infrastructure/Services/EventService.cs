@@ -8,7 +8,7 @@ namespace HoaCommunityEvents.Infrastructure.Services;
 
 public class EventService(AppDbContext dbContext) : IEventService
 {
-    public async Task<IReadOnlyList<EventDto>> GetEventsAsync(EventFilterDto filter, string? currentUserId)
+    public async Task<PagedResultDto<EventDto>> GetEventsAsync(EventFilterDto filter, string? currentUserId)
     {
         var query = dbContext.Events
             .AsNoTracking()
@@ -34,8 +34,9 @@ public class EventService(AppDbContext dbContext) : IEventService
 
         var page = filter.Page < 1 ? 1 : filter.Page;
         var pageSize = filter.PageSize < 1 ? 20 : Math.Min(filter.PageSize, 100);
+        var totalCount = await query.CountAsync();
 
-        return await query
+        var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(e => new EventDto
@@ -56,6 +57,15 @@ public class EventService(AppDbContext dbContext) : IEventService
                 IsCurrentUserAttending = currentUserId != null && e.Attendances.Any(a => a.UserId == currentUserId)
             })
             .ToListAsync();
+
+        return new PagedResultDto<EventDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
     }
 
     public async Task<EventDto?> GetEventAsync(Guid id, string? currentUserId)

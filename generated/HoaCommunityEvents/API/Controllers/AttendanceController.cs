@@ -16,13 +16,13 @@ public class AttendanceController(IAttendanceService attendanceService) : BaseAp
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("nameid");
         if (userId is null)
         {
-            return Unauthorized();
+            return ApiError(StatusCodes.Status401Unauthorized, "unauthorized", "Authentication is required.");
         }
 
         var result = await attendanceService.JoinEventAsync(eventId, userId);
         if (!result.Success)
         {
-            return StatusCode(result.StatusCode, new { error = result.Error });
+            return ApiError(result.StatusCode, "attendance_join_failed", result.Error ?? "Unable to join event.");
         }
 
         return Ok(new { attendeeCount = result.AttendeeCount });
@@ -34,13 +34,13 @@ public class AttendanceController(IAttendanceService attendanceService) : BaseAp
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("nameid");
         if (userId is null)
         {
-            return Unauthorized();
+            return ApiError(StatusCodes.Status401Unauthorized, "unauthorized", "Authentication is required.");
         }
 
         var result = await attendanceService.LeaveEventAsync(eventId, userId);
         if (!result.Success)
         {
-            return StatusCode(result.StatusCode, new { error = result.Error });
+            return ApiError(result.StatusCode, "attendance_leave_failed", result.Error ?? "Unable to leave event.");
         }
 
         return Ok(new { attendeeCount = result.AttendeeCount });

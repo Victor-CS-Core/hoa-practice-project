@@ -23,6 +23,14 @@ export type EventFilter = {
   pageSize?: number;
 };
 
+export type PagedResult<T> = {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type CreateEventFormValues = {
   title: string;
   description: string;

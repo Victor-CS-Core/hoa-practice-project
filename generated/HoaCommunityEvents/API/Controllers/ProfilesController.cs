@@ -14,7 +14,7 @@ public class ProfilesController(IProfileService profileService) : BaseApiControl
         var profile = await profileService.GetProfileAsync(username);
         if (profile is null)
         {
-            return NotFound();
+            return ApiError(StatusCodes.Status404NotFound, "profile_not_found", "Profile was not found.");
         }
 
         return Ok(profile);
@@ -26,7 +26,7 @@ public class ProfilesController(IProfileService profileService) : BaseApiControl
         var result = await profileService.UpdateProfileAsync(username, dto, User);
         if (!result.Success)
         {
-            return StatusCode(result.StatusCode, new { error = result.Error });
+            return ApiError(result.StatusCode, "profile_update_failed", result.Error ?? "Failed to update profile.");
         }
 
         return Ok(result.Profile);

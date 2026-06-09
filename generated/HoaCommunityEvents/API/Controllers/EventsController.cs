@@ -11,7 +11,7 @@ public class EventsController(IEventService eventService) : BaseApiController
 {
     [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<EventDto>>> GetEvents([FromQuery] EventFilterDto filter)
+    public async Task<ActionResult<PagedResultDto<EventDto>>> GetEvents([FromQuery] EventFilterDto filter)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var events = await eventService.GetEventsAsync(filter, currentUserId);
@@ -26,7 +26,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         var evt = await eventService.GetEventAsync(id, currentUserId);
         if (evt is null)
         {
-            return NotFound();
+            return ApiError(StatusCodes.Status404NotFound, "event_not_found", "Event was not found.");
         }
 
         return Ok(evt);
@@ -39,7 +39,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         var hostUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (hostUserId is null)
         {
-            return Unauthorized();
+            return ApiError(StatusCodes.Status401Unauthorized, "unauthorized", "Authentication is required.");
         }
 
         var created = await eventService.CreateEventAsync(dto, hostUserId);
@@ -53,13 +53,13 @@ public class EventsController(IEventService eventService) : BaseApiController
         var hostUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (hostUserId is null)
         {
-            return Unauthorized();
+            return ApiError(StatusCodes.Status401Unauthorized, "unauthorized", "Authentication is required.");
         }
 
         var updated = await eventService.EditEventAsync(id, dto, hostUserId);
         if (updated is null)
         {
-            return NotFound();
+            return ApiError(StatusCodes.Status404NotFound, "event_not_found", "Event was not found.");
         }
 
         return Ok(updated);
@@ -72,7 +72,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         var updated = await eventService.CancelEventAsync(id);
         if (updated is null)
         {
-            return NotFound();
+            return ApiError(StatusCodes.Status404NotFound, "event_not_found", "Event was not found.");
         }
 
         return Ok(updated);
@@ -85,7 +85,7 @@ public class EventsController(IEventService eventService) : BaseApiController
         var deleted = await eventService.DeleteEventAsync(id);
         if (!deleted)
         {
-            return NotFound();
+            return ApiError(StatusCodes.Status404NotFound, "event_not_found", "Event was not found.");
         }
 
         return NoContent();

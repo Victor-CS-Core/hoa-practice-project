@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent } from '../../types/event';
+import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent, PagedResult } from '../../types/event';
 import type { Attendee } from '../../types/attendee';
 import type { Profile, UpdateProfileValues } from '../../types/profile';
 import type { LoginFormValues, RegisterFormValues, User } from '../../types/user';
@@ -49,7 +49,7 @@ export const Account = {
 };
 
 export const Events = {
-    list: (filter: EventFilter) => requests.getWithParams<HoaEvent[]>('/events', filter),
+    list: (filter: EventFilter) => requests.getWithParams<PagedResult<HoaEvent>>('/events', filter),
     detail: (id: string) => requests.get<HoaEvent>(`/events/${id}`),
     create: (values: CreateEventFormValues) => requests.post<HoaEvent>('/events', values),
     edit: (id: string, values: EditEventFormValues) => requests.put<HoaEvent>(`/events/${id}`, values),

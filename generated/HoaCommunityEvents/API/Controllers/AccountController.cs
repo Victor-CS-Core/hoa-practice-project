@@ -14,7 +14,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         var result = await accountService.RegisterAsync(dto);
         if (!result.Succeeded || result.User is null)
         {
-            return BadRequest(new { errors = result.Errors });
+            return ApiError(StatusCodes.Status400BadRequest, "validation_failed", "Registration failed.", result.Errors);
         }
 
         return CreatedAtAction(nameof(CurrentUser), null, result.User);
@@ -25,7 +25,9 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     public async Task<ActionResult<UserDto>> Login(LoginDto dto)
     {
         var user = await accountService.LoginAsync(dto);
-        return user is null ? Unauthorized() : Ok(user);
+        return user is null
+            ? ApiError(StatusCodes.Status401Unauthorized, "invalid_credentials", "Invalid email or password.")
+            : Ok(user);
     }
 
     [Authorize]
@@ -33,7 +35,9 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     public async Task<ActionResult<UserDto>> CurrentUser()
     {
         var user = await accountService.GetCurrentUserAsync(User);
-        return user is null ? Unauthorized() : Ok(user);
+        return user is null
+            ? ApiError(StatusCodes.Status401Unauthorized, "unauthorized", "Authentication is required.")
+            : Ok(user);
     }
 
     [Authorize]

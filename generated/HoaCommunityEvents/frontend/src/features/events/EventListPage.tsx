@@ -70,7 +70,7 @@ export function EventListPage() {
       </div>
 
       <ul style={{ display: "grid", gap: 12, padding: 0, listStyle: "none" }}>
-        {(data ?? []).map((evt) => (
+        {(data?.items ?? []).map((evt) => (
           <li
             key={evt.id}
             style={{ border: "1px solid #ddd", padding: 12, borderRadius: 8 }}
@@ -86,6 +86,12 @@ export function EventListPage() {
           </li>
         ))}
       </ul>
+
+      {data && (
+        <p>
+          Showing page {data.page} of {data.totalPages} ({data.totalCount} total events)
+        </p>
+      )}
     </section>
   );
 }
