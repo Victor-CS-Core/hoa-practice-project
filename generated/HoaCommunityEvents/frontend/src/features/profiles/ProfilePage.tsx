@@ -5,11 +5,13 @@ import { useParams } from "react-router-dom";
 import { useStore } from "../../app/stores/store";
 import { useProfile, useUpdateProfile } from "../../hooks/useProfile";
 import type { UpdateProfileValues } from "../../types/profile";
+import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 
 export const ProfilePage = observer(function ProfilePage() {
   const { username } = useParams();
   const { authStore } = useStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const { data, isLoading, isError } = useProfile(username);
   const updateMutation = useUpdateProfile();
 
@@ -42,13 +44,19 @@ export const ProfilePage = observer(function ProfilePage() {
     authStore.user.username.toLowerCase() === username.toLowerCase();
 
   const onSubmit = async (values: UpdateProfileValues) => {
-    await updateMutation.mutateAsync({ username, values });
+    setSubmitError(null);
 
-    if (isOwnProfile) {
-      await authStore.getCurrentUser();
+    try {
+      await updateMutation.mutateAsync({ username, values });
+
+      if (isOwnProfile) {
+        await authStore.getCurrentUser();
+      }
+
+      setIsEditing(false);
+    } catch (error) {
+      setSubmitError(getApiErrorMessage(error, "Failed to update profile."));
     }
-
-    setIsEditing(false);
   };
 
   return (
@@ -75,6 +83,7 @@ export const ProfilePage = observer(function ProfilePage() {
               Cancel
             </button>
           </div>
+          {submitError && <p>{submitError}</p>}
         </form>
       ) : (
         <>

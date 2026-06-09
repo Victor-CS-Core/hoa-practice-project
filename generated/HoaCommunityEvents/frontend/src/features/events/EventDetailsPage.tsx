@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   useCancelEvent,
   useDeleteEvent,
@@ -12,6 +13,7 @@ import {
 } from "../../hooks/useAttendance";
 import { useStore } from "../../app/stores/store";
 import { useSignalR } from "../../hooks/useSignalR";
+import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 
 export function EventDetailsPage() {
   const { id } = useParams();
@@ -23,6 +25,7 @@ export function EventDetailsPage() {
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();
   const attendeesQuery = useAttendees(id, authStore.isAdmin);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useSignalR(id);
 
@@ -30,23 +33,43 @@ export function EventDetailsPage() {
   if (isError || !data) return <p>Event not found.</p>;
 
   const handleCancel = async () => {
-    await cancelMutation.mutateAsync(data.id);
+    setActionError(null);
+    try {
+      await cancelMutation.mutateAsync(data.id);
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, "Failed to cancel event."));
+    }
   };
 
   const handleDelete = async () => {
+    setActionError(null);
     const confirmed = window.confirm("Delete this event?");
     if (!confirmed) return;
 
-    await deleteMutation.mutateAsync(data.id);
-    navigate("/events");
+    try {
+      await deleteMutation.mutateAsync(data.id);
+      navigate("/events");
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, "Failed to delete event."));
+    }
   };
 
   const handleJoin = async () => {
-    await joinMutation.mutateAsync(data.id);
+    setActionError(null);
+    try {
+      await joinMutation.mutateAsync(data.id);
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, "Failed to join event."));
+    }
   };
 
   const handleLeave = async () => {
-    await leaveMutation.mutateAsync(data.id);
+    setActionError(null);
+    try {
+      await leaveMutation.mutateAsync(data.id);
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, "Failed to leave event."));
+    }
   };
 
   const canJoinOrLeave = authStore.isLoggedIn && !authStore.isAdmin;
@@ -63,6 +86,7 @@ export function EventDetailsPage() {
       <p>Starts: {new Date(data.startDate).toLocaleString()}</p>
       <p>Ends: {new Date(data.endDate).toLocaleString()}</p>
       <p>Attendees: {data.attendeeCount}</p>
+      {actionError && <p>{actionError}</p>}
       {canJoinOrLeave && (
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           {!data.isCurrentUserAttending ? (

@@ -11,13 +11,14 @@ export const AppLayout = observer(function AppLayout() {
   }, [authStore]);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px 12px" }}>
       <header
         style={{
           display: "flex",
           gap: 12,
           marginBottom: 20,
           alignItems: "center",
+          flexWrap: "wrap",
         }}
       >
         <Link to="/">Home</Link>

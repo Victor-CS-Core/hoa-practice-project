@@ -8,11 +8,14 @@ import { ProfilePage } from "../../features/profiles/ProfilePage";
 import { EventListPage } from "../../features/events/EventListPage";
 import { EventDetailsPage } from "../../features/events/EventDetailsPage";
 import { EventFormPage } from "../../features/events/EventFormPage";
+import { ErrorPage } from "../../features/errors/ErrorPage";
+import { NotFoundPage } from "../../features/errors/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <AppLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,
@@ -57,6 +60,10 @@ export const router = createBrowserRouter([
             <EventFormPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "*",
+        element: <NotFoundPage />,
       },
     ],
   },

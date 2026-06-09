@@ -55,7 +55,6 @@ HOA Community Events MVP (Clean Architecture + React SPA).
    ```
 
 8. Verify API and docs:
-
    - Health: http://localhost:5000/health
    - Swagger UI (Development): http://localhost:5000/swagger
 

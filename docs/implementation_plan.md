@@ -96,7 +96,7 @@ Agent execution constraints:
 | Slice C - Admin Event CRUD              | [x]    | Victor | Slice B          |      10-12 |          4.0 | Passed      | Admin create/edit/cancel/delete backend endpoints and frontend flows implemented and validated; role protection and CRUD runtime smoke checks passed.                                              |
 | Slice D - Attendance and Realtime       | [x]    | Victor | Slice B, Slice C |       8-10 |          3.0 | Passed      | Attendance join/leave endpoints and conflict rules validated; two-tab SignalR attendee-count synchronization verified without refresh; Slice D gate closed.                                        |
 | Slice E - Profile                       | [x]    | Victor | Slice A          |        6-8 |          2.5 | Passed      | Added profile read by username and own-profile-only update endpoint with frontend inline edit flow; runtime checks passed including 403 on cross-user edit attempts.                               |
-| Hardening and Release Readiness         | [~]    | Victor | Slice A-E        |       8-10 |          1.5 | In progress | Added global exception middleware, configured Swagger UI with Bearer auth definition, and updated root README with concrete local runbook/env setup and validation commands.                      |
+| Hardening and Release Readiness         | [x]    | Victor | Slice A-E        |       8-10 |          3.0 | Passed      | Added global exception middleware, Swagger bearer auth + endpoint grouping, README runbook updates, shared frontend error pages (route error + not found), user-friendly API error messages on key flows, and responsive app-shell tweaks. |
 
 ### Gate Checklist
 
@@ -106,7 +106,7 @@ Agent execution constraints:
 - [x] Slice C gate passed
 - [x] Slice D gate passed
 - [x] Slice E gate passed
-- [ ] Hardening gate passed
+- [x] Hardening gate passed
 
 ### Blockers Log
 

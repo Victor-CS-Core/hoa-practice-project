@@ -23,6 +23,15 @@ public static class ApplicationServiceExtensions
                 Version = "v1"
             });
 
+            options.TagActionsBy(api =>
+            {
+                var controller = api.ActionDescriptor.RouteValues.TryGetValue("controller", out var value)
+                    ? value
+                    : null;
+
+                return controller is null ? ["API"] : [controller];
+            });
+
             var bearerScheme = new OpenApiSecurityScheme
             {
                 Name = "Authorization",
