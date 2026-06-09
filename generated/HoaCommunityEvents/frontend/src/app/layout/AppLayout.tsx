@@ -23,6 +23,7 @@ export const AppLayout = observer(function AppLayout() {
       >
         <Link to="/">Home</Link>
         <Link to="/events">Events</Link>
+        <Link to="/implementation">Implementation</Link>
         {!authStore.isLoggedIn && <Link to="/login">Login</Link>}
         {!authStore.isLoggedIn && <Link to="/register">Register</Link>}
         {authStore.isLoggedIn && authStore.user && (

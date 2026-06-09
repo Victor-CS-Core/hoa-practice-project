@@ -10,6 +10,7 @@ import { EventDetailsPage } from "../../features/events/EventDetailsPage";
 import { EventFormPage } from "../../features/events/EventFormPage";
 import { ErrorPage } from "../../features/errors/ErrorPage";
 import { NotFoundPage } from "../../features/errors/NotFoundPage";
+import { ImplementationPage } from "../../features/home/ImplementationPage";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: "implementation",
+        element: <ImplementationPage />,
       },
       {
         path: "login",

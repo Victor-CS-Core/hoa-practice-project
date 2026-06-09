@@ -7,7 +7,23 @@ HOA Community Events MVP (Clean Architecture + React SPA).
 - Backend: ASP.NET Core Web API (net10.0), Clean Architecture, service/use-case application layer, EF Core SQL Server, Identity, JWT, AutoMapper, FluentValidation, SignalR, Swagger
 - Frontend: React + TypeScript + Vite, React Router, Axios, TanStack Query, MobX, React Hook Form
 
-## Next steps
+## Current Status
+
+Implemented and validated:
+
+- Authentication (register, login, current user) with role support.
+- Event read and admin CRUD flows.
+- Attendance join/leave with SignalR attendee count updates.
+- Profile read/update with ownership checks.
+- Unified API error envelope (`code`, `message`, `details`, `traceId`).
+- Paged event list response contract (`items`, `totalCount`, `page`, `pageSize`, `totalPages`).
+- FluentValidation request validators and policy-based authorization matrix.
+
+Frontend implementation artifact:
+
+- Visit `/implementation` in the SPA for a live summary of API contracts and readiness checkpoints.
+
+## Local Run
 
 1. Configure backend local secrets using user-secrets (not committed to git):
 
