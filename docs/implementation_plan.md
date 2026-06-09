@@ -88,15 +88,15 @@ Agent execution constraints:
 
 ### Slice Tracker
 
-| Slice                                   | Status | Owner  | Depends On       | Est. Hours | Actual Hours | Gate Status | Notes                                                                                                             |
-| --------------------------------------- | ------ | ------ | ---------------- | ---------: | -----------: | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| Phase 0.5 - Environment and Foundations | [~]    | Victor | None             |        3-5 |          1.7 | In progress | Solution builds on net10; full local SQL Server selected and connectivity verified; secret loading still pending. |
-| Slice A - Authentication                | [ ]    | Victor | Phase 0.5        |      10-12 |            0 | Not run     | Waiting for Phase 0.5 gate.                                                                                       |
-| Slice B - Event Read                    | [ ]    | Victor | Slice A          |       8-10 |            0 | Not run     | Waiting for Slice A gate.                                                                                         |
-| Slice C - Admin Event CRUD              | [ ]    | Victor | Slice B          |      10-12 |            0 | Not run     | Waiting for Slice B gate.                                                                                         |
-| Slice D - Attendance and Realtime       | [ ]    | Victor | Slice B, Slice C |       8-10 |            0 | Not run     | Waiting for Slice B and C gates.                                                                                  |
-| Slice E - Profile                       | [ ]    | Victor | Slice A          |        6-8 |            0 | Not run     | Waiting for Slice A gate.                                                                                         |
-| Hardening and Release Readiness         | [ ]    | Victor | Slice A-E        |       8-10 |            0 | Not run     | Starts after all feature slices are done.                                                                         |
+| Slice                                   | Status | Owner  | Depends On       | Est. Hours | Actual Hours | Gate Status | Notes                                                                                                                                             |
+| --------------------------------------- | ------ | ------ | ---------------- | ---------: | -----------: | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 0.5 - Environment and Foundations | [~]    | Victor | None             |        3-5 |          2.6 | In progress | Solution builds on net10; local SQL Server integrated security wired; EF migration applied and core tables created; secret loading still pending. |
+| Slice A - Authentication                | [ ]    | Victor | Phase 0.5        |      10-12 |            0 | Not run     | Waiting for Phase 0.5 gate.                                                                                                                       |
+| Slice B - Event Read                    | [ ]    | Victor | Slice A          |       8-10 |            0 | Not run     | Waiting for Slice A gate.                                                                                                                         |
+| Slice C - Admin Event CRUD              | [ ]    | Victor | Slice B          |      10-12 |            0 | Not run     | Waiting for Slice B gate.                                                                                                                         |
+| Slice D - Attendance and Realtime       | [ ]    | Victor | Slice B, Slice C |       8-10 |            0 | Not run     | Waiting for Slice B and C gates.                                                                                                                  |
+| Slice E - Profile                       | [ ]    | Victor | Slice A          |        6-8 |            0 | Not run     | Waiting for Slice A gate.                                                                                                                         |
+| Hardening and Release Readiness         | [ ]    | Victor | Slice A-E        |       8-10 |            0 | Not run     | Starts after all feature slices are done.                                                                                                         |
 
 ### Gate Checklist
 
