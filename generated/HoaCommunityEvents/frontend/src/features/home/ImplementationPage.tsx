@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Account, Diagnostics, Events } from "../../app/api/agent";
+import { useStore } from "../../app/stores/store";
 
 function StatusLine({
   title,
@@ -21,6 +22,7 @@ function StatusLine({
 }
 
 export function ImplementationPage() {
+  const { authStore } = useStore();
   const hasToken = !!localStorage.getItem("jwt");
 
   const healthQuery = useQuery({
@@ -68,6 +70,19 @@ export function ImplementationPage() {
     validationQuery.data.details &&
     typeof validationQuery.data.details === "object"
   );
+
+  const adminProbeMutation = useMutation({
+    mutationFn: () => Diagnostics.adminCreateProbe(),
+  });
+
+  const adminProbeResult = adminProbeMutation.data;
+  const isAdmin = authStore.user?.role === "hoa_admin";
+  const isResident = authStore.user?.role === "resident";
+
+  const adminProbePass =
+    adminProbeResult &&
+    ((isAdmin && adminProbeResult.status === 400 && adminProbeResult.code === "validation_failed") ||
+      (isResident && adminProbeResult.status === 403));
 
   return (
     <section>
@@ -126,6 +141,29 @@ export function ImplementationPage() {
           }
         />
       </ul>
+
+      <h2>Admin Policy Probe</h2>
+      <p>
+        Runs a non-destructive check against <code>POST /api/events</code> using an intentionally invalid payload.
+      </p>
+      <p>
+        Expected: resident gets 403; admin gets 400 validation_failed.
+      </p>
+      <button
+        type="button"
+        onClick={() => adminProbeMutation.mutate()}
+        disabled={!hasToken || adminProbeMutation.isPending}
+      >
+        {adminProbeMutation.isPending ? "Running..." : "Run Admin Policy Probe"}
+      </button>
+      {!hasToken && <p>Login required to run this probe.</p>}
+      {adminProbeResult && (
+        <p>
+          Result: {adminProbePass ? "PASS" : "FAIL"} (status={adminProbeResult.status}
+          {adminProbeResult.code ? `, code=${adminProbeResult.code}` : ""}
+          {adminProbeResult.message ? `, message=${adminProbeResult.message}` : ""})
+        </p>
+      )}
 
       <h2>Completed Foundations</h2>
       <ul>

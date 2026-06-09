@@ -49,6 +49,12 @@ type ValidationEnvelope = {
     traceId?: string;
 };
 
+type AdminPolicyProbeResult = {
+    status: number;
+    code?: string;
+    message?: string;
+};
+
 const getApiRoot = () => {
     if (!baseURL) {
         return '';
@@ -90,4 +96,24 @@ export const Diagnostics = {
         agent.post('/account/register', values)
             .then(() => null)
             .catch((error: AxiosError<ValidationEnvelope>) => error.response?.data ?? null),
+    adminCreateProbe: (): Promise<AdminPolicyProbeResult> =>
+        agent.post('/events', {
+            title: '',
+            description: '',
+            category: '',
+            locationWithinCommunity: '',
+            startDate: '',
+            endDate: '',
+            maxAttendees: 0,
+        })
+            .then(() => ({
+                status: 201,
+                code: undefined,
+                message: undefined,
+            } satisfies AdminPolicyProbeResult))
+            .catch((error: AxiosError<ValidationEnvelope>) => ({
+                status: error.response?.status ?? 0,
+                code: error.response?.data?.code,
+                message: error.response?.data?.message,
+            } satisfies AdminPolicyProbeResult)),
 };
