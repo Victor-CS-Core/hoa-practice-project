@@ -30,6 +30,7 @@ public static class ApplicationServiceExtensions
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IAttendanceService, AttendanceService>();

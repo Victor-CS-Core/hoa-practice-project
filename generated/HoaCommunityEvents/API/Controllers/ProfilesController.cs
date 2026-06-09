@@ -1,0 +1,34 @@
+using HoaCommunityEvents.Application.Common.Interfaces;
+using HoaCommunityEvents.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace HoaCommunityEvents.API.Controllers;
+
+[Authorize]
+public class ProfilesController(IProfileService profileService) : BaseApiController
+{
+    [HttpGet("{username}")]
+    public async Task<ActionResult<ProfileDto>> GetProfile(string username)
+    {
+        var profile = await profileService.GetProfileAsync(username);
+        if (profile is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(profile);
+    }
+
+    [HttpPut("{username}")]
+    public async Task<ActionResult<ProfileDto>> UpdateProfile(string username, UpdateProfileDto dto)
+    {
+        var result = await profileService.UpdateProfileAsync(username, dto, User);
+        if (!result.Success)
+        {
+            return StatusCode(result.StatusCode, new { error = result.Error });
+        }
+
+        return Ok(result.Profile);
+    }
+}

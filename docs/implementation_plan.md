@@ -95,8 +95,8 @@ Agent execution constraints:
 | Slice B - Event Read                    | [x]    | Victor | Slice A          |       8-10 |          4.0 | Passed      | Event list/detail backend endpoints and frontend list/detail/filter routes implemented; backend+frontend build/lint passed and list/detail API smoke test verified.                                |
 | Slice C - Admin Event CRUD              | [x]    | Victor | Slice B          |      10-12 |          4.0 | Passed      | Admin create/edit/cancel/delete backend endpoints and frontend flows implemented and validated; role protection and CRUD runtime smoke checks passed.                                              |
 | Slice D - Attendance and Realtime       | [x]    | Victor | Slice B, Slice C |       8-10 |          3.0 | Passed      | Attendance join/leave endpoints and conflict rules validated; two-tab SignalR attendee-count synchronization verified without refresh; Slice D gate closed.                                        |
-| Slice E - Profile                       | [ ]    | Victor | Slice A          |        6-8 |            0 | Not run     | Waiting for Slice A gate.                                                                                                                                                                          |
-| Hardening and Release Readiness         | [ ]    | Victor | Slice A-E        |       8-10 |            0 | Not run     | Starts after all feature slices are done.                                                                                                                                                          |
+| Slice E - Profile                       | [x]    | Victor | Slice A          |        6-8 |          2.5 | Passed      | Added profile read by username and own-profile-only update endpoint with frontend inline edit flow; runtime checks passed including 403 on cross-user edit attempts.                              |
+| Hardening and Release Readiness         | [~]    | Victor | Slice A-E        |       8-10 |          0.5 | In progress | Started hardening with global exception middleware and consistent error payload for unhandled server errors.                                                                                      |
 
 ### Gate Checklist
 
@@ -105,7 +105,7 @@ Agent execution constraints:
 - [x] Slice B gate passed
 - [x] Slice C gate passed
 - [x] Slice D gate passed
-- [ ] Slice E gate passed
+- [x] Slice E gate passed
 - [ ] Hardening gate passed
 
 ### Blockers Log

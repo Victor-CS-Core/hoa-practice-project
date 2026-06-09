@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent } from '../../types/event';
 import type { Attendee } from '../../types/attendee';
+import type { Profile, UpdateProfileValues } from '../../types/profile';
 import type { LoginFormValues, RegisterFormValues, User } from '../../types/user';
 
 const baseURL = import.meta.env.VITE_API_URL;
@@ -60,4 +61,9 @@ export const Attendance = {
     join: (eventId: string) => requests.postEmpty<{ attendeeCount: number }>(`/attendance/${eventId}/join`),
     leave: (eventId: string) => requests.delWithBody<{ attendeeCount: number }>(`/attendance/${eventId}/leave`),
     list: (eventId: string) => requests.get<Attendee[]>(`/attendance/${eventId}`),
+};
+
+export const Profiles = {
+    detail: (username: string) => requests.get<Profile>(`/profiles/${username}`),
+    update: (username: string, values: UpdateProfileValues) => requests.put<Profile>(`/profiles/${username}`, values),
 };

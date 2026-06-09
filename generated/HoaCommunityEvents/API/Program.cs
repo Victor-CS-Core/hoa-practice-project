@@ -1,4 +1,5 @@
 using HoaCommunityEvents.API.Extensions;
+using HoaCommunityEvents.API.Middleware;
 using HoaCommunityEvents.Infrastructure.Hubs;
 using HoaCommunityEvents.Persistence.Data;
 
@@ -13,6 +14,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseCors("Frontend");

@@ -48,7 +48,9 @@ export class AuthStore {
             return;
         }
 
-        this.loadingUser = true;
+        runInAction(() => {
+            this.loadingUser = true;
+        });
         try {
             const user = await Account.current();
             runInAction(() => {
