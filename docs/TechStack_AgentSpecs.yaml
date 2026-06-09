@@ -1,0 +1,319 @@
+TECH_STACK_SPEC:
+Build full-stack app using:
+Backend: ASP.NET Core Web API, C#, .NET 10 if available (otherwise .NET 9), Clean Architecture, service/use-case application layer, EF Core, SQL Server, ASP.NET Core Identity, JWT auth, AutoMapper, FluentValidation, SignalR, Swagger.
+Frontend: React, TypeScript, Vite, React Router, Axios, TanStack React Query, MobX, React Hook Form, optional Zod, Semantic UI or Tailwind.
+Architecture: API/Application/Domain/Infrastructure/Persistence backend layers. Feature-based React frontend.
+Required app features: CRUD, auth, register/login/logout/current user, protected routes, profile editing, image upload, paging, sorting, filtering, global error handling, validation, deployment environment variables.
+Rules: Keep API controllers thin. Use application services/use cases for business logic. Do not return EF entities directly; use DTOs. Use Axios interceptors. Use React Query for server state. Use MobX for client/UI/auth state. Use React Hook Form for all forms. Use EF migrations. Use Swagger for API testing. Use SignalR only for real-time features.
+Deployment target: Azure preferred, Docker acceptable.
+
+application_stack_spec:
+  stack_name: dotnet-react-clean-architecture-fullstack
+  purpose: >
+    Use this stack to build modern full-stack CRUD web applications with authentication,
+    role-based access, image uploads, real-time updates, client-side forms, filtering,
+    pagination, sorting, and production deployment.
+
+  architecture:
+    pattern: Clean Architecture
+    backend_layers:
+      - API
+      - Application
+      - Domain
+      - Infrastructure
+      - Persistence
+    application_patterns:
+      - Service and Use-Case Pattern
+      - Repository optional only when needed
+      - DTO-based API contracts
+      - Separation of transport and business logic
+    frontend_architecture:
+      - React component-based UI
+      - Feature-based folder structure
+      - API abstraction layer
+      - Shared stores for client state
+      - Server-state caching with React Query
+
+  backend:
+    platform: ASP.NET Core Web API
+    language: C#
+    runtime: .NET 10 preferred when available (otherwise .NET 9)
+    project_type: Web API
+    api_style: REST
+    required_libraries:
+      - Entity Framework Core
+      - ASP.NET Core Identity
+      - AutoMapper
+      - FluentValidation
+      - SignalR
+      - Swagger/OpenAPI
+    database:
+      primary: SQL Server
+      orm: Entity Framework Core
+      migration_strategy: EF Core Migrations
+    authentication:
+      provider: ASP.NET Core Identity
+      method:
+        - JWT Bearer tokens
+        - Secure cookies acceptable when needed
+      features:
+        - Register
+        - Login
+        - Logout
+        - Current user endpoint
+        - Protected routes
+        - Authorization policies
+        - Role-based access optional
+    validation:
+      backend: FluentValidation
+      frontend_optional: Zod
+    error_handling:
+      required:
+        - Global exception middleware
+        - Consistent API error response shape
+        - Validation error formatting
+        - Unauthorized and forbidden responses
+        - NotFound responses
+    realtime:
+      library: SignalR
+      use_cases:
+        - Live notifications
+        - Comments
+        - Attendance updates
+        - Following/follower events
+        - Real-time dashboard updates
+    file_upload:
+      acceptable_providers:
+        - Cloudinary
+        - Local API storage
+        - Azure Blob Storage
+      required_features:
+        - API upload endpoint
+        - Client-side image upload
+        - Image URL persistence in database
+        - Delete/replace image support when applicable
+    api_documentation:
+      tool: Swagger/OpenAPI
+
+  frontend:
+    framework: React
+    language: TypeScript
+    build_tool: Vite
+    required_libraries:
+      - React Router
+      - Axios
+      - TanStack React Query
+      - MobX
+      - React Hook Form
+      - Zod optional
+    styling_options:
+      preferred:
+        - Semantic UI
+        - Material UI
+        - Tailwind CSS
+        - Bootstrap
+      default_if_unspecified: Semantic UI
+    routing:
+      library: React Router
+      required_features:
+        - Public routes
+        - Protected routes
+        - Layout routes
+        - NotFound page
+        - Login/register routes
+        - Detail pages
+        - Create/edit pages
+    api_client:
+      library: Axios
+      required_features:
+        - Axios instance
+        - Base URL from environment variable
+        - Request interceptor for auth token
+        - Response interceptor for error handling
+        - Centralized API agent/service file
+    server_state:
+      library: TanStack React Query
+      required_features:
+        - Query caching
+        - Mutations
+        - Loading states
+        - Error states
+        - Invalidation after create/update/delete
+        - Pagination query keys
+    client_state:
+      library: MobX
+      use_cases:
+        - Auth user state
+        - UI state
+        - Modal state
+        - Shared app state
+    forms:
+      library: React Hook Form
+      required_features:
+        - Client validation
+        - Submit handling
+        - Error display
+        - Reusable input components
+        - Create/edit form reuse
+
+  core_features_to_support:
+    crud:
+      required: true
+      operations:
+        - List
+        - Details
+        - Create
+        - Edit
+        - Delete
+    identity:
+      required: true
+      operations:
+        - Register
+        - Login
+        - Logout
+        - Get current user
+        - Protect API endpoints
+        - Protect frontend routes
+    profile:
+      required_when_user_app: true
+      operations:
+        - View profile
+        - Edit profile
+        - Upload profile image
+    social_features:
+      optional:
+        - Following
+        - Followers
+        - Attendance
+    data_features:
+      required:
+        - Paging
+        - Sorting
+        - Filtering
+        - Searching optional
+    image_features:
+      required_when_app_has_media:
+        - API image upload
+        - Client image upload
+        - Persist image metadata
+    realtime_features:
+      optional:
+        - SignalR hub
+        - Client SignalR connection
+        - Live event updates
+
+  backend_folder_structure:
+    solution:
+      - API:
+          purpose: HTTP controllers, middleware, SignalR hubs, startup configuration
+      - Application:
+          purpose: Services/use-cases, DTOs, validators, business workflows
+      - Domain:
+          purpose: Core entities and domain models
+      - Infrastructure:
+          purpose: External services such as image upload, email, cloud providers
+      - Persistence:
+          purpose: DbContext, migrations, seed data, EF configuration
+
+  frontend_folder_structure:
+    src:
+      - app:
+          purpose: App setup, router, stores, API agent, layouts
+      - features:
+          purpose: Feature-based modules such as activities, profiles, identity
+      - components:
+          purpose: Shared reusable UI components
+      - hooks:
+          purpose: Custom React hooks
+      - lib:
+          purpose: Utilities and helper functions
+      - types:
+          purpose: Shared TypeScript interfaces and DTOs
+
+  api_design_rules:
+    controllers:
+      requirement: Keep controllers thin
+      allowed_responsibilities:
+        - Receive HTTP request
+        - Call application services/use cases
+        - Return HTTP response
+      forbidden_responsibilities:
+        - Business logic
+        - Direct database access
+        - Large validation logic
+    service_methods:
+      naming: VerbEntityAsync
+      examples:
+        - CreateActivityAsync
+        - UpdateActivityAsync
+        - DeleteActivityAsync
+        - GetActivityDetailsAsync
+        - ListActivitiesAsync
+    responses:
+      use_dtos: true
+      never_return_entities_directly: true
+
+  database_rules:
+    orm: Entity Framework Core
+    migrations_required: true
+    entity_relationships:
+      support:
+        - one-to-many
+        - many-to-many
+        - owned entities when appropriate
+    seed_data:
+      recommended: true
+
+  deployment:
+    backend_options:
+      - Azure App Service
+      - Render
+      - Railway
+      - Docker
+    frontend_options:
+      - Azure Static Web Apps
+      - Vercel
+      - Netlify
+      - Docker
+    database_options:
+      - Azure SQL
+      - SQL Server
+      - Docker SQL Server
+    production_requirements:
+      - Environment variables
+      - HTTPS
+      - CORS configured
+      - Secure auth settings
+      - Database migration strategy
+      - Logging
+
+  environment_variables:
+    backend:
+      - ConnectionStrings__DefaultConnection
+      - TokenKey
+      - Cloudinary__CloudName
+      - Cloudinary__ApiKey
+      - Cloudinary__ApiSecret
+      - ASPNETCORE_ENVIRONMENT
+    frontend:
+      - VITE_API_URL
+
+  testing_recommendations:
+    backend:
+      - Unit tests for services/use cases
+      - Integration tests for API endpoints
+      - Validation tests
+    frontend:
+      - Component tests
+      - Form behavior tests
+      - API mocking
+      - Auth flow tests
+
+  default_agent_instruction: >
+    When designing or building an application, use ASP.NET Core Web API with Clean
+    Architecture, application services/use-cases, Entity Framework Core, SQL Server, ASP.NET Core
+    Identity, AutoMapper, FluentValidation, SignalR, and Swagger for the backend.
+    Use React with TypeScript, Vite, React Router, Axios, TanStack React Query,
+    MobX, React Hook Form, and a UI library for the frontend. Implement CRUD,
+    authentication, protected routes, global error handling, forms, image upload,
+    pagination, sorting, filtering, and deployment-ready environment configuration.

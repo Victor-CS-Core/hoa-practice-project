@@ -1,0 +1,69 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Secrets / credentials / keys
+secrets.json
+**/secrets.json
+appsettings.Development.json
+**/appsettings.Development.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.jwk
+*.snk
+*.crt
+*.cer
+*.der
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.ovpn
+*.kubeconfig
+*.tfvars
+*.tfvars.json
+
+# .NET / C#
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test and coverage artifacts
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+
+# Node / frontend
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Tool caches
+.cache/
+.turbo/

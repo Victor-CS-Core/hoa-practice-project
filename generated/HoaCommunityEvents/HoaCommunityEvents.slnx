@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/API/">
+    <Project Path="API/HoaCommunityEvents.API.csproj" />
+  </Folder>
+  <Folder Name="/Application/">
+    <Project Path="Application/HoaCommunityEvents.Application.csproj" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="Domain/HoaCommunityEvents.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="Infrastructure/HoaCommunityEvents.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Persistence/">
+    <Project Path="Persistence/HoaCommunityEvents.Persistence.csproj" />
+  </Folder>
+</Solution>

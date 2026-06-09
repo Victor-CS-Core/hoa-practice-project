@@ -1,0 +1,593 @@
+app_name: HOA Community Events App
+app_type: Full-stack HOA event management application
+spec_version: MVP_under_80_hours
+
+target_development_time: under_80_hours
+
+core_goal: >
+  Build a simplified HOA community events application where residents can
+  register, log in, view published HOA events, join or leave events, edit a
+  basic profile, and see live attendance count updates. HOA admins can create,
+  edit, cancel, delete, and manage events.
+
+mvp_strategy: >
+  Keep the app focused on essential event management only. Remove features that
+  create extra relationships, complex workflows, third-party integrations, or
+  unnecessary admin screens. The app should still demonstrate the required
+  full-stack architecture, authentication, CRUD, validation, API communication,
+  state management, and SignalR real-time updates.
+
+tech_stack:
+  backend:
+    - ASP.NET Core Web API
+    - C#
+    - .NET 10 if available (otherwise .NET 9)
+    - Clean Architecture
+    - Entity Framework Core
+    - SQL Server
+    - ASP.NET Core Identity
+    - JWT Authentication
+    - AutoMapper
+    - FluentValidation
+    - SignalR
+    - Swagger/OpenAPI
+
+  frontend:
+    - React
+    - TypeScript
+    - Vite
+    - React Router
+    - Axios
+    - Axios Interceptors
+    - TanStack React Query
+    - MobX
+    - React Hook Form
+    - Optional Zod
+    - Semantic UI / Tailwind / Material UI / Bootstrap
+
+do_not_use:
+  - CQRS
+  - MediatR
+
+architecture:
+  backend_layers:
+    - API
+    - Application
+    - Domain
+    - Infrastructure
+    - Persistence
+
+  backend_rules:
+    - Keep API controllers thin.
+    - Place business logic in the Application layer.
+    - Use application services for use-case workflows.
+    - Use DTOs for API request and response models.
+    - Do not return EF Core entities directly from API endpoints.
+    - Use FluentValidation for backend validation.
+    - Use AutoMapper for mapping entities to DTOs.
+    - Use EF Core for database access.
+    - Use SQL Server as the database.
+    - Use Swagger/OpenAPI for endpoint documentation and testing.
+    - Use global exception middleware for consistent errors.
+
+  frontend_rules:
+    - Use React Query for server state.
+    - Use MobX for authentication and simple UI state.
+    - Use Axios for API calls.
+    - Use Axios interceptors for JWT handling and API error handling.
+    - Use React Hook Form for all forms.
+    - Use React Router for page routing and protected routes.
+    - Keep frontend folder structure feature-based and simple.
+
+roles:
+  resident:
+    permissions:
+      - Register account
+      - Login/logout
+      - View published HOA events
+      - View event details
+      - Join events
+      - Leave events
+      - View live attendee count updates
+      - View own profile
+      - Edit own display name
+      - Edit own bio
+      - Add or edit profile image URL
+      - Filter events by category and status
+      - Sort events by upcoming date
+
+  hoa_admin:
+    permissions:
+      - Login/logout
+      - Create HOA events
+      - Edit HOA events
+      - Cancel HOA events
+      - Delete HOA events
+      - View attendee counts
+      - View attendee lists
+      - Manage event status
+
+admin_bootstrap:
+  required: true
+  strategy:
+    - Seed one default HOA admin account during development database initialization.
+    - Require changing seeded admin password on first login in non-local environments.
+  development_seed:
+    email: admin@hoa.local
+    username: hoaadmin
+    role: hoa_admin
+  production_guidance:
+    - Prefer environment-variable-driven seed credentials.
+    - Disable default credentials after initial setup.
+
+authorization_and_business_rules:
+  event_permissions:
+    - Only hoa_admin users can create, edit, cancel, or delete events.
+    - Any hoa_admin may manage any event for MVP simplicity.
+  attendance_rules:
+    - Only authenticated residents can join or leave events.
+    - Residents cannot join cancelled events.
+    - Residents cannot join events that already ended.
+    - Residents cannot join the same event more than once.
+    - Residents can leave only events they already joined.
+    - Enforce maxAttendees when provided; return conflict when full.
+  profile_rules:
+    - Users can edit only their own profile.
+    - hoa_admin can read attendee lists for admin screens.
+  expected_conflict_responses:
+    - Join when already joined: 409 Conflict
+    - Join when event full: 409 Conflict
+    - Join when event cancelled or ended: 409 Conflict
+    - Leave when not joined: 409 Conflict
+
+removed_for_mvp:
+  - Board member role
+  - Following system
+  - Real image upload service
+  - Event banner upload service
+  - Cloudinary integration requirement
+  - Azure Blob Storage integration requirement
+  - Advanced admin dashboard
+  - Advanced filtering
+  - Advanced sorting
+  - Hosted events profile tab
+  - Joined events profile tab
+  - Followers tab
+  - Following tab
+  - Draft event workflow
+  - Completed event workflow
+  - Messaging
+  - Payments
+  - HOA dues
+  - Document management
+  - Maintenance tickets
+  - Voting
+  - Resident violation tracking
+  - Accounting features
+  - Complex admin workflows
+
+main_entities:
+  user:
+    description: Identity-backed user account with basic profile fields.
+    fields:
+      - id
+      - displayName
+      - email
+      - username
+      - role
+      - profileImageUrl
+      - bio
+      - createdAt
+
+  event:
+    description: HOA community event created and managed by admins.
+    fields:
+      - id
+      - title
+      - description
+      - category
+      - locationWithinCommunity
+      - startDate
+      - endDate
+      - maxAttendees
+      - imageUrl
+      - hostUserId
+      - status
+      - createdAt
+      - updatedAt
+
+  event_attendance:
+    description: Join table between residents and events.
+    fields:
+      - id
+      - eventId
+      - userId
+      - joinedAt
+
+event_categories:
+  - Board Meeting
+  - Community Cleanup
+  - Pool Event
+  - Garage Sale
+  - Safety Meeting
+  - Landscaping Meeting
+  - Neighborhood Watch
+  - Kids Activity
+  - Holiday Event
+  - Social Gathering
+  - Volunteer Event
+
+event_statuses:
+  - Published
+  - Cancelled
+
+features:
+  authentication:
+    description: Users can register, log in, log out, stay authenticated, and access protected pages.
+    backend:
+      - ASP.NET Core Identity
+      - JWT token generation
+      - Register endpoint
+      - Login endpoint
+      - Current user endpoint
+      - Role-based authorization for admin actions
+    frontend:
+      - Login form
+      - Register form
+      - Auth state stored in MobX
+      - Axios token interceptor
+      - Protected routes
+      - Admin-only UI controls
+
+  event_management:
+    description: HOA admins can manage core event records.
+    operations:
+      - Create event
+      - View event list
+      - View event details
+      - Edit event
+      - Cancel event
+      - Delete event
+    backend:
+      - EventController
+      - EventService
+      - Event DTOs
+      - Event validators
+      - EF Core event persistence
+    frontend:
+      - Event list page
+      - Event details page
+      - Create event form
+      - Edit event form
+      - Cancel event button for admins
+      - Delete confirmation modal for admins
+
+  event_browsing:
+    description: Residents can browse published HOA events.
+    filters:
+      - Category
+      - Event status
+    sorting:
+      - Upcoming date
+    paging:
+      required: false
+      note: Add simple paging only if time allows.
+    backend:
+      - API query parameters
+      - EF Core LINQ filtering
+      - EF Core LINQ sorting
+      - Optional paginated response wrapper
+    frontend:
+      - Category filter
+      - Status filter
+      - Upcoming date sort
+      - Optional pagination controls
+      - React Query query keys based on filters
+
+  event_attendance:
+    description: Residents can join or leave events and see attendee counts.
+    operations:
+      - Join event
+      - Leave event
+      - View attendee count
+      - View attendee list for admins
+    backend:
+      - AttendanceController
+      - AttendanceService
+      - Attendance DTOs
+      - EF Core relationship between users and events
+      - SignalR broadcast after join or leave
+    frontend:
+      - Join event button
+      - Leave event button
+      - Attendee count display
+      - Admin attendee list
+      - React Query mutation and invalidation
+
+  realtime_attendance:
+    description: Use SignalR only for live attendee count updates.
+    signalr_use_cases:
+      - Resident joins event
+      - Resident leaves event
+      - Attendance count changes
+    backend:
+      - EventHub
+      - Broadcast updated attendee count
+    frontend:
+      - SignalR client connection
+      - Live attendee count update
+      - React Query cache update or invalidation
+
+  basic_profiles:
+    description: Users can view and edit a simple profile.
+    profile_fields:
+      - displayName
+      - bio
+      - profileImageUrl
+    backend:
+      - ProfileController
+      - ProfileService
+      - Profile DTOs
+      - Profile validators
+    frontend:
+      - Profile page
+      - Edit profile form
+      - Profile image URL input
+
+  image_handling:
+    description: Use image URL fields instead of real file uploads for the MVP.
+    rules:
+      - Do not implement Cloudinary upload.
+      - Do not implement Azure Blob upload.
+      - Do not implement local file upload.
+      - Allow admins to paste an event image URL.
+      - Allow residents to paste a profile image URL.
+    backend:
+      - Store imageUrl string fields
+      - Validate URL format if practical
+    frontend:
+      - Image URL input
+      - Image preview if URL is present
+
+  forms_and_validation:
+    description: Forms use React Hook Form on the frontend and FluentValidation on the backend.
+    forms:
+      - Login form
+      - Register form
+      - Create event form
+      - Edit event form
+      - Edit profile form
+    validation:
+      frontend:
+        - Required fields
+        - Date validation
+        - Max length validation
+      backend:
+        - FluentValidation validators
+        - Authorization validation
+        - Date validation
+        - Max length validation
+
+  error_handling:
+    description: Provide consistent backend and frontend error behavior.
+    backend:
+      - Global exception middleware
+      - Validation error responses
+      - Unauthorized responses
+      - Forbidden responses
+      - Not found responses
+      - Server error responses
+    frontend:
+      - Axios response interceptor
+      - Form validation messages
+      - Toast or alert notifications
+      - NotFound page
+      - Unauthorized page
+      - Loading states
+      - Error states
+
+  api_documentation:
+    description: Backend endpoints should be documented and testable.
+    backend:
+      - Swagger/OpenAPI
+
+  deployment_readiness:
+    description: Prepare the app for deployment but avoid overengineering.
+    backend:
+      - Environment variables
+      - HTTPS-ready configuration
+      - CORS configuration
+      - Secure JWT settings
+      - EF Core migrations
+    database:
+      - SQL Server
+      - Azure SQL optional
+    frontend:
+      - Vite environment variables
+
+api_contracts:
+  conventions:
+    base_path: /api
+    content_type: application/json
+    auth_scheme: Bearer JWT
+    error_shape:
+      fields:
+        - statusCode
+        - message
+        - details_optional
+  endpoints:
+    authentication:
+      - method: POST
+        route: /api/account/register
+        success: 201
+      - method: POST
+        route: /api/account/login
+        success: 200
+      - method: POST
+        route: /api/account/logout
+        success: 204
+      - method: GET
+        route: /api/account/current
+        success: 200
+        auth_required: true
+    events:
+      - method: GET
+        route: /api/events
+        success: 200
+        query:
+          - category
+          - status
+          - sortBy
+          - page_optional
+          - pageSize_optional
+      - method: GET
+        route: /api/events/{id}
+        success: 200
+        not_found: 404
+      - method: POST
+        route: /api/events
+        success: 201
+        auth_required: true
+        role_required: hoa_admin
+      - method: PUT
+        route: /api/events/{id}
+        success: 200
+        auth_required: true
+        role_required: hoa_admin
+      - method: PATCH
+        route: /api/events/{id}/cancel
+        success: 200
+        auth_required: true
+        role_required: hoa_admin
+      - method: DELETE
+        route: /api/events/{id}
+        success: 204
+        auth_required: true
+        role_required: hoa_admin
+    attendance:
+      - method: POST
+        route: /api/events/{id}/join
+        success: 200
+        auth_required: true
+        conflict: 409
+      - method: DELETE
+        route: /api/events/{id}/leave
+        success: 200
+        auth_required: true
+        conflict: 409
+      - method: GET
+        route: /api/events/{id}/attendees
+        success: 200
+        auth_required: true
+        role_required: hoa_admin
+    profiles:
+      - method: GET
+        route: /api/profiles/{username}
+        success: 200
+      - method: PUT
+        route: /api/profiles/me
+        success: 200
+        auth_required: true
+
+pages:
+  public:
+    - Home page
+    - Event list
+    - Event details
+    - Login
+    - Register
+
+  protected_resident:
+    - My profile
+    - Edit profile
+    - Joined event actions on event details page
+
+  protected_admin:
+    - Create event
+    - Edit event
+    - Admin controls on event list/details page
+    - Manage event attendees inside event details page
+
+recommended_build_plan:
+  phase_1:
+    name: Backend foundation
+    estimated_hours: 18-22
+    include:
+      - Solution structure
+      - Clean Architecture layers
+      - EF Core setup
+      - SQL Server connection
+      - Identity setup
+      - JWT authentication
+      - Event entity
+      - Attendance entity
+      - Basic profile fields
+      - Swagger
+      - Global error middleware
+
+  phase_2:
+    name: Backend features
+    estimated_hours: 18-22
+    include:
+      - Register/login/current user endpoints
+      - Event list/details endpoints
+      - Create/edit/delete/cancel event endpoints
+      - Join/leave event endpoints
+      - Profile view/edit endpoints
+      - Basic filtering by category and status
+      - Upcoming-date sorting
+      - SignalR attendance count broadcast
+
+  phase_3:
+    name: Frontend foundation
+    estimated_hours: 14-18
+    include:
+      - React/Vite setup
+      - React Router setup
+      - Axios API agent
+      - Axios interceptors
+      - MobX auth store
+      - React Query setup
+      - Layout/navigation
+      - Login/register pages
+      - Protected routes
+
+  phase_4:
+    name: Frontend features
+    estimated_hours: 20-24
+    include:
+      - Event list page
+      - Event details page
+      - Create event form
+      - Edit event form
+      - Join/leave buttons
+      - Profile page
+      - Edit profile form
+      - Admin-only controls
+      - SignalR client attendance updates
+      - Basic error and loading states
+
+environment_variables:
+  backend:
+    - ConnectionStrings__DefaultConnection
+    - TokenKey
+    - ASPNETCORE_ENVIRONMENT
+
+  frontend:
+    - VITE_API_URL
+
+agent_build_instruction: >
+  Build an MVP HOA Community Events App that can be completed in under 80 hours.
+  Use ASP.NET Core Web API, C#, .NET 10 if available (otherwise .NET 9), Clean Architecture, EF Core,
+  SQL Server, ASP.NET Core Identity, JWT authentication, AutoMapper,
+  FluentValidation, SignalR, and Swagger/OpenAPI on the backend. Do not use CQRS
+  or MediatR. Use thin controllers and application services for business logic.
+  Use React, TypeScript, Vite, React Router, Axios, Axios interceptors, TanStack
+  React Query, MobX, and React Hook Form on the frontend. The app must support
+  resident/admin authentication, protected routes, basic role-based access, HOA
+  event CRUD, cancel events, join/leave attendance, live SignalR attendance count
+  updates, basic resident profiles, image URL fields instead of file uploads,
+  simple filtering by category/status, sorting by upcoming date, validation,
+  global error handling, Swagger API documentation, and deployment-ready
+  environment configuration. Keep the app simple and do not add features outside
+  the HOA events MVP scope.
