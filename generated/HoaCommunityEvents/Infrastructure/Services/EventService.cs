@@ -1,5 +1,6 @@
 using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
+using HoaCommunityEvents.Domain.Entities;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,5 +83,79 @@ public class EventService(AppDbContext dbContext) : IEventService
                 IsCurrentUserAttending = currentUserId != null && e.Attendances.Any(a => a.UserId == currentUserId)
             })
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<EventDto> CreateEventAsync(CreateEventDto dto, string hostUserId)
+    {
+        var evt = new Event
+        {
+            Title = dto.Title,
+            Description = dto.Description,
+            Category = dto.Category,
+            LocationWithinCommunity = dto.LocationWithinCommunity,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            MaxAttendees = dto.MaxAttendees,
+            ImageUrl = dto.ImageUrl,
+            HostUserId = hostUserId,
+            Status = "Published"
+        };
+
+        dbContext.Events.Add(evt);
+        await dbContext.SaveChangesAsync();
+
+        var created = await GetEventAsync(evt.Id, hostUserId);
+        return created!;
+    }
+
+    public async Task<EventDto?> EditEventAsync(Guid id, EditEventDto dto, string hostUserId)
+    {
+        var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+        if (evt is null)
+        {
+            return null;
+        }
+
+        evt.Title = dto.Title;
+        evt.Description = dto.Description;
+        evt.Category = dto.Category;
+        evt.LocationWithinCommunity = dto.LocationWithinCommunity;
+        evt.StartDate = dto.StartDate;
+        evt.EndDate = dto.EndDate;
+        evt.MaxAttendees = dto.MaxAttendees;
+        evt.ImageUrl = dto.ImageUrl;
+        evt.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+
+        return await GetEventAsync(id, hostUserId);
+    }
+
+    public async Task<EventDto?> CancelEventAsync(Guid id)
+    {
+        var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+        if (evt is null)
+        {
+            return null;
+        }
+
+        evt.Status = "Cancelled";
+        evt.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
+
+        return await GetEventAsync(id, null);
+    }
+
+    public async Task<bool> DeleteEventAsync(Guid id)
+    {
+        var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+        if (evt is null)
+        {
+            return false;
+        }
+
+        dbContext.Events.Remove(evt);
+        await dbContext.SaveChangesAsync();
+        return true;
     }
 }

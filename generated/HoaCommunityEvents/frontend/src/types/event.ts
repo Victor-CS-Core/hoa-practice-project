@@ -22,3 +22,16 @@ export type EventFilter = {
   page?: number;
   pageSize?: number;
 };
+
+export type CreateEventFormValues = {
+  title: string;
+  description: string;
+  category: string;
+  locationWithinCommunity: string;
+  startDate: string;
+  endDate: string;
+  maxAttendees?: number | null;
+  imageUrl?: string | null;
+};
+
+export type EditEventFormValues = CreateEventFormValues;

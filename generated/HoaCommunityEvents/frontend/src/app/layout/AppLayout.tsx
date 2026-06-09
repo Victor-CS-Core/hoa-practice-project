@@ -27,6 +27,7 @@ export const AppLayout = observer(function AppLayout() {
         {authStore.isLoggedIn && authStore.user && (
           <Link to={`/profile/${authStore.user.username}`}>Profile</Link>
         )}
+        {authStore.isAdmin && <Link to="/events/create">Create Event</Link>}
         {authStore.isLoggedIn && (
           <button type="button" onClick={authStore.logout}>
             Logout

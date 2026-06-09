@@ -13,6 +13,18 @@ public static class ApplicationServiceExtensions
     {
         services.AddControllers();
         services.AddOpenApi();
+        services.AddSignalR();
+        services.AddCors(options =>
+        {
+            options.AddPolicy("Frontend", policy =>
+            {
+                policy
+                    .WithOrigins("http://localhost:5173")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
@@ -20,6 +32,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEventService, EventService>();
+        services.AddScoped<IAttendanceService, AttendanceService>();
 
         return services;
     }

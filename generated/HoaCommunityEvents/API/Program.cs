@@ -1,4 +1,5 @@
 using HoaCommunityEvents.API.Extensions;
+using HoaCommunityEvents.Infrastructure.Hubs;
 using HoaCommunityEvents.Persistence.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +15,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<EventHub>("/hubs/events");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 

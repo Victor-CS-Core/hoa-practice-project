@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { ProfilePage } from "../../features/profiles/ProfilePage";
 import { EventListPage } from "../../features/events/EventListPage";
 import { EventDetailsPage } from "../../features/events/EventDetailsPage";
+import { EventFormPage } from "../../features/events/EventFormPage";
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +41,22 @@ export const router = createBrowserRouter([
       {
         path: "events/:id",
         element: <EventDetailsPage />,
+      },
+      {
+        path: "events/create",
+        element: (
+          <ProtectedRoute requireAdmin>
+            <EventFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "events/:id/edit",
+        element: (
+          <ProtectedRoute requireAdmin>
+            <EventFormPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

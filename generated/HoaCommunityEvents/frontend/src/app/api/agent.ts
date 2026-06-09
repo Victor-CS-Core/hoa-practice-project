@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
-import type { EventFilter, HoaEvent } from '../../types/event';
+import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent } from '../../types/event';
+import type { Attendee } from '../../types/attendee';
 import type { LoginFormValues, RegisterFormValues, User } from '../../types/user';
 
 const baseURL = import.meta.env.VITE_API_URL;
@@ -32,6 +33,11 @@ const responseBody = <T>(response: { data: T }) => response.data;
 const requests = {
     get: <T>(url: string) => agent.get<T>(url).then(responseBody),
     post: <T>(url: string, body: object) => agent.post<T>(url, body).then(responseBody),
+    postEmpty: <T>(url: string) => agent.post<T>(url, {}).then(responseBody),
+    put: <T>(url: string, body: object) => agent.put<T>(url, body).then(responseBody),
+    patch: <T>(url: string) => agent.patch<T>(url).then(responseBody),
+    del: (url: string) => agent.delete(url),
+    delWithBody: <T>(url: string) => agent.delete<T>(url).then(responseBody),
     getWithParams: <T>(url: string, params: object) => agent.get<T>(url, { params }).then(responseBody),
 };
 
@@ -44,4 +50,14 @@ export const Account = {
 export const Events = {
     list: (filter: EventFilter) => requests.getWithParams<HoaEvent[]>('/events', filter),
     detail: (id: string) => requests.get<HoaEvent>(`/events/${id}`),
+    create: (values: CreateEventFormValues) => requests.post<HoaEvent>('/events', values),
+    edit: (id: string, values: EditEventFormValues) => requests.put<HoaEvent>(`/events/${id}`, values),
+    cancel: (id: string) => requests.patch<HoaEvent>(`/events/${id}/cancel`),
+    delete: (id: string) => requests.del(`/events/${id}`),
+};
+
+export const Attendance = {
+    join: (eventId: string) => requests.postEmpty<{ attendeeCount: number }>(`/attendance/${eventId}/join`),
+    leave: (eventId: string) => requests.delWithBody<{ attendeeCount: number }>(`/attendance/${eventId}/leave`),
+    list: (eventId: string) => requests.get<Attendee[]>(`/attendance/${eventId}`),
 };
