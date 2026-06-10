@@ -25,9 +25,10 @@ vi.mock("../../app/stores/store", () => ({
 }));
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
 
   return {
     ...actual,
@@ -114,7 +115,9 @@ describe("EventListPage", () => {
     );
 
     expect(
-      screen.getByText(/Failed to load events\. Please refresh and try again\./i),
+      screen.getByText(
+        /Failed to load events\. Please refresh and try again\./i,
+      ),
     ).toBeInTheDocument();
   });
 

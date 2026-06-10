@@ -132,7 +132,9 @@ describe("AdminDashboardPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/No events match your filters\./i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No events match your filters\./i),
+    ).toBeInTheDocument();
   });
 
   it("shows loading and error states", () => {

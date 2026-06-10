@@ -49,9 +49,15 @@ describe("AdminEventList", () => {
 
     expect(screen.getByText("Board Meeting")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^edit$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /attendees/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^cancel$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /attendees/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^cancel$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^delete$/i }),
+    ).toBeInTheDocument();
   });
 
   it("calls mobile action handlers", async () => {
