@@ -1,18 +1,50 @@
+import { createElement, lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
-import { HomePage } from "../../features/home/HomePage";
-import { LoginPage } from "../../features/auth/LoginPage";
-import { RegisterPage } from "../../features/auth/RegisterPage";
 import { ProtectedRoute } from "./ProtectedRoute";
-import { ProfilePage } from "../../features/profiles/ProfilePage";
-import { EventListPage } from "../../features/events/EventListPage";
-import { EventDetailsPage } from "../../features/events/EventDetailsPage";
-import { EventFormPage } from "../../features/events/EventFormPage";
-import { AdminAttendeesPage } from "../../features/events/AdminAttendeesPage";
-import { AdminDashboardPage } from "../../features/events/AdminDashboardPage";
 import { ErrorPage } from "../../features/errors/ErrorPage";
-import { NotFoundPage } from "../../features/errors/NotFoundPage";
-import { ImplementationPage } from "../../features/home/ImplementationPage";
+
+const homePageRoute = lazy(() =>
+  import("../../features/home/HomePage").then((module) => ({ default: module.HomePage })),
+);
+const loginPageRoute = lazy(() =>
+  import("../../features/auth/LoginPage").then((module) => ({ default: module.LoginPage })),
+);
+const registerPageRoute = lazy(() =>
+  import("../../features/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })),
+);
+const profilePageRoute = lazy(() =>
+  import("../../features/profiles/ProfilePage").then((module) => ({ default: module.ProfilePage })),
+);
+const eventListPageRoute = lazy(() =>
+  import("../../features/events/EventListPage").then((module) => ({ default: module.EventListPage })),
+);
+const eventDetailsPageRoute = lazy(() =>
+  import("../../features/events/EventDetailsPage").then((module) => ({ default: module.EventDetailsPage })),
+);
+const eventFormPageRoute = lazy(() =>
+  import("../../features/events/EventFormPage").then((module) => ({ default: module.EventFormPage })),
+);
+const adminAttendeesPageRoute = lazy(() =>
+  import("../../features/events/AdminAttendeesPage").then((module) => ({ default: module.AdminAttendeesPage })),
+);
+const adminDashboardPageRoute = lazy(() =>
+  import("../../features/events/AdminDashboardPage").then((module) => ({ default: module.AdminDashboardPage })),
+);
+const notFoundPageRoute = lazy(() =>
+  import("../../features/errors/NotFoundPage").then((module) => ({ default: module.NotFoundPage })),
+);
+const implementationPageRoute = lazy(() =>
+  import("../../features/home/ImplementationPage").then((module) => ({ default: module.ImplementationPage })),
+);
+
+function withPageLoader(element: ReactNode) {
+  return (
+    <Suspense fallback={<p>Loading page...</p>}>
+      {element}
+    </Suspense>
+  );
+}
 
 export const router = createBrowserRouter([
   {
@@ -22,71 +54,71 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: withPageLoader(createElement(homePageRoute)),
       },
       {
         path: "implementation",
-        element: <ImplementationPage />,
+        element: withPageLoader(createElement(implementationPageRoute)),
       },
       {
         path: "login",
-        element: <LoginPage />,
+        element: withPageLoader(createElement(loginPageRoute)),
       },
       {
         path: "register",
-        element: <RegisterPage />,
+        element: withPageLoader(createElement(registerPageRoute)),
       },
       {
         path: "profile/:username",
-        element: (
+        element: withPageLoader(
           <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
+            {createElement(profilePageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {
         path: "events",
-        element: <EventListPage />,
+        element: withPageLoader(createElement(eventListPageRoute)),
       },
       {
         path: "events/:id",
-        element: <EventDetailsPage />,
+        element: withPageLoader(createElement(eventDetailsPageRoute)),
       },
       {
         path: "events/create",
-        element: (
+        element: withPageLoader(
           <ProtectedRoute requireAdmin>
-            <EventFormPage />
-          </ProtectedRoute>
+            {createElement(eventFormPageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {
         path: "events/:id/edit",
-        element: (
+        element: withPageLoader(
           <ProtectedRoute requireAdmin>
-            <EventFormPage />
-          </ProtectedRoute>
+            {createElement(eventFormPageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {
         path: "admin/events",
-        element: (
+        element: withPageLoader(
           <ProtectedRoute requireAdmin>
-            <AdminDashboardPage />
-          </ProtectedRoute>
+            {createElement(adminDashboardPageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {
         path: "admin/attendees",
-        element: (
+        element: withPageLoader(
           <ProtectedRoute requireAdmin>
-            <AdminAttendeesPage />
-          </ProtectedRoute>
+            {createElement(adminAttendeesPageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {
         path: "*",
-        element: <NotFoundPage />,
+        element: withPageLoader(createElement(notFoundPageRoute)),
       },
     ],
   },
