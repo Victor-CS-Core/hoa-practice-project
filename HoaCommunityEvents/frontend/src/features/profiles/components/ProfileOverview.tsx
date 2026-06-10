@@ -15,13 +15,13 @@ export function ProfileOverview({
   onEditClick,
 }: ProfileOverviewProps) {
   return (
-    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-      <div className="relative flex flex-col items-center border-b border-stone-200 bg-stone-50 p-8">
+    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm">
+      <div className="relative flex flex-col items-center border-b theme-border-surface theme-bg-surface-muted p-8">
         {isOwner && (
           <div className="absolute right-4 top-4">
             <Button
               variant="outline"
-              className="border-stone-300 bg-white text-stone-700"
+              className="theme-border-surface theme-bg-surface theme-text-muted"
               onClick={onEditClick}
             >
               <Edit3 className="mr-2 h-4 w-4" />
@@ -30,7 +30,7 @@ export function ProfileOverview({
           </div>
         )}
 
-        <div className="mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-stone-200 shadow-md">
+        <div className="mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 theme-border-base theme-bg-surface-muted shadow-md">
           {profile.profileImageUrl ? (
             <img
               src={profile.profileImageUrl}
@@ -38,14 +38,14 @@ export function ProfileOverview({
               className="h-full w-full object-cover"
             />
           ) : (
-            <User className="h-16 w-16 text-stone-400" />
+            <User className="h-16 w-16 theme-text-muted" />
           )}
         </div>
 
-        <h1 className="font-heading text-2xl font-bold text-stone-900">
+        <h1 className="font-heading text-2xl font-bold theme-text-primary">
           {profile.displayName}
         </h1>
-        <p className="mb-3 font-medium text-stone-500">@{profile.username}</p>
+        <p className="mb-3 font-medium theme-text-muted">@{profile.username}</p>
 
         {profile.role && profile.role !== "resident" && (
           <Badge variant="secondary" className="bg-amber-100 text-amber-800">
@@ -55,28 +55,28 @@ export function ProfileOverview({
       </div>
 
       <div className="p-8">
-        <h3 className="mb-3 font-heading text-lg font-semibold text-stone-900">
+        <h3 className="mb-3 font-heading text-lg font-semibold theme-text-primary">
           About
         </h3>
         {profile.bio ? (
-          <p className="whitespace-pre-line leading-relaxed text-stone-600">
+          <p className="whitespace-pre-line leading-relaxed theme-text-muted">
             {profile.bio}
           </p>
         ) : (
-          <p className="italic text-stone-400">
+          <p className="italic theme-text-muted">
             This user hasn&apos;t added a bio yet.
           </p>
         )}
       </div>
 
       {isOwner && (
-        <div className="flex items-center justify-between border-t border-stone-200 bg-stone-50 p-6 text-sm">
-          <span className="text-stone-500">
+        <div className="flex items-center justify-between border-t theme-border-surface theme-bg-surface-muted p-6 text-sm">
+          <span className="theme-text-muted">
             This is how your profile appears to the community.
           </span>
           <Button
             variant="ghost"
-            className="text-stone-500 hover:text-stone-900"
+            className="theme-text-muted theme-hover-text-primary"
             disabled
           >
             <Settings className="mr-2 h-4 w-4" />
@@ -87,3 +87,6 @@ export function ProfileOverview({
     </div>
   );
 }
+
+
+

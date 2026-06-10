@@ -93,7 +93,7 @@ export function DropdownMenuContent({
   return (
     <div
       className={cn(
-        "absolute z-50 mt-2 min-w-44 rounded-md border border-stone-200 bg-white p-1 shadow-lg",
+        "absolute z-50 mt-2 min-w-44 rounded-md border theme-border-surface theme-bg-surface p-1 theme-text-primary shadow-lg",
         align === "end" ? "right-0" : "left-0",
         className,
       )}
@@ -111,7 +111,7 @@ export function DropdownMenuLabel({
   return (
     <div
       className={cn(
-        "px-2 py-1.5 text-xs font-semibold text-stone-500",
+        "px-2 py-1.5 text-xs font-semibold theme-text-muted",
         className,
       )}
       {...props}
@@ -123,7 +123,7 @@ export function DropdownMenuSeparator({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("my-1 h-px bg-stone-200", className)} {...props} />;
+  return <div className={cn("my-1 h-px theme-bg-surface-border", className)} {...props} />;
 }
 
 export function DropdownMenuItem({
@@ -136,7 +136,7 @@ export function DropdownMenuItem({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center rounded px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
+        "flex w-full items-center rounded px-2 py-1.5 text-left text-sm theme-text-primary theme-hover-bg-surface-muted theme-focus-bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 theme-focus-ring-offset-surface",
         className,
       )}
       onClick={(event) => {
@@ -147,3 +147,6 @@ export function DropdownMenuItem({
     />
   );
 }
+
+
+

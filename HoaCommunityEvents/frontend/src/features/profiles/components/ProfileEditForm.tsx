@@ -29,12 +29,12 @@ export function ProfileEditForm({
   const profileImageError = getFieldError(apiError?.details, "ProfileImageUrl");
 
   return (
-    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-      <div className="border-b border-stone-200 bg-stone-50 px-8 py-6">
-        <h2 className="font-heading text-2xl font-bold text-stone-900">
+    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm">
+      <div className="border-b theme-border-surface theme-bg-surface-muted px-8 py-6">
+        <h2 className="font-heading text-2xl font-bold theme-text-primary">
           Edit Profile
         </h2>
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm theme-text-muted">
           Update your public identity details.
         </p>
       </div>
@@ -51,7 +51,7 @@ export function ProfileEditForm({
 
         <div className="flex flex-col items-start gap-8 sm:flex-row">
           <div className="mx-auto flex shrink-0 flex-col items-center gap-3 sm:mx-0">
-            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-stone-100 shadow-sm">
+            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border theme-border-surface theme-bg-surface-muted shadow-sm">
               {formValues.profileImageUrl ? (
                 <img
                   src={formValues.profileImageUrl}
@@ -59,17 +59,17 @@ export function ProfileEditForm({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <User className="h-12 w-12 text-stone-400" />
+                <User className="h-12 w-12 theme-text-muted" />
               )}
             </div>
-            <span className="text-xs font-medium uppercase tracking-wider text-stone-500">
+            <span className="text-xs font-medium uppercase tracking-wider theme-text-muted">
               Avatar Preview
             </span>
           </div>
 
           <div className="w-full flex-1 space-y-5">
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
+              <label className="mb-1 block text-sm font-medium theme-text-primary">
                 Display Name <span className="text-red-500">*</span>
               </label>
               <Input
@@ -93,7 +93,7 @@ export function ProfileEditForm({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
+              <label className="mb-1 block text-sm font-medium theme-text-primary">
                 Bio (Optional)
               </label>
               <textarea
@@ -104,10 +104,10 @@ export function ProfileEditForm({
                     bio: event.target.value,
                   }))
                 }
-                className={`flex min-h-30 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`flex min-h-30 w-full rounded-md border bg-transparent px-3 py-2 text-sm theme-text-primary shadow-sm theme-placeholder-text-muted focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
                   bioError
                     ? "border-red-300 focus-visible:ring-red-500"
-                    : "border-stone-200 focus-visible:ring-emerald-500"
+                    : "theme-border-surface focus-visible:ring-emerald-500"
                 }`}
                 placeholder="Tell your neighbors a bit about yourself..."
               />
@@ -117,7 +117,7 @@ export function ProfileEditForm({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
+              <label className="mb-1 block text-sm font-medium theme-text-primary">
                 Avatar Image URL (Optional)
               </label>
               <Input
@@ -138,7 +138,7 @@ export function ProfileEditForm({
               {profileImageError && (
                 <p className="mt-1 text-xs text-red-500">{profileImageError}</p>
               )}
-              <p className="mt-1 text-xs text-stone-400">
+              <p className="mt-1 text-xs theme-text-muted">
                 Provide an absolute URL to an image for your avatar.
               </p>
             </div>
@@ -146,11 +146,11 @@ export function ProfileEditForm({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 border-t border-stone-200 bg-stone-50 px-8 py-4">
+      <div className="flex items-center justify-end gap-3 border-t theme-border-surface theme-bg-surface-muted px-8 py-4">
         <Button
           variant="ghost"
           onClick={onCancel}
-          className="text-stone-600 hover:text-stone-900"
+          className="theme-text-muted theme-hover-text-primary"
           disabled={isSubmitting}
         >
           Cancel
@@ -166,3 +166,6 @@ export function ProfileEditForm({
     </div>
   );
 }
+
+
+

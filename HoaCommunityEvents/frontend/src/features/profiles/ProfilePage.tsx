@@ -18,7 +18,7 @@ export const ProfilePage = observer(function ProfilePage() {
 
   if (!authStore.user || !username) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
         Profile not available.
       </div>
     );
@@ -26,7 +26,7 @@ export const ProfilePage = observer(function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
         Loading profile...
       </div>
     );
@@ -34,7 +34,7 @@ export const ProfilePage = observer(function ProfilePage() {
 
   if (isError || !data) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
         Profile not found.
       </div>
     );
@@ -91,3 +91,6 @@ export const ProfilePage = observer(function ProfilePage() {
     </section>
   );
 });
+
+
+

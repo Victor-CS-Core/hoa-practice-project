@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useStore } from "../stores/store";
 import { useState } from "react";
+import { useTheme } from "../theme/theme-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +51,7 @@ type NavItem = {
 export const AppLayout = observer(function AppLayout() {
   const { authStore } = useStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isNightHeader, setIsNightHeader] = useState(false);
+  const { themePreference, resolvedTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,6 +95,7 @@ export const AppLayout = observer(function AppLayout() {
   const user = authStore.user;
 
   const closeMobile = () => setMobileOpen(false);
+  const isDark = resolvedTheme === "dark";
 
   const handleLogout = () => {
     authStore.logout();
@@ -101,15 +103,15 @@ export const AppLayout = observer(function AppLayout() {
     void navigate("/login", { replace: true });
   };
 
-  const headerTone = isNightHeader
+  const headerTone = isDark
     ? "border-stone-700 bg-stone-950/80 text-stone-100"
     : "border-stone-200 bg-white/80 text-stone-900";
 
-  const navTone = isNightHeader
+  const navTone = isDark
     ? "text-stone-300 hover:bg-stone-800/90 hover:text-emerald-300"
     : "text-stone-600 hover:bg-stone-100 hover:text-emerald-700";
 
-  const activeTone = isNightHeader
+  const activeTone = isDark
     ? "bg-emerald-900/40 text-emerald-200"
     : "bg-emerald-100 text-emerald-800";
 
@@ -122,7 +124,7 @@ export const AppLayout = observer(function AppLayout() {
     ].join(" ");
 
   return (
-    <div className="min-h-screen font-body text-stone-900">
+    <div className="min-h-screen font-body text-(--text-primary)">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-white"
@@ -145,7 +147,7 @@ export const AppLayout = observer(function AppLayout() {
                 </div>
                 <span
                   className={`hidden font-heading text-lg font-semibold sm:block ${
-                    isNightHeader ? "text-emerald-200" : "text-emerald-900"
+                    isDark ? "text-emerald-200" : "text-emerald-900"
                   }`}
                 >
                   Community Events
@@ -209,16 +211,16 @@ export const AppLayout = observer(function AppLayout() {
             <div className="hidden items-center gap-3 md:flex">
               <button
                 type="button"
-                onClick={() => setIsNightHeader((prev) => !prev)}
+                onClick={toggleTheme}
                 className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${
-                  isNightHeader
+                  isDark
                     ? "border-stone-600 bg-stone-900 text-amber-300 hover:bg-stone-800"
                     : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
                 }`}
                 aria-label="Toggle header theme"
-                title="Toggle header theme"
+                title={`Theme: ${themePreference} (${resolvedTheme})`}
               >
-                {isNightHeader ? (
+                {isDark ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
@@ -230,7 +232,7 @@ export const AppLayout = observer(function AppLayout() {
                   <button
                     type="button"
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors duration-200 ${
-                      isNightHeader
+                      isDark
                         ? "border-stone-600 bg-stone-900/70 hover:bg-stone-800"
                         : "border-stone-200 bg-white hover:bg-stone-50"
                     }`}
@@ -252,7 +254,7 @@ export const AppLayout = observer(function AppLayout() {
                       </span>
                       <span
                         className={`block truncate text-xs ${
-                          isNightHeader ? "text-stone-400" : "text-stone-500"
+                          isDark ? "text-stone-400" : "text-stone-500"
                         }`}
                       >
                         {roleToLabel(user?.role)}
@@ -300,7 +302,7 @@ export const AppLayout = observer(function AppLayout() {
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
               className={`rounded-md p-2 md:hidden ${
-                isNightHeader
+                isDark
                   ? "text-stone-200 hover:bg-stone-800"
                   : "text-stone-600 hover:bg-stone-100"
               }`}
@@ -314,7 +316,7 @@ export const AppLayout = observer(function AppLayout() {
           {mobileOpen && (
             <div
               className={`border-t px-4 py-4 md:hidden ${
-                isNightHeader
+                isDark
                   ? "border-stone-700 bg-stone-950"
                   : "border-stone-200 bg-white"
               }`}
@@ -338,12 +340,12 @@ export const AppLayout = observer(function AppLayout() {
                 {authStore.isAdmin && (
                   <div
                     className={`space-y-2 border-t pt-3 ${
-                      isNightHeader ? "border-stone-700" : "border-stone-200"
+                      isDark ? "border-stone-700" : "border-stone-200"
                     }`}
                   >
                     <p
                       className={`px-3 text-xs font-semibold tracking-wide ${
-                        isNightHeader ? "text-stone-400" : "text-stone-500"
+                        isDark ? "text-stone-400" : "text-stone-500"
                       }`}
                     >
                       ADMIN TOOLS
@@ -364,12 +366,12 @@ export const AppLayout = observer(function AppLayout() {
 
                 <div
                   className={`space-y-2 border-t pt-3 ${
-                    isNightHeader ? "border-stone-700" : "border-stone-200"
+                    isDark ? "border-stone-700" : "border-stone-200"
                   }`}
                 >
                   <p
                     className={`px-3 text-xs font-semibold tracking-wide ${
-                      isNightHeader ? "text-stone-400" : "text-stone-500"
+                      isDark ? "text-stone-400" : "text-stone-500"
                     }`}
                   >
                     ACCOUNT
@@ -390,10 +392,10 @@ export const AppLayout = observer(function AppLayout() {
 
                   <button
                     type="button"
-                    onClick={() => setIsNightHeader((prev) => !prev)}
+                    onClick={toggleTheme}
                     className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${navTone}`}
                   >
-                    {isNightHeader ? (
+                    {isDark ? (
                       <Sun className="h-4 w-4" />
                     ) : (
                       <Moon className="h-4 w-4" />
@@ -424,3 +426,6 @@ export const AppLayout = observer(function AppLayout() {
     </div>
   );
 });
+
+
+
