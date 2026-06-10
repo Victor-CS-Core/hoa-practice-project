@@ -1,6 +1,6 @@
 # HOA Community Events MVP - Implementation Plan
 
-Build the full-stack MVP described in [docs/agent_build_instruction_hoa_events_mvp.yaml](docs/agent_build_instruction_hoa_events_mvp.yaml) on top of [generated/HoaCommunityEvents](generated/HoaCommunityEvents).
+Build the full-stack MVP described in [docs/agent_build_instruction_hoa_events_mvp.yaml](docs/agent_build_instruction_hoa_events_mvp.yaml) on top of [HoaCommunityEvents](HoaCommunityEvents).
 
 ## Budget Target: Under 80 Hours
 
@@ -157,7 +157,7 @@ Tasks:
 - Confirm DB connectivity and migration path.
 - Define local secret loading approach.
 - Replace template weather endpoint and wire base API infrastructure skeleton.
-- Add solution-level runbook notes to [generated/HoaCommunityEvents/README.md](generated/HoaCommunityEvents/README.md).
+- Add solution-level runbook notes to [HoaCommunityEvents/README.md](HoaCommunityEvents/README.md).
 
 Deliverables:
 
@@ -168,7 +168,7 @@ Deliverables:
 Verification gate:
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet --info
 dotnet build HoaCommunityEvents.slnx
 ```
@@ -181,7 +181,7 @@ Expected outcomes:
 Runbook (copy/paste):
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet --info
 dotnet build HoaCommunityEvents.slnx
 ```
@@ -208,7 +208,7 @@ Frontend tasks:
 Verification gate:
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 dotnet run --project API
 # Swagger: register/login/current user
@@ -226,7 +226,7 @@ Expected outcomes:
 Runbook (copy/paste):
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 dotnet run --project API
 
@@ -254,7 +254,7 @@ Frontend tasks:
 Verification gate:
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 
 cd frontend
@@ -271,7 +271,7 @@ Expected outcomes:
 Runbook (copy/paste):
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 
 cd frontend
@@ -393,12 +393,12 @@ Tasks:
 - Swagger bearer auth setup and endpoint grouping.
 - CORS policy finalization for local dev.
 - Final pass on mobile responsiveness.
-- Update [generated/HoaCommunityEvents/README.md](generated/HoaCommunityEvents/README.md) with exact run steps and environment variables.
+- Update [HoaCommunityEvents/README.md](HoaCommunityEvents/README.md) with exact run steps and environment variables.
 
 Automated checks:
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 
 cd frontend
@@ -414,7 +414,7 @@ Expected outcomes:
 Runbook (copy/paste):
 
 ```bash
-cd generated/HoaCommunityEvents
+cd HoaCommunityEvents
 dotnet build HoaCommunityEvents.slnx
 
 cd frontend
@@ -467,3 +467,4 @@ MVP is done when all are true:
 - Manual checklist passes.
 - No sensitive values are committed.
 - README runbook is complete and accurate.
+
