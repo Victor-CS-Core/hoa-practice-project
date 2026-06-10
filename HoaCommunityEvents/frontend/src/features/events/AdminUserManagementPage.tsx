@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Search, Shield, UserCheck, UserX } from "lucide-react";
 import { useStore } from "../../app/stores/store";
+import { useTheme } from "../../app/theme/theme-context";
 import {
   useAdminUsers,
   useDeleteUser,
@@ -10,26 +12,33 @@ import { toApiError } from "../auth/authApiError";
 
 export function AdminUserManagementPage() {
   const { authStore } = useStore();
+  const { resolvedTheme } = useTheme();
   const [userSearch, setUserSearch] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
+  const isDark = resolvedTheme === "dark";
 
   const usersQuery = useAdminUsers();
   const promoteUserMutation = usePromoteUserToAdmin();
   const deleteUserMutation = useDeleteUser();
+  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+  const rowHoverTone = isDark ? "hover:bg-stone-800/45" : "hover:bg-stone-100";
 
   const filteredUsers = useMemo(() => {
-    const users = usersQuery.data ?? [];
     const q = userSearch.trim().toLowerCase();
-    if (!q) return users;
+    if (!q) return allUsers;
 
-    return users.filter((user) =>
+    return allUsers.filter((user) =>
       [user.displayName, user.username, user.email]
         .join(" ")
         .toLowerCase()
         .includes(q),
     );
-  }, [userSearch, usersQuery.data]);
+  }, [allUsers, userSearch]);
+
+  const totalUsers = allUsers.length;
+  const adminUsers = allUsers.filter((user) => user.role === "hoa_admin").length;
+  const residentUsers = allUsers.filter((user) => user.role !== "hoa_admin").length;
 
   if (!authStore.isAdmin) {
     return (
@@ -80,23 +89,85 @@ export function AdminUserManagementPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-3xl font-bold text-stone-900">
-            User Management
-          </h1>
-          <p className="mt-2 text-stone-600">
-            Promote residents to admin and manage account deletion rules.
-          </p>
+      <div
+        className={`rounded-2xl border p-6 shadow-sm ${
+          isDark
+            ? "border-emerald-700/40 bg-linear-to-r from-stone-900 via-stone-900 to-emerald-950/25"
+            : "border-emerald-200/70 bg-linear-to-r from-emerald-50 via-white to-emerald-50/30"
+        }`}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
+              User Management
+            </h1>
+            <p className="mt-2 max-w-2xl text-(--text-muted)">
+              Manage role assignments and account controls with a clear view of
+              admin coverage across your community.
+            </p>
+          </div>
         </div>
 
-        <input
-          type="search"
-          value={userSearch}
-          onChange={(event) => setUserSearch(event.target.value)}
-          placeholder="Search by name, username, or email"
-          className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-80"
-        />
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div
+            className={`rounded-xl border p-4 ${
+              isDark
+                ? "border-stone-700 bg-stone-900/70"
+                : "border-stone-200 bg-white"
+            }`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-(--text-muted)">
+              Total Users
+            </p>
+            <p className="mt-2 font-heading text-2xl font-bold text-(--text-primary)">
+              {totalUsers}
+            </p>
+          </div>
+          <div
+            className={`rounded-xl border p-4 ${
+              isDark
+                ? "border-amber-700/40 bg-amber-950/30"
+                : "border-amber-200 bg-amber-50/70"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-wide ${
+                isDark ? "text-amber-300" : "text-amber-700"
+              }`}
+            >
+              Admins
+            </p>
+            <p
+              className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
+                isDark ? "text-amber-200" : "text-amber-900"
+              }`}
+            >
+              <Shield className="h-5 w-5" /> {adminUsers}
+            </p>
+          </div>
+          <div
+            className={`rounded-xl border p-4 ${
+              isDark
+                ? "border-emerald-700/40 bg-emerald-950/30"
+                : "border-emerald-200 bg-emerald-50/70"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-wide ${
+                isDark ? "text-emerald-300" : "text-emerald-700"
+              }`}
+            >
+              Residents
+            </p>
+            <p
+              className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
+                isDark ? "text-emerald-200" : "text-emerald-900"
+              }`}
+            >
+              <UserCheck className="h-5 w-5" /> {residentUsers}
+            </p>
+          </div>
+        </div>
       </div>
 
       {flashMessage && (
@@ -125,9 +196,42 @@ export function AdminUserManagementPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-stone-200 bg-white shadow-sm">
+        <div className="border-b border-stone-200 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-heading text-xl font-semibold text-stone-900">
+                Accounts Directory
+              </h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Search by display name, username, or email and take role actions.
+              </p>
+            </div>
+
+            <label className="relative block w-full sm:w-90">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <input
+                type="search"
+                value={userSearch}
+                onChange={(event) => setUserSearch(event.target.value)}
+                placeholder="Search users..."
+                className="min-h-11 w-full rounded-md border border-stone-300 bg-white pl-10 pr-3 py-2 text-sm text-stone-900"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 pt-4">
+          {!usersQuery.isLoading && !usersQuery.isError && (
+            <p className="mb-3 text-xs font-medium text-stone-500">
+              Showing {filteredUsers.length} of {totalUsers} users
+            </p>
+          )}
+
         {usersQuery.isLoading && (
-          <p className="text-sm text-stone-500">Loading users...</p>
+          <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-500">
+            Loading users...
+          </p>
         )}
 
         {usersQuery.isError && (
@@ -140,7 +244,7 @@ export function AdminUserManagementPage() {
           !usersQuery.isError &&
           filteredUsers.length === 0 && (
             <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-              No users match your search.
+              No users match your current search.
             </p>
           )}
 
@@ -156,69 +260,74 @@ export function AdminUserManagementPage() {
                 return (
                   <div
                     key={user.email}
-                    className="flex flex-col gap-3 rounded-lg border border-stone-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+                    className={`rounded-xl border border-stone-200 p-4 transition-colors ${rowHoverTone}`}
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-stone-900">
-                        {user.displayName}
-                      </p>
-                      <p className="truncate text-sm text-stone-500">
-                        @{user.username} • {user.email}
-                      </p>
-                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-stone-900">
+                          {user.displayName}
+                        </p>
+                        <p className="truncate text-sm text-stone-500">
+                          @{user.username}
+                        </p>
+                        <p className="truncate text-sm text-stone-500">{user.email}</p>
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          isAdminRole
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-stone-100 text-stone-700"
-                        }`}
-                      >
-                        {user.isMasterAdmin
-                          ? "Master Admin"
-                          : isAdminRole
-                            ? "Admin"
-                            : "Resident"}
-                      </span>
-
-                      {!isAdminRole && (
-                        <button
-                          type="button"
-                          onClick={() => handlePromote(user.email)}
-                          disabled={isBusy}
-                          className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            isAdminRole
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-stone-100 text-stone-700"
+                          }`}
                         >
-                          {promoteUserMutation.isPending
-                            ? "Updating..."
-                            : "Promote to Admin"}
-                        </button>
-                      )}
-
-                      {user.canDelete ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDeleteUser(user.email, user.displayName)
-                          }
-                          disabled={isBusy}
-                          className="inline-flex min-h-11 items-center rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {deleteUserMutation.isPending
-                            ? "Deleting..."
-                            : "Delete User"}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-stone-500">
-                          Delete locked
+                          {user.isMasterAdmin
+                            ? "Master Admin"
+                            : isAdminRole
+                              ? "Admin"
+                              : "Resident"}
                         </span>
-                      )}
+
+                        {!isAdminRole && (
+                          <button
+                            type="button"
+                            onClick={() => handlePromote(user.email)}
+                            disabled={isBusy}
+                            className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            {promoteUserMutation.isPending
+                              ? "Updating..."
+                              : "Promote to Admin"}
+                          </button>
+                        )}
+
+                        {user.canDelete ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteUser(user.email, user.displayName)
+                            }
+                            disabled={isBusy}
+                            className="inline-flex min-h-11 items-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                          >
+                            <UserX className="h-4 w-4" />
+                            {deleteUserMutation.isPending
+                              ? "Deleting..."
+                              : "Delete User"}
+                          </button>
+                        ) : (
+                          <span className="text-xs font-medium text-stone-500">
+                            Delete locked
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
       </div>
     </section>
   );
