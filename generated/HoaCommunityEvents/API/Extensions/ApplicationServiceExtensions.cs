@@ -69,6 +69,13 @@ public static class ApplicationServiceExtensions
             };
 
             options.AddSecurityDefinition("Bearer", bearerScheme);
+            options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecuritySchemeReference("Bearer", null),
+                    []
+                }
+            });
         });
         services.AddSignalR();
         services.AddCors(options =>

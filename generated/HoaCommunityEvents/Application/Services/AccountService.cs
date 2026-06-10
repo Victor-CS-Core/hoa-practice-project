@@ -74,6 +74,38 @@ public class AccountService(
         return CreateUserDto(user, roles);
     }
 
+    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> PromoteUserToAdminAsync(PromoteUserToAdminDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return (400, "validation_failed", "Email is required.", ["Email is required."], null);
+        }
+
+        var normalizedEmail = dto.Email.Trim();
+        var user = await userManager.FindByEmailAsync(normalizedEmail);
+        if (user is null)
+        {
+            return (404, "not_found", "User was not found.", ["No user exists with the provided email."], null);
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AppRoles.HoaAdmin))
+        {
+            var addRoleResult = await userManager.AddToRoleAsync(user, AppRoles.HoaAdmin);
+            if (!addRoleResult.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to promote user.", addRoleResult.Errors.Select(e => e.Description), null);
+            }
+        }
+
+        if (await userManager.IsInRoleAsync(user, AppRoles.Resident))
+        {
+            await userManager.RemoveFromRoleAsync(user, AppRoles.Resident);
+        }
+
+        var roles = await userManager.GetRolesAsync(user);
+        return (200, "ok", "User promoted to admin.", null, CreateUserDto(user, roles));
+    }
+
     private UserDto CreateUserDto(AppUser user, IList<string> roles)
     {
         return new UserDto
@@ -82,8 +114,18 @@ public class AccountService(
             Username = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             ProfileImageUrl = user.ProfileImageUrl,
-            Role = roles.FirstOrDefault() ?? AppRoles.Resident,
+            Role = ResolvePrimaryRole(roles),
             Token = tokenService.CreateToken(user, roles)
         };
+    }
+
+    private static string ResolvePrimaryRole(IList<string> roles)
+    {
+        if (roles.Contains(AppRoles.HoaAdmin))
+        {
+            return AppRoles.HoaAdmin;
+        }
+
+        return roles.FirstOrDefault() ?? AppRoles.Resident;
     }
 }

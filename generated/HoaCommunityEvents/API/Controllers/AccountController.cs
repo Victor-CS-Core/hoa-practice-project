@@ -47,4 +47,17 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     {
         return NoContent();
     }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpPost("promote-admin")]
+    public async Task<ActionResult<UserDto>> PromoteUserToAdmin(PromoteUserToAdminDto dto)
+    {
+        var result = await accountService.PromoteUserToAdminAsync(dto);
+        if (result.User is null)
+        {
+            return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);
+        }
+
+        return Ok(result.User);
+    }
 }
