@@ -48,7 +48,6 @@ export const AppLayout = observer(function AppLayout() {
   const adminLinks: NavItem[] = authStore.isAdmin
     ? [
         { to: "/admin/events", label: "Admin Dashboard" },
-        { to: "/events/create", label: "Quick Create" },
         { to: "/admin/attendees", label: "Admin Attendees" },
       ]
     : [];

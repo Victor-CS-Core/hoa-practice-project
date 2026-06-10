@@ -1,14 +1,16 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEvents } from "../../hooks/useEvents";
+import { useCreateEvent, useEvents } from "../../hooks/useEvents";
 import { useStore } from "../../app/stores/store";
 import { EventCard } from "./components/EventCard";
 import { EventsFilterBar } from "./components/EventsFilterBar";
 import { EventsPagination } from "./components/EventsPagination";
+import { AdminEventForm } from "./components/AdminEventForm";
 import { useJoinEvent, useLeaveEvent } from "../../hooks/useAttendance";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
-import type { EventFilter } from "../../types/event";
+import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
+import type { CreateEventFormValues, EventFilter } from "../../types/event";
 import { useState } from "react";
 
 export function EventListPage() {
@@ -16,6 +18,11 @@ export function EventListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createError, setCreateError] = useState<ApiErrorEnvelope | null>(null);
+  const [createSuccessMessage, setCreateSuccessMessage] = useState<
+    string | null
+  >(null);
 
   const category = searchParams.get("category") ?? "";
   const status = searchParams.get("status") ?? "";
@@ -24,6 +31,7 @@ export function EventListPage() {
 
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();
+  const createMutation = useCreateEvent();
 
   const filter = useMemo(
     (): EventFilter => ({
@@ -77,6 +85,20 @@ export function EventListPage() {
     }
   };
 
+  const handleCreateSubmit = async (values: CreateEventFormValues) => {
+    setCreateError(null);
+    setCreateSuccessMessage(null);
+
+    try {
+      const created = await createMutation.mutateAsync(values);
+      setCreateSuccessMessage(`Event created successfully: ${created.title}`);
+      setCreateOpen(false);
+    } catch (error) {
+      const next = toApiError(error);
+      setCreateError(next ?? { message: "Failed to create event." });
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -91,13 +113,37 @@ export function EventListPage() {
       </div>
 
       {authStore.isAdmin && (
-        <div>
-          <Link
-            to="/events/create"
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateOpen((prev) => !prev);
+              setCreateError(null);
+              setCreateSuccessMessage(null);
+            }}
             className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
-            Create New Event
-          </Link>
+            {createOpen ? "Hide Create Event Form" : "Create New Event"}
+          </button>
+
+          {createSuccessMessage && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+              {createSuccessMessage}
+            </div>
+          )}
+
+          {createOpen && (
+            <AdminEventForm
+              mode="create"
+              isSubmitting={createMutation.isPending}
+              apiError={createError}
+              onCancel={() => {
+                setCreateOpen(false);
+                setCreateError(null);
+              }}
+              onSubmit={handleCreateSubmit}
+            />
+          )}
         </div>
       )}
 

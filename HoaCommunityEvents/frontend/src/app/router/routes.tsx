@@ -1,5 +1,9 @@
 import { createElement, lazy, Suspense, type ReactNode } from "react";
-import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import {
+  Navigate,
+  createBrowserRouter,
+  type RouteObject,
+} from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { ErrorPage } from "../../features/errors/ErrorPage";
@@ -108,8 +112,8 @@ export const appRoutes: RouteObject[] = [
       {
         path: "events/create",
         element: withPageLoader(
-          <ProtectedRoute requireAdmin>
-            {createElement(eventFormPageRoute)}
+          <ProtectedRoute>
+            <Navigate to="/events" replace />
           </ProtectedRoute>,
         ),
       },
