@@ -30,7 +30,10 @@ function getStoredPreference(): ThemePreference {
   return "system";
 }
 
-function resolveTheme(preference: ThemePreference, systemIsDark: boolean): ResolvedTheme {
+function resolveTheme(
+  preference: ThemePreference,
+  systemIsDark: boolean,
+): ResolvedTheme {
   if (preference === "system") {
     return systemIsDark ? "dark" : "light";
   }
@@ -46,7 +49,9 @@ function applyThemeToDocument(theme: ResolvedTheme) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themePreference, setThemePreferenceState] =
     useState<ThemePreference>(getStoredPreference);
-  const [systemIsDark, setSystemIsDark] = useState(() => getSystemTheme() === "dark");
+  const [systemIsDark, setSystemIsDark] = useState(
+    () => getSystemTheme() === "dark",
+  );
 
   const resolvedTheme = useMemo(
     () => resolveTheme(themePreference, systemIsDark),
@@ -65,7 +70,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     mediaQuery.addEventListener("change", handleSystemThemeChange);
-    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
+    return () =>
+      mediaQuery.removeEventListener("change", handleSystemThemeChange);
   }, []);
 
   const setThemePreference = useCallback((theme: ThemePreference) => {
@@ -74,7 +80,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    const current = themePreference === "system" ? resolvedTheme : themePreference;
+    const current =
+      themePreference === "system" ? resolvedTheme : themePreference;
     setThemePreference(current === "dark" ? "light" : "dark");
   }, [themePreference, resolvedTheme, setThemePreference]);
 
@@ -88,5 +95,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [themePreference, resolvedTheme, setThemePreference, toggleTheme],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }

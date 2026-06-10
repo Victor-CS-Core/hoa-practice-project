@@ -207,6 +207,3 @@ export function EventListPage() {
     </section>
   );
 }
-
-
-

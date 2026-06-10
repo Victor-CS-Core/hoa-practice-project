@@ -123,7 +123,12 @@ export function DropdownMenuSeparator({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("my-1 h-px theme-bg-surface-border", className)} {...props} />;
+  return (
+    <div
+      className={cn("my-1 h-px theme-bg-surface-border", className)}
+      {...props}
+    />
+  );
 }
 
 export function DropdownMenuItem({
@@ -147,6 +152,3 @@ export function DropdownMenuItem({
     />
   );
 }
-
-
-

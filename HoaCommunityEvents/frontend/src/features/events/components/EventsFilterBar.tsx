@@ -77,6 +77,3 @@ export function EventsFilterBar({
     </div>
   );
 }
-
-
-

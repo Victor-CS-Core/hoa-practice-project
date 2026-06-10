@@ -91,6 +91,3 @@ export const ProfilePage = observer(function ProfilePage() {
     </section>
   );
 });
-
-
-
