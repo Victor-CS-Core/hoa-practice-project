@@ -78,12 +78,12 @@ export const AppLayout = observer(function AppLayout() {
     ? [
         {
           to: "/admin/events",
-          label: "Dashboard",
+          label: "Event Management",
           icon: LayoutDashboard,
         },
         {
-          to: "/admin/attendees",
-          label: "Attendees",
+          to: "/admin/users",
+          label: "User Management",
           icon: Users,
         },
       ]
@@ -194,13 +194,13 @@ export const AppLayout = observer(function AppLayout() {
                         onClick={() => void navigate("/admin/events")}
                         className="gap-2"
                       >
-                        <LayoutDashboard className="h-4 w-4" /> Dashboard
+                        <LayoutDashboard className="h-4 w-4" /> Event Management
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => void navigate("/admin/attendees")}
+                        onClick={() => void navigate("/admin/users")}
                         className="gap-2"
                       >
-                        <Users className="h-4 w-4" /> Attendees
+                        <Users className="h-4 w-4" /> User Management
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -6,6 +6,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../../../app/theme/theme-context";
 import type { HoaEvent } from "../../../types/event";
 
 interface AdminQuickActionsProps {
@@ -41,24 +42,47 @@ function ActionCard({ to, icon, title, description, accent }: ActionCardProps) {
 }
 
 export function AdminQuickActions({ events }: AdminQuickActionsProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const publishedCount = events.filter((e) => e.status === "Published").length;
   const cancelledCount = events.filter((e) => e.status === "Cancelled").length;
 
+  const sectionTone = isDark
+    ? "border-amber-700/40 bg-linear-to-br from-stone-900 to-stone-800/80"
+    : "border-amber-200 bg-linear-to-br from-amber-50 to-orange-50/50";
+
+  const headerTone = isDark
+    ? "border-amber-700/30 bg-amber-900/25"
+    : "border-amber-200 bg-amber-100/50";
+
+  const titleTone = isDark ? "text-amber-200" : "text-amber-900";
+  const statsTone = isDark ? "text-amber-300" : "text-amber-700";
+  const badgeTone = isDark
+    ? "bg-amber-800/60 text-amber-100"
+    : "bg-amber-200 text-amber-800";
+  const actionAccent = isDark
+    ? "border-amber-700/40 bg-stone-900/70 hover:border-amber-500"
+    : "border-amber-200 bg-white hover:border-amber-300";
+
   return (
-    <section className="animate-fade-up animate-delay-300 overflow-hidden rounded-xl border-2 border-amber-200 bg-linear-to-br from-amber-50 to-orange-50/50 shadow-sm">
-      <div className="border-b border-amber-200 bg-amber-100/50 px-6 py-4">
+    <section
+      className={`animate-fade-up animate-delay-300 h-full overflow-hidden rounded-xl border-2 shadow-sm ${sectionTone}`}
+    >
+      <div className={`border-b px-6 py-4 ${headerTone}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <LayoutDashboard className="h-5 w-5 text-amber-700" />
-            <h2 className="font-heading text-xl font-bold text-amber-900">
+            <LayoutDashboard className={`h-5 w-5 ${titleTone}`} />
+            <h2 className={`font-heading text-xl font-bold ${titleTone}`}>
               Admin Quick Actions
             </h2>
           </div>
-          <span className="rounded-full bg-amber-200 px-3 py-1 text-xs font-semibold text-amber-800">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeTone}`}
+          >
             Admin
           </span>
         </div>
-        <div className="mt-2 flex gap-4 text-sm text-amber-700">
+        <div className={`mt-2 flex gap-4 text-sm ${statsTone}`}>
           <span className="flex items-center gap-1">
             <CalendarDays className="h-3.5 w-3.5" />
             {publishedCount} published
@@ -73,21 +97,21 @@ export function AdminQuickActions({ events }: AdminQuickActionsProps) {
           icon={<Plus className="h-5 w-5" />}
           title="Create Event"
           description="Add a new community event"
-          accent="border-amber-200 bg-white hover:border-amber-300"
+          accent={actionAccent}
         />
         <ActionCard
           to="/admin/events"
           icon={<LayoutDashboard className="h-5 w-5" />}
           title="Manage Events"
           description="Edit, cancel, or delete events"
-          accent="border-amber-200 bg-white hover:border-amber-300"
+          accent={actionAccent}
         />
         <ActionCard
-          to="/admin/attendees"
+          to="/admin/users"
           icon={<Users className="h-5 w-5" />}
-          title="Manage Attendees"
-          description="View attendance across events"
-          accent="border-amber-200 bg-white hover:border-amber-300"
+          title="Manage Users"
+          description="Promote roles and manage accounts"
+          accent={actionAccent}
         />
       </div>
     </section>

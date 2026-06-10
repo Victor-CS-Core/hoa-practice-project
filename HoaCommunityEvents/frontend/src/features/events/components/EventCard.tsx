@@ -94,7 +94,7 @@ export function EventCard({
         </div>
       </CardContent>
 
-      <CardFooter className="mt-4 flex flex-col gap-3 border-t border-stone-100 pb-5 pt-0 sm:flex-row">
+      <CardFooter className="mt-4 flex flex-col gap-3 border-t border-stone-100 px-5 pb-5 pt-4 sm:flex-row">
         <Button
           variant="outline"
           className="w-full border-stone-300 text-stone-700 hover:bg-stone-50 sm:flex-1"

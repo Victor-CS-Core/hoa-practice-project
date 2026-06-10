@@ -1,7 +1,19 @@
 import { Heart, CalendarDays, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../../../app/theme/theme-context";
 
 export function CommunityInfo() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const visualGradient = isDark
+    ? "linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #0b1220 100%)"
+    : "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #a7f3d0 100%)";
+
+  const badgeTone = isDark ? "bg-stone-800/80" : "bg-white/70";
+  const badgeTextTone = isDark ? "text-emerald-200" : "text-emerald-800";
+  const iconTone = isDark ? "text-emerald-300" : "text-emerald-600";
+
   return (
     <section className="animate-fade-up animate-delay-400 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
       <div className="grid items-center gap-0 md:grid-cols-2">
@@ -34,28 +46,33 @@ export function CommunityInfo() {
 
         {/* Right: decorative visual */}
         <div
-          className="hidden h-full min-h-[240px] md:block"
+          className="hidden h-full min-h-60 md:block"
           style={{
-            background:
-              "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #a7f3d0 100%)",
+            background: visualGradient,
           }}
         >
           <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
-            <div className="flex items-center gap-3 rounded-xl bg-white/70 px-5 py-3 shadow-sm backdrop-blur-sm">
-              <CalendarDays className="h-5 w-5 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">
+            <div
+              className={`flex items-center gap-3 rounded-xl px-5 py-3 shadow-sm backdrop-blur-sm ${badgeTone}`}
+            >
+              <CalendarDays className={`h-5 w-5 ${iconTone}`} />
+              <span className={`text-sm font-medium ${badgeTextTone}`}>
                 Community Events
               </span>
             </div>
-            <div className="flex items-center gap-3 rounded-xl bg-white/70 px-5 py-3 shadow-sm backdrop-blur-sm">
-              <MapPin className="h-5 w-5 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">
+            <div
+              className={`flex items-center gap-3 rounded-xl px-5 py-3 shadow-sm backdrop-blur-sm ${badgeTone}`}
+            >
+              <MapPin className={`h-5 w-5 ${iconTone}`} />
+              <span className={`text-sm font-medium ${badgeTextTone}`}>
                 Your Neighborhood
               </span>
             </div>
-            <div className="flex items-center gap-3 rounded-xl bg-white/70 px-5 py-3 shadow-sm backdrop-blur-sm">
+            <div
+              className={`flex items-center gap-3 rounded-xl px-5 py-3 shadow-sm backdrop-blur-sm ${badgeTone}`}
+            >
               <Heart className="h-5 w-5 text-rose-500" />
-              <span className="text-sm font-medium text-emerald-800">
+              <span className={`text-sm font-medium ${badgeTextTone}`}>
                 Stronger Together
               </span>
             </div>

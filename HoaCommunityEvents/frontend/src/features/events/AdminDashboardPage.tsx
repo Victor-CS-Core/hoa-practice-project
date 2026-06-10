@@ -9,11 +9,6 @@ import {
   useEditEvent,
   useEvents,
 } from "../../hooks/useEvents";
-import {
-  useAdminUsers,
-  useDeleteUser,
-  usePromoteUserToAdmin,
-} from "../../hooks/useAdminUsers";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
 import type {
   CreateEventFormValues,
@@ -40,7 +35,6 @@ export function AdminDashboardPage() {
   const [formError, setFormError] = useState<ApiErrorEnvelope | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
-  const [userSearch, setUserSearch] = useState("");
 
   const status = searchParams.get("status") ?? "";
   const category = searchParams.get("category") ?? "";
@@ -68,23 +62,7 @@ export function AdminDashboardPage() {
     selectedAttendeesEventId ?? undefined,
     !!selectedAttendeesEventId,
   );
-  const usersQuery = useAdminUsers();
-  const promoteUserMutation = usePromoteUserToAdmin();
-  const deleteUserMutation = useDeleteUser();
   const hasActiveFilters = !!status || !!category;
-
-  const filteredUsers = useMemo(() => {
-    const users = usersQuery.data ?? [];
-    const q = userSearch.trim().toLowerCase();
-    if (!q) return users;
-
-    return users.filter((user) =>
-      [user.displayName, user.username, user.email]
-        .join(" ")
-        .toLowerCase()
-        .includes(q),
-    );
-  }, [userSearch, usersQuery.data]);
 
   if (!authStore.isAdmin) {
     return (
@@ -107,9 +85,13 @@ export function AdminDashboardPage() {
   const updateFilter = (next: Partial<EventFilter>) => {
     const params = new URLSearchParams(searchParams);
 
-    const nextStatus = next.status ?? filter.status;
-    const nextCategory = next.category ?? filter.category;
-    const nextPage = next.page ?? filter.page ?? 1;
+    const hasStatus = Object.prototype.hasOwnProperty.call(next, "status");
+    const hasCategory = Object.prototype.hasOwnProperty.call(next, "category");
+    const hasPage = Object.prototype.hasOwnProperty.call(next, "page");
+
+    const nextStatus = hasStatus ? next.status : filter.status;
+    const nextCategory = hasCategory ? next.category : filter.category;
+    const nextPage = hasPage ? (next.page ?? 1) : (filter.page ?? 1);
 
     if (nextStatus) params.set("status", nextStatus);
     else params.delete("status");
@@ -174,35 +156,6 @@ export function AdminDashboardPage() {
       setActionError(
         next?.message ?? `Failed to ${confirmState.action} event.`,
       );
-    }
-  };
-
-  const handlePromote = async (email: string) => {
-    setActionError(null);
-
-    try {
-      const updated = await promoteUserMutation.mutateAsync(email);
-      setFlashMessage(`Updated role: ${updated.displayName} is now admin.`);
-    } catch (error) {
-      const next = toApiError(error);
-      setActionError(next?.message ?? "Failed to update user role.");
-    }
-  };
-
-  const handleDeleteUser = async (email: string, displayName: string) => {
-    setActionError(null);
-
-    const confirmed = window.confirm(
-      `Delete ${displayName}? This action cannot be undone.`,
-    );
-    if (!confirmed) return;
-
-    try {
-      await deleteUserMutation.mutateAsync(email);
-      setFlashMessage(`Deleted user: ${displayName}.`);
-    } catch (error) {
-      const next = toApiError(error);
-      setActionError(next?.message ?? "Failed to delete user.");
     }
   };
 
@@ -392,122 +345,6 @@ export function AdminDashboardPage() {
           onPageChange={(nextPage) => updateFilter({ page: nextPage })}
         />
       )}
-
-      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-heading text-xl font-semibold text-stone-900">
-              User Role Management
-            </h2>
-            <p className="mt-1 text-sm text-stone-600">
-              Promote residents to admin and delete users. Only master admin can
-              delete admin users.
-            </p>
-          </div>
-
-          <input
-            type="search"
-            value={userSearch}
-            onChange={(event) => setUserSearch(event.target.value)}
-            placeholder="Search by name, username, or email"
-            className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-80"
-          />
-        </div>
-
-        {usersQuery.isLoading && (
-          <p className="text-sm text-stone-500">Loading users...</p>
-        )}
-
-        {usersQuery.isError && (
-          <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Failed to load users.
-          </p>
-        )}
-
-        {!usersQuery.isLoading &&
-          !usersQuery.isError &&
-          filteredUsers.length === 0 && (
-            <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-              No users match your search.
-            </p>
-          )}
-
-        {!usersQuery.isLoading &&
-          !usersQuery.isError &&
-          filteredUsers.length > 0 && (
-            <div className="space-y-2">
-              {filteredUsers.map((user) => {
-                const isAdminRole = user.role === "hoa_admin";
-                const isBusy =
-                  promoteUserMutation.isPending || deleteUserMutation.isPending;
-
-                return (
-                  <div
-                    key={user.email}
-                    className="flex flex-col gap-3 rounded-lg border border-stone-200 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-stone-900">
-                        {user.displayName}
-                      </p>
-                      <p className="truncate text-sm text-stone-500">
-                        @{user.username} • {user.email}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          isAdminRole
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-stone-100 text-stone-700"
-                        }`}
-                      >
-                        {user.isMasterAdmin
-                          ? "Master Admin"
-                          : isAdminRole
-                            ? "Admin"
-                            : "Resident"}
-                      </span>
-
-                      {!isAdminRole && (
-                        <button
-                          type="button"
-                          onClick={() => handlePromote(user.email)}
-                          disabled={isBusy}
-                          className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-                        >
-                          {promoteUserMutation.isPending
-                            ? "Updating..."
-                            : "Promote to Admin"}
-                        </button>
-                      )}
-
-                      {user.canDelete ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDeleteUser(user.email, user.displayName)
-                          }
-                          disabled={isBusy}
-                          className="inline-flex min-h-11 items-center rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {deleteUserMutation.isPending
-                            ? "Deleting..."
-                            : "Delete User"}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-stone-500">
-                          Delete locked
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-      </div>
 
       {selectedAttendeesEventId && (
         <div className="rounded-xl border border-stone-200 bg-white p-4">

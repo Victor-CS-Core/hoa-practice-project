@@ -53,6 +53,11 @@ const adminDashboardPageRoute = lazy(() =>
     default: module.AdminDashboardPage,
   })),
 );
+const adminUserManagementPageRoute = lazy(() =>
+  import("../../features/events/AdminUserManagementPage").then((module) => ({
+    default: module.AdminUserManagementPage,
+  })),
+);
 const notFoundPageRoute = lazy(() =>
   import("../../features/errors/NotFoundPage").then((module) => ({
     default: module.NotFoundPage,
@@ -138,6 +143,14 @@ export const appRoutes: RouteObject[] = [
         element: withPageLoader(
           <ProtectedRoute requireAdmin>
             {createElement(adminAttendeesPageRoute)}
+          </ProtectedRoute>,
+        ),
+      },
+      {
+        path: "admin/users",
+        element: withPageLoader(
+          <ProtectedRoute requireAdmin>
+            {createElement(adminUserManagementPageRoute)}
           </ProtectedRoute>,
         ),
       },

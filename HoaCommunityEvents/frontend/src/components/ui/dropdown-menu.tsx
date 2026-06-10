@@ -1,16 +1,21 @@
 import {
   createContext,
+  type Dispatch,
   type HTMLAttributes,
   type ReactNode,
+  type SetStateAction,
+  useEffect,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { cn } from "../../lib/cn";
 
 type MenuCtx = {
   open: boolean;
-  setOpen: (value: boolean) => void;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  rootRef: React.RefObject<HTMLDivElement | null>;
 };
 
 const DropdownContext = createContext<MenuCtx | null>(null);
@@ -27,11 +32,43 @@ function useDropdownContext() {
 
 export function DropdownMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const value = useMemo(() => ({ open, setOpen }), [open]);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (!rootRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const value = useMemo(() => ({ open, setOpen, rootRef }), [open]);
 
   return (
     <DropdownContext.Provider value={value}>
-      <div className="relative inline-block text-left">{children}</div>
+      <div ref={rootRef} className="relative inline-block text-left">
+        {children}
+      </div>
     </DropdownContext.Provider>
   );
 }
@@ -52,11 +89,11 @@ export function DropdownMenuTrigger({
         tabIndex={0}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((prev) => !prev)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setOpen(true);
+            setOpen((prev) => !prev);
           }
         }}
       >
@@ -70,7 +107,7 @@ export function DropdownMenuTrigger({
       type="button"
       aria-haspopup="menu"
       aria-expanded={open}
-      onClick={() => setOpen(true)}
+      onClick={() => setOpen((prev) => !prev)}
       className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
     >
       {children}
@@ -87,7 +124,7 @@ export function DropdownMenuContent({
   className?: string;
   align?: "start" | "end";
 }) {
-  const { open, setOpen } = useDropdownContext();
+  const { open } = useDropdownContext();
   if (!open) return null;
 
   return (
@@ -97,7 +134,6 @@ export function DropdownMenuContent({
         align === "end" ? "right-0" : "left-0",
         className,
       )}
-      onMouseLeave={() => setOpen(false)}
     >
       {children}
     </div>

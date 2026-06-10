@@ -54,6 +54,11 @@ export const HomePage = observer(function HomePage() {
         ? ("resident" as const)
         : ("guest" as const);
 
+  const showResidentSection = authStore.isLoggedIn && role === "resident";
+  const showAdminSection = authStore.isLoggedIn && authStore.isAdmin;
+  const roleSectionCount =
+    Number(showResidentSection) + Number(showAdminSection);
+
   const handleJoinLeave = async (eventId: string, joining: boolean) => {
     setActionError(null);
     try {
@@ -110,9 +115,13 @@ export const HomePage = observer(function HomePage() {
 
       {/* Conditional role sections rendered side by side on wider screens */}
       {authStore.isLoggedIn && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div
+          className={`grid gap-6 ${
+            roleSectionCount > 1 ? "lg:grid-cols-2" : "grid-cols-1"
+          }`}
+        >
           {/* My Events — residents see their RSVPs */}
-          {role === "resident" && (
+          {showResidentSection && (
             <MyEventsWidget
               events={allEvents}
               isLoading={dashboardDataQuery.isLoading}
@@ -120,7 +129,7 @@ export const HomePage = observer(function HomePage() {
           )}
 
           {/* Admin Quick Actions */}
-          {authStore.isAdmin && <AdminQuickActions events={allEvents} />}
+          {showAdminSection && <AdminQuickActions events={allEvents} />}
         </div>
       )}
 

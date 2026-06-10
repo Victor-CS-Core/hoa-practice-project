@@ -31,7 +31,7 @@ export function MyEventsWidget({ events, isLoading }: MyEventsWidgetProps) {
 
   if (isLoading) {
     return (
-      <div className="animate-fade-up animate-delay-300 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+      <div className="animate-fade-up animate-delay-300 h-full rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="mb-4 h-7 w-36 animate-pulse rounded bg-stone-100" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -46,18 +46,18 @@ export function MyEventsWidget({ events, isLoading }: MyEventsWidgetProps) {
   }
 
   return (
-    <section className="animate-fade-up animate-delay-300 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+    <section className="animate-fade-up animate-delay-300 h-full rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CalendarCheck className="h-5 w-5 text-emerald-600" />
-          <h2 className="font-heading text-xl font-bold text-stone-900">
+          <h2 className="font-heading text-xl font-bold text-(--text-primary)">
             My Events
           </h2>
         </div>
         {myEvents.length > 0 && (
           <Link
             to="/events"
-            className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 transition-colors hover:text-emerald-800"
+            className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 transition-colors hover:text-emerald-600"
           >
             View all
             <ArrowRight className="h-3.5 w-3.5" />
@@ -95,7 +95,10 @@ export function MyEventsWidget({ events, isLoading }: MyEventsWidgetProps) {
                   {event.title}
                 </p>
                 <div className="flex items-center gap-3 text-xs text-stone-500">
-                  <span>{formatEventDate(event.startDate)} • {formatEventTime(event.startDate)}</span>
+                  <span>
+                    {formatEventDate(event.startDate)} •{" "}
+                    {formatEventTime(event.startDate)}
+                  </span>
                   <span className="hidden items-center gap-1 sm:inline-flex">
                     <MapPin className="h-3 w-3" />
                     {event.locationWithinCommunity}
