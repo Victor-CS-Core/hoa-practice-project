@@ -81,7 +81,9 @@ export function ImplementationPage() {
 
   const adminProbePass =
     adminProbeResult &&
-    ((isAdmin && adminProbeResult.status === 400 && adminProbeResult.code === "validation_failed") ||
+    ((isAdmin &&
+      adminProbeResult.status === 400 &&
+      adminProbeResult.code === "validation_failed") ||
       (isResident && adminProbeResult.status === 403));
 
   return (
@@ -144,11 +146,10 @@ export function ImplementationPage() {
 
       <h2>Admin Policy Probe</h2>
       <p>
-        Runs a non-destructive check against <code>POST /api/events</code> using an intentionally invalid payload.
+        Runs a non-destructive check against <code>POST /api/events</code> using
+        an intentionally invalid payload.
       </p>
-      <p>
-        Expected: resident gets 403; admin gets 400 validation_failed.
-      </p>
+      <p>Expected: resident gets 403; admin gets 400 validation_failed.</p>
       <button
         type="button"
         onClick={() => adminProbeMutation.mutate()}
@@ -159,18 +160,32 @@ export function ImplementationPage() {
       {!hasToken && <p>Login required to run this probe.</p>}
       {adminProbeResult && (
         <p>
-          Result: {adminProbePass ? "PASS" : "FAIL"} (status={adminProbeResult.status}
+          Result: {adminProbePass ? "PASS" : "FAIL"} (status=
+          {adminProbeResult.status}
           {adminProbeResult.code ? `, code=${adminProbeResult.code}` : ""}
-          {adminProbeResult.message ? `, message=${adminProbeResult.message}` : ""})
+          {adminProbeResult.message
+            ? `, message=${adminProbeResult.message}`
+            : ""}
+          )
         </p>
       )}
 
       <h2>Completed Foundations</h2>
       <ul>
-        <li>Event list API returns paged metadata (items, totalCount, page, pageSize, totalPages).</li>
-        <li>API errors use a unified envelope (code, message, details, traceId).</li>
-        <li>FluentValidation is active for request DTOs with field-level details.</li>
-        <li>Authorization is policy-based with AdminOnly and ResidentOrAdmin policies.</li>
+        <li>
+          Event list API returns paged metadata (items, totalCount, page,
+          pageSize, totalPages).
+        </li>
+        <li>
+          API errors use a unified envelope (code, message, details, traceId).
+        </li>
+        <li>
+          FluentValidation is active for request DTOs with field-level details.
+        </li>
+        <li>
+          Authorization is policy-based with AdminOnly and ResidentOrAdmin
+          policies.
+        </li>
       </ul>
 
       <h2>Contract Samples</h2>
@@ -200,7 +215,10 @@ export function ImplementationPage() {
       <h2>Authorization Matrix</h2>
       <ul>
         <li>AdminOnly: event create, edit, cancel, delete; attendee list.</li>
-        <li>ResidentOrAdmin: current user, logout, attendance join/leave, profiles.</li>
+        <li>
+          ResidentOrAdmin: current user, logout, attendance join/leave,
+          profiles.
+        </li>
       </ul>
     </section>
   );

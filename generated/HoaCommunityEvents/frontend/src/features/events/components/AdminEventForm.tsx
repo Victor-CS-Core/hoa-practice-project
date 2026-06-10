@@ -53,7 +53,8 @@ export function AdminEventForm({
           const next: CreateEventFormValues = {
             ...values,
             maxAttendees:
-              typeof values.maxAttendees === "number" && Number.isFinite(values.maxAttendees)
+              typeof values.maxAttendees === "number" &&
+              Number.isFinite(values.maxAttendees)
                 ? values.maxAttendees
                 : undefined,
           };
@@ -78,10 +79,16 @@ export function AdminEventForm({
             <Input
               {...register("title")}
               placeholder="e.g., Annual HOA Meeting"
-              className={getFieldError(apiError?.details, "Title") ? "border-red-300 focus-visible:ring-red-500" : ""}
+              className={
+                getFieldError(apiError?.details, "Title")
+                  ? "border-red-300 focus-visible:ring-red-500"
+                  : ""
+              }
             />
             {getFieldError(apiError?.details, "Title") && (
-              <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "Title")}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {getFieldError(apiError?.details, "Title")}
+              </p>
             )}
           </div>
 
@@ -99,7 +106,9 @@ export function AdminEventForm({
               placeholder="Describe the event..."
             />
             {getFieldError(apiError?.details, "Description") && (
-              <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "Description")}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {getFieldError(apiError?.details, "Description")}
+              </p>
             )}
           </div>
 
@@ -112,10 +121,16 @@ export function AdminEventForm({
                 type="datetime-local"
                 defaultValue={toLocalDateInput(initialValues?.startDate)}
                 {...register("startDate")}
-                className={getFieldError(apiError?.details, "StartDate") ? "border-red-300 focus-visible:ring-red-500" : ""}
+                className={
+                  getFieldError(apiError?.details, "StartDate")
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }
               />
               {getFieldError(apiError?.details, "StartDate") && (
-                <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "StartDate")}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {getFieldError(apiError?.details, "StartDate")}
+                </p>
               )}
             </div>
 
@@ -127,10 +142,16 @@ export function AdminEventForm({
                 type="datetime-local"
                 defaultValue={toLocalDateInput(initialValues?.endDate)}
                 {...register("endDate")}
-                className={getFieldError(apiError?.details, "EndDate") ? "border-red-300 focus-visible:ring-red-500" : ""}
+                className={
+                  getFieldError(apiError?.details, "EndDate")
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }
               />
               {getFieldError(apiError?.details, "EndDate") && (
-                <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "EndDate")}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {getFieldError(apiError?.details, "EndDate")}
+                </p>
               )}
             </div>
 
@@ -141,10 +162,16 @@ export function AdminEventForm({
               <Input
                 {...register("category")}
                 placeholder="e.g., Board Meeting"
-                className={getFieldError(apiError?.details, "Category") ? "border-red-300 focus-visible:ring-red-500" : ""}
+                className={
+                  getFieldError(apiError?.details, "Category")
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }
               />
               {getFieldError(apiError?.details, "Category") && (
-                <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "Category")}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {getFieldError(apiError?.details, "Category")}
+                </p>
               )}
             </div>
 
@@ -162,41 +189,70 @@ export function AdminEventForm({
                 }
               />
               {getFieldError(apiError?.details, "LocationWithinCommunity") && (
-                <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "LocationWithinCommunity")}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {getFieldError(apiError?.details, "LocationWithinCommunity")}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">Max Attendees (Optional)</label>
+              <label className="mb-1 block text-sm font-medium text-stone-700">
+                Max Attendees (Optional)
+              </label>
               <Input
                 type="number"
                 defaultValue={initialValues?.maxAttendees ?? undefined}
                 {...register("maxAttendees", { valueAsNumber: true })}
                 placeholder="e.g., 50"
-                className={getFieldError(apiError?.details, "MaxAttendees") ? "border-red-300 focus-visible:ring-red-500" : ""}
+                className={
+                  getFieldError(apiError?.details, "MaxAttendees")
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }
               />
               {getFieldError(apiError?.details, "MaxAttendees") && (
-                <p className="mt-1 text-xs text-red-500">{getFieldError(apiError?.details, "MaxAttendees")}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {getFieldError(apiError?.details, "MaxAttendees")}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">Image URL (Optional)</label>
+              <label className="mb-1 block text-sm font-medium text-stone-700">
+                Image URL (Optional)
+              </label>
               <Input
                 {...register("imageUrl")}
                 placeholder="https://example.com/banner.jpg"
-                className={getFieldError(apiError?.details, "ImageUrl") ? "border-red-300 focus-visible:ring-red-500" : ""}
+                className={
+                  getFieldError(apiError?.details, "ImageUrl")
+                    ? "border-red-300 focus-visible:ring-red-500"
+                    : ""
+                }
               />
             </div>
           </div>
         </div>
 
         <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4 -mx-6 -mb-6">
-          <Button variant="ghost" onClick={onCancel} className="text-stone-600 hover:text-stone-900" type="button">
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            className="text-stone-600 hover:text-stone-900"
+            type="button"
+          >
             Cancel
           </Button>
-          <Button className="bg-emerald-600 text-white hover:bg-emerald-700" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Saving..." : mode === "create" ? "Create Event" : "Save Changes"}
+          <Button
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            disabled={isSubmitting}
+            type="submit"
+          >
+            {isSubmitting
+              ? "Saving..."
+              : mode === "create"
+                ? "Create Event"
+                : "Save Changes"}
           </Button>
         </div>
       </form>
