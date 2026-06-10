@@ -100,7 +100,9 @@ export const appRoutes: RouteObject[] = [
       {
         path: "events/:id",
         element: withPageLoader(
-          <ProtectedRoute>{createElement(eventDetailsPageRoute)}</ProtectedRoute>,
+          <ProtectedRoute>
+            {createElement(eventDetailsPageRoute)}
+          </ProtectedRoute>,
         ),
       },
       {

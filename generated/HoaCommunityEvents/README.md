@@ -19,9 +19,23 @@ Implemented and validated:
 - Paged event list response contract (`items`, `totalCount`, `page`, `pageSize`, `totalPages`).
 - FluentValidation request validators and policy-based authorization matrix.
 
-Frontend implementation artifact:
+## Solution Structure
 
-- Visit `/implementation` in the SPA for a live summary of API contracts and readiness checkpoints.
+```
+HoaCommunityEvents/
+   API/              ASP.NET Core host (controllers, middleware, startup)
+   Application/      Use cases, DTOs, interfaces, validators
+   Domain/           Core entities and domain constants
+   Infrastructure/   Cross-cutting integrations (identity token services, SignalR)
+   Persistence/      EF Core DbContext, migrations, seeding
+   frontend/         React SPA (Vite + TypeScript)
+```
+
+## Naming Conventions
+
+- Backend projects use PascalCase layer folders aligned to Clean Architecture (`API`, `Application`, `Domain`, `Infrastructure`, `Persistence`).
+- Frontend remains in `frontend/` (lowercase) to align with Node/Vite ecosystem conventions.
+- Public API and app-level names use `HoaCommunityEvents.*` for consistent discovery in solution and build output.
 
 ## Local Run
 
@@ -48,7 +62,7 @@ Frontend implementation artifact:
 4. Configure frontend environment in frontend/.env:
 
    ```text
-   VITE_API_URL=http://localhost:5000/api
+   VITE_API_URL=http://localhost:5284/api
    ```
 
 5. Install frontend dependencies:
@@ -71,8 +85,8 @@ Frontend implementation artifact:
    ```
 
 8. Verify API and docs:
-   - Health: http://localhost:5000/health
-   - Swagger UI (Development): http://localhost:5000/swagger
+   - Health: http://localhost:5284/health
+   - Swagger UI (Development): http://localhost:5284/swagger
 
 9. Validation commands:
 

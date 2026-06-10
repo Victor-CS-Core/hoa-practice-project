@@ -63,9 +63,7 @@ export function AdminQuickActions({ events }: AdminQuickActionsProps) {
             <CalendarDays className="h-3.5 w-3.5" />
             {publishedCount} published
           </span>
-          {cancelledCount > 0 && (
-            <span>{cancelledCount} cancelled</span>
-          )}
+          {cancelledCount > 0 && <span>{cancelledCount} cancelled</span>}
         </div>
       </div>
 
