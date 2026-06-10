@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent, PagedResult } from '../../types/event';
 import type { Attendee } from '../../types/attendee';
 import type { Profile, UpdateProfileValues } from '../../types/profile';
-import type { LoginFormValues, RegisterFormValues, User } from '../../types/user';
+import type { AdminUser, DeleteUserValues, LoginFormValues, PromoteUserToAdminValues, RegisterFormValues, User } from '../../types/user';
 
 const baseURL = import.meta.env.VITE_API_URL;
 
@@ -69,6 +69,9 @@ export const Account = {
     login: (values: LoginFormValues) => requests.post<User>('/account/login', values),
     register: (values: RegisterFormValues) => requests.post<User>('/account/register', values),
     current: () => requests.get<User>('/account/current'),
+    listUsers: () => requests.get<AdminUser[]>('/account/users'),
+    promoteAdmin: (values: PromoteUserToAdminValues) => requests.post<User>('/account/promote-admin', values),
+    deleteUser: (values: DeleteUserValues) => requests.post<{ message: string }>('/account/delete-user', values),
 };
 
 export const Events = {

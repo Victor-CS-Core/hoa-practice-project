@@ -49,6 +49,14 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpGet("users")]
+    public async Task<ActionResult<IReadOnlyList<AdminUserDto>>> GetUsersForAdmin()
+    {
+        var users = await accountService.GetAllUsersForAdminAsync(User);
+        return Ok(users);
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost("promote-admin")]
     public async Task<ActionResult<UserDto>> PromoteUserToAdmin(PromoteUserToAdminDto dto)
     {
@@ -59,5 +67,18 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         }
 
         return Ok(result.User);
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    [HttpPost("delete-user")]
+    public async Task<ActionResult> DeleteUser(DeleteUserDto dto)
+    {
+        var result = await accountService.DeleteUserAsync(dto, User);
+        if (result.StatusCode != StatusCodes.Status200OK)
+        {
+            return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);
+        }
+
+        return Ok(new { message = result.Message });
     }
 }

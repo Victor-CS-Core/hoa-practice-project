@@ -3,11 +3,14 @@ using HoaCommunityEvents.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 
 namespace HoaCommunityEvents.Persistence.Data;
 
 public static class SeedData
 {
+    private const string MasterAdminClaimType = "is_master_admin";
+
     public static async Task SeedRolesAndAdminAsync(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -46,6 +49,7 @@ public static class SeedData
             if (createAdmin.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, AppRoles.HoaAdmin);
+                await EnsureMasterAdminClaimAsync(userManager, adminUser);
             }
         }
         else
@@ -56,6 +60,8 @@ public static class SeedData
             {
                 await userManager.AddToRoleAsync(existingAdmin, AppRoles.HoaAdmin);
             }
+
+            await EnsureMasterAdminClaimAsync(userManager, existingAdmin);
         }
 
         if (!dbContext.Events.Any())
@@ -98,6 +104,17 @@ public static class SeedData
             );
 
             await dbContext.SaveChangesAsync();
+        }
+    }
+
+    private static async Task EnsureMasterAdminClaimAsync(UserManager<AppUser> userManager, AppUser user)
+    {
+        var claims = await userManager.GetClaimsAsync(user);
+        if (!claims.Any(c =>
+                c.Type == MasterAdminClaimType
+                && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase)))
+        {
+            await userManager.AddClaimAsync(user, new Claim(MasterAdminClaimType, "true"));
         }
     }
 }

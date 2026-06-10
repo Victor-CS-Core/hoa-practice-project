@@ -12,6 +12,8 @@ public class AccountService(
     SignInManager<AppUser> signInManager,
     ITokenService tokenService) : IAccountService
 {
+    private const string MasterAdminClaimType = "is_master_admin";
+
     public async Task<(bool Succeeded, IEnumerable<string> Errors, UserDto? User)> RegisterAsync(RegisterDto dto)
     {
         if (await userManager.FindByEmailAsync(dto.Email) is not null)
@@ -74,6 +76,33 @@ public class AccountService(
         return CreateUserDto(user, roles);
     }
 
+    public async Task<IReadOnlyList<AdminUserDto>> GetAllUsersForAdminAsync(ClaimsPrincipal principal)
+    {
+        var currentUser = await userManager.GetUserAsync(principal);
+        var currentUserId = currentUser?.Id;
+        var currentIsMasterAdmin = currentUser is not null && await IsMasterAdminAsync(currentUser);
+
+        var users = userManager.Users
+            .OrderBy(u => u.DisplayName)
+            .ThenBy(u => u.UserName)
+            .ToList();
+
+        var output = new List<AdminUserDto>(users.Count);
+        foreach (var user in users)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+            var isMasterAdmin = await IsMasterAdminAsync(user);
+            var isAdmin = roles.Contains(AppRoles.HoaAdmin);
+            var canDelete = !isMasterAdmin
+                && user.Id != currentUserId
+                && (!isAdmin || currentIsMasterAdmin);
+
+            output.Add(CreateAdminUserDto(user, roles, isMasterAdmin, canDelete));
+        }
+
+        return output;
+    }
+
     public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> PromoteUserToAdminAsync(PromoteUserToAdminDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Email))
@@ -106,6 +135,61 @@ public class AccountService(
         return (200, "ok", "User promoted to admin.", null, CreateUserDto(user, roles));
     }
 
+    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors)> DeleteUserAsync(DeleteUserDto dto, ClaimsPrincipal principal)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return (400, "validation_failed", "Email is required.", ["Email is required."]);
+        }
+
+        var currentUser = await userManager.GetUserAsync(principal);
+        if (currentUser is null)
+        {
+            return (401, "unauthorized", "Authentication is required.", null);
+        }
+
+        var targetUser = await userManager.FindByEmailAsync(dto.Email.Trim());
+        if (targetUser is null)
+        {
+            return (404, "not_found", "User was not found.", ["No user exists with the provided email."]);
+        }
+
+        if (targetUser.Id == currentUser.Id)
+        {
+            return (400, "validation_failed", "You cannot delete your own account.", ["Self deletion is not allowed."]);
+        }
+
+        var targetRoles = await userManager.GetRolesAsync(targetUser);
+        var targetIsAdmin = targetRoles.Contains(AppRoles.HoaAdmin);
+        var targetIsMasterAdmin = await IsMasterAdminAsync(targetUser);
+
+        if (targetIsMasterAdmin)
+        {
+            return (403, "forbidden", "Master admin cannot be deleted.", ["Master admin account is protected."]);
+        }
+
+        var currentIsMasterAdmin = await IsMasterAdminAsync(currentUser);
+        if (targetIsAdmin && !currentIsMasterAdmin)
+        {
+            return (403, "forbidden", "Only master admin can delete an admin user.", ["You do not have permission to delete admin users."]);
+        }
+
+        try
+        {
+            var deleteResult = await userManager.DeleteAsync(targetUser);
+            if (!deleteResult.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to delete user.", deleteResult.Errors.Select(e => e.Description));
+            }
+        }
+        catch
+        {
+            return (400, "validation_failed", "Failed to delete user.", ["The user may be referenced by existing records."]);
+        }
+
+        return (200, "ok", "User deleted successfully.", null);
+    }
+
     private UserDto CreateUserDto(AppUser user, IList<string> roles)
     {
         return new UserDto
@@ -117,6 +201,32 @@ public class AccountService(
             Role = ResolvePrimaryRole(roles),
             Token = tokenService.CreateToken(user, roles)
         };
+    }
+
+    private static AdminUserDto CreateAdminUserDto(
+        AppUser user,
+        IList<string> roles,
+        bool isMasterAdmin,
+        bool canDelete)
+    {
+        return new AdminUserDto
+        {
+            DisplayName = user.DisplayName,
+            Username = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
+            ProfileImageUrl = user.ProfileImageUrl,
+            Role = ResolvePrimaryRole(roles),
+            IsMasterAdmin = isMasterAdmin,
+            CanDelete = canDelete
+        };
+    }
+
+    private async Task<bool> IsMasterAdminAsync(AppUser user)
+    {
+        var claims = await userManager.GetClaimsAsync(user);
+        return claims.Any(c =>
+            c.Type == MasterAdminClaimType
+            && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase));
     }
 
     private static string ResolvePrimaryRole(IList<string> roles)
