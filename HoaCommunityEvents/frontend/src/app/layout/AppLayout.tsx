@@ -1,18 +1,30 @@
 import { useEffect } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { Menu, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Shield,
+  Sun,
+  UserCircle,
+  Users,
+  X,
+} from "lucide-react";
 import { useStore } from "../stores/store";
 import { useState } from "react";
-
-function navClass(isActive: boolean) {
-  return [
-    "rounded-full px-3 py-1.5 text-sm transition-colors",
-    isActive
-      ? "bg-emerald-100 text-emerald-800"
-      : "text-stone-600 hover:bg-stone-100 hover:text-emerald-700",
-  ].join(" ");
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
 
 function roleToLabel(role?: string) {
   if (role === "hoa_admin") return "Admin";
@@ -20,15 +32,25 @@ function roleToLabel(role?: string) {
   return "Guest";
 }
 
+function getInitials(displayName?: string, username?: string) {
+  const source = (displayName ?? username ?? "U").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (!parts.length) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? "U"}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
 type NavItem = {
   to: string;
   label: string;
   end?: boolean;
+  icon: typeof Home;
 };
 
 export const AppLayout = observer(function AppLayout() {
   const { authStore } = useStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isNightHeader, setIsNightHeader] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,24 +58,40 @@ export const AppLayout = observer(function AppLayout() {
   }, [authStore]);
 
   const baseLinks: NavItem[] = [
-    { to: "/", label: "Home", end: true },
-    { to: "/events", label: "Events" },
+    { to: "/", label: "Home", end: true, icon: Home },
+    { to: "/events", label: "Events", icon: CalendarDays },
   ];
 
   const userLinks: NavItem[] =
     authStore.isLoggedIn && authStore.user
-      ? [{ to: `/profile/${authStore.user.username}`, label: "My Profile" }]
+      ? [
+          {
+            to: `/profile/${authStore.user.username}`,
+            label: "My Profile",
+            icon: UserCircle,
+          },
+        ]
       : [];
 
   const adminLinks: NavItem[] = authStore.isAdmin
     ? [
-        { to: "/admin/events", label: "Admin Dashboard" },
-        { to: "/admin/attendees", label: "Admin Attendees" },
+        {
+          to: "/admin/events",
+          label: "Dashboard",
+          icon: LayoutDashboard,
+        },
+        {
+          to: "/admin/attendees",
+          label: "Attendees",
+          icon: Users,
+        },
       ]
     : [];
 
-  const links = [...baseLinks, ...userLinks, ...adminLinks];
+  const desktopLinks = baseLinks;
+
   const showTopNavigation = authStore.isLoggedIn;
+  const user = authStore.user;
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -63,87 +101,324 @@ export const AppLayout = observer(function AppLayout() {
     void navigate("/login", { replace: true });
   };
 
+  const headerTone = isNightHeader
+    ? "border-stone-700 bg-stone-950/80 text-stone-100"
+    : "border-stone-200 bg-white/80 text-stone-900";
+
+  const navTone = isNightHeader
+    ? "text-stone-300 hover:bg-stone-800/90 hover:text-emerald-300"
+    : "text-stone-600 hover:bg-stone-100 hover:text-emerald-700";
+
+  const activeTone = isNightHeader
+    ? "bg-emerald-900/40 text-emerald-200"
+    : "bg-emerald-100 text-emerald-800";
+
+  const initials = getInitials(user?.displayName, user?.username);
+
+  const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
+    [
+      "flex min-h-11 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+      isActive ? activeTone : navTone,
+    ].join(" ");
+
   return (
     <div className="min-h-screen font-body text-stone-900">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
+
       {showTopNavigation && (
-        <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
+        <header
+          className={`sticky top-0 z-50 border-b backdrop-blur-md transition-colors duration-300 ${headerTone}`}
+        >
+          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-4 sm:gap-8">
+              <Link
+                to="/"
+                className="group flex items-center gap-2 transition-transform duration-200 hover:scale-[1.02]"
+              >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-sm font-heading font-bold text-white">
                   HOA
                 </div>
-                <span className="hidden font-heading text-lg font-semibold text-emerald-900 sm:block">
+                <span
+                  className={`hidden font-heading text-lg font-semibold sm:block ${
+                    isNightHeader ? "text-emerald-200" : "text-emerald-900"
+                  }`}
+                >
                   Community Events
                 </span>
               </Link>
 
               <nav className="hidden items-center gap-2 md:flex">
-                {links.map((link) => (
+                {desktopLinks.map((link) => (
                   <NavLink
                     key={link.to}
                     to={link.to}
                     end={link.end}
-                    className={({ isActive }) => navClass(isActive)}
+                    className={({ isActive }) =>
+                      [
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200",
+                        isActive ? activeTone : navTone,
+                      ].join(" ")
+                    }
                   >
+                    <link.icon className="h-4 w-4" />
                     {link.label}
                   </NavLink>
                 ))}
+
+                {authStore.isAdmin && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${navTone}`}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-52 animate-fade-in"
+                    >
+                      <DropdownMenuLabel>Admin Tools</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => void navigate("/admin/events")}
+                        className="gap-2"
+                      >
+                        <LayoutDashboard className="h-4 w-4" /> Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void navigate("/admin/attendees")}
+                        className="gap-2"
+                      >
+                        <Users className="h-4 w-4" /> Attendees
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </nav>
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
-                {roleToLabel(authStore.user?.role)}
-              </span>
               <button
                 type="button"
-                onClick={handleLogout}
-                className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
+                onClick={() => setIsNightHeader((prev) => !prev)}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${
+                  isNightHeader
+                    ? "border-stone-600 bg-stone-900 text-amber-300 hover:bg-stone-800"
+                    : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
+                }`}
+                aria-label="Toggle header theme"
+                title="Toggle header theme"
               >
-                Logout
+                {isNightHeader ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
               </button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors duration-200 ${
+                      isNightHeader
+                        ? "border-stone-600 bg-stone-900/70 hover:bg-stone-800"
+                        : "border-stone-200 bg-white hover:bg-stone-50"
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-xs font-bold text-white">
+                      {user?.profileImageUrl ? (
+                        <img
+                          src={user.profileImageUrl}
+                          alt={user.displayName ?? user.username ?? "User"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials
+                      )}
+                    </span>
+                    <span className="max-w-36 text-left">
+                      <span className="block truncate text-sm font-semibold">
+                        {user?.displayName ?? user?.username ?? "User"}
+                      </span>
+                      <span
+                        className={`block truncate text-xs ${
+                          isNightHeader ? "text-stone-400" : "text-stone-500"
+                        }`}
+                      >
+                        {roleToLabel(user?.role)}
+                      </span>
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-60 animate-fade-in"
+                >
+                  <DropdownMenuLabel>
+                    <div className="font-semibold text-stone-800">
+                      {user?.displayName ?? user?.username}
+                    </div>
+                    <div className="text-xs font-normal text-stone-500">
+                      @{user?.username}
+                    </div>
+                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      {roleToLabel(user?.role)}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      void navigate(`/profile/${user?.username ?? ""}`)
+                    }
+                    className="gap-2"
+                  >
+                    <UserCircle className="h-4 w-4" /> My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="gap-2 text-red-700 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="rounded-md p-2 text-stone-600 hover:bg-stone-100 md:hidden"
+              className={`rounded-md p-2 md:hidden ${
+                isNightHeader
+                  ? "text-stone-200 hover:bg-stone-800"
+                  : "text-stone-600 hover:bg-stone-100"
+              }`}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
 
           {mobileOpen && (
-            <div className="border-t border-stone-200 bg-white px-4 py-4 md:hidden">
-              <nav className="flex flex-col gap-2">
-                {links.map((link) => (
-                  <NavLink
-                    key={`mobile-${link.to}`}
-                    to={link.to}
-                    end={link.end}
-                    onClick={closeMobile}
-                    className={({ isActive }) => navClass(isActive)}
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
+            <div
+              className={`border-t px-4 py-4 md:hidden ${
+                isNightHeader
+                  ? "border-stone-700 bg-stone-950"
+                  : "border-stone-200 bg-white"
+              }`}
+            >
+              <nav className="flex flex-col gap-4">
+                <div className="space-y-2">
+                  {baseLinks.map((link) => (
+                    <NavLink
+                      key={`mobile-${link.to}`}
+                      to={link.to}
+                      end={link.end}
+                      onClick={closeMobile}
+                      className={mobileLinkClass}
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {link.label}
+                    </NavLink>
+                  ))}
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-full px-3 py-1.5 text-left text-sm text-red-700 hover:bg-red-50"
+                {authStore.isAdmin && (
+                  <div
+                    className={`space-y-2 border-t pt-3 ${
+                      isNightHeader ? "border-stone-700" : "border-stone-200"
+                    }`}
+                  >
+                    <p
+                      className={`px-3 text-xs font-semibold tracking-wide ${
+                        isNightHeader ? "text-stone-400" : "text-stone-500"
+                      }`}
+                    >
+                      ADMIN TOOLS
+                    </p>
+                    {adminLinks.map((link) => (
+                      <NavLink
+                        key={`mobile-admin-${link.to}`}
+                        to={link.to}
+                        onClick={closeMobile}
+                        className={mobileLinkClass}
+                      >
+                        <link.icon className="h-4 w-4" />
+                        {link.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+
+                <div
+                  className={`space-y-2 border-t pt-3 ${
+                    isNightHeader ? "border-stone-700" : "border-stone-200"
+                  }`}
                 >
-                  Logout
-                </button>
+                  <p
+                    className={`px-3 text-xs font-semibold tracking-wide ${
+                      isNightHeader ? "text-stone-400" : "text-stone-500"
+                    }`}
+                  >
+                    ACCOUNT
+                  </p>
+
+                  {userLinks.map((link) => (
+                    <NavLink
+                      key={`mobile-user-${link.to}`}
+                      to={link.to}
+                      end={link.end}
+                      onClick={closeMobile}
+                      className={mobileLinkClass}
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {link.label}
+                    </NavLink>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsNightHeader((prev) => !prev)}
+                    className={`flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${navTone}`}
+                  >
+                    {isNightHeader ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
+                    Toggle Theme
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-red-700 transition-all duration-200 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" /> Logout
+                  </button>
+                </div>
               </nav>
             </div>
           )}
         </header>
       )}
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main
+        id="main-content"
+        className="mx-auto w-full max-w-7xl px-3 py-8 sm:px-6 lg:px-8"
+      >
         <Outlet />
       </main>
     </div>
