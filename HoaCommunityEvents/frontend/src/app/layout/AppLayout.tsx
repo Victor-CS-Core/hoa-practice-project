@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
+import { Tooltip } from "../../components/ui/tooltip";
 
 function roleToLabel(role?: string) {
   if (role === "hoa_admin") return "Admin";
@@ -209,23 +210,27 @@ export const AppLayout = observer(function AppLayout() {
             </div>
 
             <div className="hidden items-center gap-3 md:flex">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${
-                  isDark
-                    ? "border-stone-600 bg-stone-900 text-amber-300 hover:bg-stone-800"
-                    : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
-                }`}
-                aria-label="Toggle header theme"
-                title={`Theme: ${themePreference} (${resolvedTheme})`}
+              <Tooltip
+                content={`Theme: ${themePreference} (${resolvedTheme})`}
+                side="bottom"
               >
-                {isDark ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${
+                    isDark
+                      ? "border-stone-600 bg-stone-900 text-amber-300 hover:bg-stone-800"
+                      : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
+                  }`}
+                  aria-label="Toggle header theme"
+                >
+                  {isDark ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </button>
+              </Tooltip>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

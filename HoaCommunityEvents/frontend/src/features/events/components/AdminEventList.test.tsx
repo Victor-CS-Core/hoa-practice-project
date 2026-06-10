@@ -41,9 +41,15 @@ describe("AdminEventList", () => {
         feed={makeFeed([makeEvent()])}
         onEdit={vi.fn()}
         onCancel={vi.fn()}
+        onPublish={vi.fn()}
+        onUnpublish={vi.fn()}
         onDelete={vi.fn()}
         onViewAttendees={vi.fn()}
         onPageChange={vi.fn()}
+        expandedEditEventId={null}
+        expandedAttendeesEventId={null}
+        renderExpandedEdit={() => null}
+        renderExpandedAttendees={() => null}
       />,
     );
 
@@ -56,6 +62,12 @@ describe("AdminEventList", () => {
       screen.getByRole("button", { name: /^cancel$/i }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: /^unpublish$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^publish$/i }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: /^delete$/i }),
     ).toBeInTheDocument();
   });
@@ -63,6 +75,8 @@ describe("AdminEventList", () => {
   it("calls mobile action handlers", async () => {
     const onEdit = vi.fn();
     const onCancel = vi.fn();
+    const onPublish = vi.fn();
+    const onUnpublish = vi.fn();
     const onDelete = vi.fn();
     const onViewAttendees = vi.fn();
     const user = userEvent.setup();
@@ -72,20 +86,52 @@ describe("AdminEventList", () => {
         feed={makeFeed([makeEvent()])}
         onEdit={onEdit}
         onCancel={onCancel}
+        onPublish={onPublish}
+        onUnpublish={onUnpublish}
         onDelete={onDelete}
         onViewAttendees={onViewAttendees}
         onPageChange={vi.fn()}
+        expandedEditEventId={null}
+        expandedAttendeesEventId={null}
+        renderExpandedEdit={() => null}
+        renderExpandedAttendees={() => null}
       />,
     );
 
     await user.click(screen.getByRole("button", { name: /^edit$/i }));
     await user.click(screen.getByRole("button", { name: /attendees/i }));
     await user.click(screen.getByRole("button", { name: /^cancel$/i }));
+    await user.click(screen.getByRole("button", { name: /^unpublish$/i }));
     await user.click(screen.getByRole("button", { name: /^delete$/i }));
 
     expect(onEdit).toHaveBeenCalledWith("evt-1");
     expect(onViewAttendees).toHaveBeenCalledWith("evt-1");
     expect(onCancel).toHaveBeenCalledWith("evt-1");
+    expect(onPublish).not.toHaveBeenCalled();
+    expect(onUnpublish).toHaveBeenCalledWith("evt-1");
     expect(onDelete).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("does not show publish action for cancelled events", () => {
+    render(
+      <AdminEventList
+        feed={makeFeed([makeEvent({ status: "Cancelled" })])}
+        onEdit={vi.fn()}
+        onCancel={vi.fn()}
+        onPublish={vi.fn()}
+        onUnpublish={vi.fn()}
+        onDelete={vi.fn()}
+        onViewAttendees={vi.fn()}
+        onPageChange={vi.fn()}
+        expandedEditEventId={null}
+        expandedAttendeesEventId={null}
+        renderExpandedEdit={() => null}
+        renderExpandedAttendees={() => null}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /^publish$/i }),
+    ).not.toBeInTheDocument();
   });
 });

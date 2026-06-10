@@ -7,6 +7,8 @@ import {
   useCreateEvent,
   useDeleteEvent,
   useEditEvent,
+  usePublishEvent,
+  useUnpublishEvent,
   useEvents,
 } from "../../hooks/useEvents";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
@@ -45,6 +47,7 @@ export function AdminDashboardPage() {
     (): EventFilter => ({
       status: status || undefined,
       category: category || undefined,
+      includePending: true,
       sortBy: "upcoming",
       page: safePage,
       pageSize: 10,
@@ -56,6 +59,8 @@ export function AdminDashboardPage() {
   const createMutation = useCreateEvent();
   const editMutation = useEditEvent();
   const cancelMutation = useCancelEvent();
+  const publishMutation = usePublishEvent();
+  const unpublishMutation = useUnpublishEvent();
   const deleteMutation = useDeleteEvent();
 
   const attendeesQuery = useAttendees(
@@ -159,23 +164,56 @@ export function AdminDashboardPage() {
     }
   };
 
+  const handlePublish = async (eventId: string) => {
+    setActionError(null);
+
+    try {
+      await publishMutation.mutateAsync(eventId);
+      setFlashMessage("Event published successfully.");
+    } catch (error) {
+      const next = toApiError(error);
+      setActionError(next?.message ?? "Failed to publish event.");
+    }
+  };
+
+  const handleUnpublish = async (eventId: string) => {
+    setActionError(null);
+
+    try {
+      await unpublishMutation.mutateAsync(eventId);
+      setFlashMessage("Event unpublished successfully.");
+    } catch (error) {
+      const next = toApiError(error);
+      setActionError(next?.message ?? "Failed to unpublish event.");
+    }
+  };
+
   const isConfirmSubmitting =
     cancelMutation.isPending || deleteMutation.isPending;
-  const isSavingForm = createMutation.isPending || editMutation.isPending;
+  const isCreatingForm = createMutation.isPending;
+  const isEditingForm = editMutation.isPending;
 
-  const inFlightMessage = isSavingForm
-    ? formState?.mode === "edit"
-      ? "Saving event changes..."
-      : "Creating event..."
-    : cancelMutation.isPending
-      ? "Cancelling event..."
-      : deleteMutation.isPending
-        ? "Deleting event..."
-        : null;
+  const inFlightMessage =
+    isCreatingForm || isEditingForm
+      ? formState?.mode === "edit"
+        ? "Saving event changes..."
+        : "Creating event..."
+      : cancelMutation.isPending
+        ? "Cancelling event..."
+        : publishMutation.isPending
+          ? "Publishing event..."
+          : unpublishMutation.isPending
+            ? "Unpublishing event..."
+            : deleteMutation.isPending
+              ? "Deleting event..."
+              : null;
+
+  const isCreateOpen = formState?.mode === "create";
+  const editingEvent = formState?.mode === "edit" ? formState.event : null;
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="space-y-4">
         <div>
           <h1 className="font-heading text-3xl font-bold text-stone-900">
             Admin Management Dashboard
@@ -188,12 +226,28 @@ export function AdminDashboardPage() {
           type="button"
           onClick={() => {
             setFormError(null);
-            setFormState({ mode: "create" });
+            setFormState((prev) =>
+              prev?.mode === "create" ? null : { mode: "create" },
+            );
           }}
           className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
-          Create Event
+          {isCreateOpen ? "Hide Create Event Form" : "Create New Event"}
         </button>
+
+        {isCreateOpen && (
+          <AdminEventForm
+            key="create"
+            mode="create"
+            isSubmitting={isCreatingForm}
+            apiError={formError}
+            onCancel={() => {
+              setFormError(null);
+              setFormState(null);
+            }}
+            onSubmit={handleCreate}
+          />
+        )}
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
@@ -213,7 +267,9 @@ export function AdminDashboardPage() {
             className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:w-auto"
           >
             <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
             <option value="Published">Published</option>
+            <option value="Ended">Ended</option>
             <option value="Cancelled">Cancelled</option>
           </select>
 
@@ -337,76 +393,84 @@ export function AdminDashboardPage() {
             );
             if (!hit) return;
             setFormError(null);
-            setFormState({ mode: "edit", event: hit });
+            setSelectedAttendeesEventId(null);
+            setFormState((prev) =>
+              prev?.mode === "edit" && prev.event.id === eventId
+                ? null
+                : { mode: "edit", event: hit },
+            );
           }}
           onCancel={(eventId) => setConfirmState({ action: "cancel", eventId })}
+          onPublish={handlePublish}
+          onUnpublish={handleUnpublish}
           onDelete={(eventId) => setConfirmState({ action: "delete", eventId })}
-          onViewAttendees={(eventId) => setSelectedAttendeesEventId(eventId)}
+          onViewAttendees={(eventId) => {
+            setFormError(null);
+            setFormState((prev) => (prev?.mode === "edit" ? null : prev));
+            setSelectedAttendeesEventId((prev) =>
+              prev === eventId ? null : eventId,
+            );
+          }}
           onPageChange={(nextPage) => updateFilter({ page: nextPage })}
-        />
-      )}
-
-      {selectedAttendeesEventId && (
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-heading text-xl font-semibold text-stone-900">
-              Attendees Panel
-            </h2>
-            <button
-              type="button"
-              onClick={() => setSelectedAttendeesEventId(null)}
-              className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-100"
-            >
-              Close Panel
-            </button>
-          </div>
-          <p className="mb-4 mt-1 text-sm text-stone-600">
-            Viewing attendees for event ID: {selectedAttendeesEventId}
-          </p>
-
-          {attendeesQuery.isLoading && (
-            <p className="text-stone-500">Loading attendees...</p>
-          )}
-          {attendeesQuery.isError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
-              Failed to load attendees.
-            </p>
-          )}
-          {attendeesQuery.data && (
-            <AdminAttendeeList
-              attendees={attendeesQuery.data}
-              totalCount={attendeesQuery.data.length}
+          expandedEditEventId={editingEvent?.id ?? null}
+          expandedAttendeesEventId={selectedAttendeesEventId}
+          renderExpandedEdit={(event) => (
+            <AdminEventForm
+              key={`edit-${event.id}`}
+              mode="edit"
+              initialValues={{
+                title: event.title,
+                description: event.description,
+                category: event.category,
+                locationWithinCommunity: event.locationWithinCommunity,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                maxAttendees: event.maxAttendees ?? undefined,
+                imageUrl: event.imageUrl ?? undefined,
+              }}
+              isSubmitting={isEditingForm}
+              apiError={formError}
+              onCancel={() => {
+                setFormError(null);
+                setFormState(null);
+              }}
+              onSubmit={handleEdit}
             />
           )}
-        </div>
-      )}
+          renderExpandedAttendees={(event) => (
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-heading text-xl font-semibold text-stone-900">
+                  Attendees Panel
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAttendeesEventId(null)}
+                  className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-100"
+                >
+                  Close Panel
+                </button>
+              </div>
+              <p className="mb-4 mt-1 text-sm text-stone-600">
+                Viewing attendees for: {event.title}
+              </p>
 
-      {formState && (
-        <AdminEventForm
-          key={formState.mode === "edit" ? formState.event.id : "create"}
-          mode={formState.mode}
-          initialValues={
-            formState.mode === "edit"
-              ? {
-                  title: formState.event.title,
-                  description: formState.event.description,
-                  category: formState.event.category,
-                  locationWithinCommunity:
-                    formState.event.locationWithinCommunity,
-                  startDate: formState.event.startDate,
-                  endDate: formState.event.endDate,
-                  maxAttendees: formState.event.maxAttendees ?? undefined,
-                  imageUrl: formState.event.imageUrl ?? undefined,
-                }
-              : undefined
-          }
-          isSubmitting={isSavingForm}
-          apiError={formError}
-          onCancel={() => {
-            setFormError(null);
-            setFormState(null);
-          }}
-          onSubmit={formState.mode === "create" ? handleCreate : handleEdit}
+              {attendeesQuery.isLoading && (
+                <p className="text-stone-500">Loading attendees...</p>
+              )}
+              {attendeesQuery.isError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+                  Failed to load attendees.
+                </p>
+              )}
+              {attendeesQuery.data && (
+                <AdminAttendeeList
+                  attendees={attendeesQuery.data}
+                  totalCount={attendeesQuery.data.length}
+                />
+              )}
+            </div>
+          )}
         />
       )}
 

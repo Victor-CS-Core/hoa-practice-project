@@ -80,6 +80,8 @@ export const Events = {
     create: (values: CreateEventFormValues) => requests.post<HoaEvent>('/events', values),
     edit: (id: string, values: EditEventFormValues) => requests.put<HoaEvent>(`/events/${id}`, values),
     cancel: (id: string) => requests.patch<HoaEvent>(`/events/${id}/cancel`),
+    publish: (id: string) => requests.patch<HoaEvent>(`/events/${id}/publish`),
+    unpublish: (id: string) => requests.patch<HoaEvent>(`/events/${id}/unpublish`),
     delete: (id: string) => requests.del(`/events/${id}`),
 };
 

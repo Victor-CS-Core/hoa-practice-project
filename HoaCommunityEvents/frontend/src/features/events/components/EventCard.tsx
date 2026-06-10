@@ -32,7 +32,11 @@ export function EventCard({
   const endDateObj = new Date(event.endDate);
   const now = new Date();
   const isEnded = !isCancelled && endDateObj.getTime() < now.getTime();
-  const statusLabel = isCancelled ? "Cancelled" : isEnded ? "Ended" : "Published";
+  const statusLabel = isCancelled
+    ? "Cancelled"
+    : isEnded
+      ? "Ended"
+      : "Published";
 
   const cardTone = isCancelled
     ? isDark
@@ -129,28 +133,31 @@ export function EventCard({
           View Details
         </Button>
 
-        {role !== "guest" && !isCancelled && !isEnded && role !== "hoa_admin" && (
-          <Button
-            variant={event.isCurrentUserAttending ? "secondary" : "default"}
-            className={`w-full sm:flex-1 ${
-              event.isCurrentUserAttending
-                ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
-            }`}
-            onClick={() =>
-              onJoinLeave?.(event.id, !event.isCurrentUserAttending)
-            }
-          >
-            {event.isCurrentUserAttending ? (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Joined
-              </>
-            ) : (
-              "Join Event"
-            )}
-          </Button>
-        )}
+        {role !== "guest" &&
+          !isCancelled &&
+          !isEnded &&
+          role !== "hoa_admin" && (
+            <Button
+              variant={event.isCurrentUserAttending ? "secondary" : "default"}
+              className={`w-full sm:flex-1 ${
+                event.isCurrentUserAttending
+                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+              }`}
+              onClick={() =>
+                onJoinLeave?.(event.id, !event.isCurrentUserAttending)
+              }
+            >
+              {event.isCurrentUserAttending ? (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Joined
+                </>
+              ) : (
+                "Join Event"
+              )}
+            </Button>
+          )}
       </CardFooter>
 
       {role === "hoa_admin" && (

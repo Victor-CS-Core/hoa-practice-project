@@ -41,7 +41,7 @@ export function AdminEventForm({
   };
 
   return (
-    <div className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
       <div className="border-b border-stone-200 bg-stone-50 px-6 py-4">
         <h2 className="font-heading text-xl font-bold text-stone-900">
           {mode === "create" ? "Create New Event" : "Edit Event"}

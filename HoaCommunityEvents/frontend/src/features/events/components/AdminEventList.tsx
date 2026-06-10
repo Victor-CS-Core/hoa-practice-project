@@ -2,14 +2,17 @@ import {
   Calendar,
   Edit,
   Eye,
+  Info,
   MapPin,
   MoreHorizontal,
   Trash2,
   Users,
   XCircle,
 } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
+import { Tooltip } from "../../../components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,18 +28,30 @@ interface AdminEventListProps {
   feed: PagedResult<HoaEvent>;
   onEdit: (id: string) => void;
   onCancel: (id: string) => void;
+  onPublish: (id: string) => void;
+  onUnpublish: (id: string) => void;
   onDelete: (id: string) => void;
   onViewAttendees: (id: string) => void;
   onPageChange: (page: number) => void;
+  expandedEditEventId: string | null;
+  expandedAttendeesEventId: string | null;
+  renderExpandedEdit: (event: HoaEvent) => ReactNode;
+  renderExpandedAttendees: (event: HoaEvent) => ReactNode;
 }
 
 export function AdminEventList({
   feed,
   onEdit,
   onCancel,
+  onPublish,
+  onUnpublish,
   onDelete,
   onViewAttendees,
   onPageChange,
+  expandedEditEventId,
+  expandedAttendeesEventId,
+  renderExpandedEdit,
+  renderExpandedAttendees,
 }: AdminEventListProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -65,14 +80,20 @@ export function AdminEventList({
           <tbody className="divide-y divide-stone-100">
             {feed.items.map((event) => {
               const startDate = new Date(event.startDate).toLocaleDateString();
+              const isPending = event.status === "Pending";
               const isCancelled = event.status === "Cancelled";
+              const isPublished = event.status === "Published";
               const endDateObj = new Date(event.endDate);
-              const isEnded = !isCancelled && endDateObj.getTime() < now.getTime();
+              const isEnded =
+                event.status === "Ended" ||
+                (isPublished && endDateObj.getTime() < now.getTime());
               const statusLabel = isCancelled
                 ? "Cancelled"
                 : isEnded
                   ? "Ended"
-                  : "Published";
+                  : isPending
+                    ? "Pending"
+                    : "Published";
 
               const rowTone = isCancelled
                 ? isDark
@@ -82,9 +103,13 @@ export function AdminEventList({
                   ? isDark
                     ? "bg-slate-900/45 hover:bg-slate-800/60"
                     : "bg-slate-200/70 hover:bg-slate-300/60"
-                  : isDark
-                    ? "bg-emerald-950/20 hover:bg-emerald-900/25"
-                    : "bg-emerald-100/60 hover:bg-emerald-200/55";
+                  : isPending
+                    ? isDark
+                      ? "bg-amber-950/25 hover:bg-amber-900/30"
+                      : "bg-amber-100/65 hover:bg-amber-200/60"
+                    : isDark
+                      ? "bg-emerald-950/20 hover:bg-emerald-900/25"
+                      : "bg-emerald-100/60 hover:bg-emerald-200/55";
 
               const badgeTone = isCancelled
                 ? isDark
@@ -94,125 +119,193 @@ export function AdminEventList({
                   ? isDark
                     ? "!bg-slate-700/80 !text-slate-100"
                     : "!bg-slate-300 !text-slate-800"
-                  : isDark
-                    ? "!bg-emerald-900/70 !text-emerald-100"
-                    : "!bg-emerald-200 !text-emerald-800";
+                  : isPending
+                    ? isDark
+                      ? "!bg-amber-900/70 !text-amber-100"
+                      : "!bg-amber-200 !text-amber-800"
+                    : isDark
+                      ? "!bg-emerald-900/70 !text-emerald-100"
+                      : "!bg-emerald-200 !text-emerald-800";
+
+              const isEditExpanded = expandedEditEventId === event.id;
+              const isAttendeesExpanded = expandedAttendeesEventId === event.id;
+              const showExpandedPanel = isEditExpanded || isAttendeesExpanded;
 
               return (
-                <tr
-                  key={event.id}
-                  className={`transition-colors ${rowTone}`}
-                >
-                  <td className="px-6 py-4">
-                    <div className="mb-1 font-semibold text-stone-900">
-                      {event.title}
-                    </div>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-stone-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> {startDate}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />{" "}
-                        {event.locationWithinCommunity}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      variant="secondary"
-                      className={badgeTone}
-                    >
-                      {statusLabel}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-stone-600">
-                      <Users className="h-4 w-4 text-stone-400" />
-                      <span>
-                        {event.attendeeCount}{" "}
-                        {event.maxAttendees ? `/ ${event.maxAttendees}` : ""}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex flex-wrap justify-end gap-2 md:hidden">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEdit(event.id)}
-                      >
-                        <Edit className="mr-1 h-4 w-4" /> Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onViewAttendees(event.id)}
-                      >
-                        <Eye className="mr-1 h-4 w-4" /> Attendees
-                      </Button>
-                      {!isCancelled && !isEnded && (
+                <Fragment key={event.id}>
+                  <tr className={`transition-colors ${rowTone}`}>
+                    <td className="px-6 py-4">
+                      <div className="mb-1 font-semibold text-stone-900">
+                        {event.title}
+                      </div>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-stone-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> {startDate}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />{" "}
+                          {event.locationWithinCommunity}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={badgeTone}>
+                          {statusLabel}
+                        </Badge>
+                        {isEnded && (
+                          <Tooltip content="Ended is applied automatically when a published event's end date has passed.">
+                            <button
+                              type="button"
+                              className="inline-flex text-slate-500"
+                              aria-label="Ended status is date-derived from a published event"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-stone-600">
+                        <Users className="h-4 w-4 text-stone-400" />
+                        <span>
+                          {event.attendeeCount}{" "}
+                          {event.maxAttendees ? `/ ${event.maxAttendees}` : ""}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex flex-wrap justify-end gap-2 md:hidden">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                          onClick={() => onCancel(event.id)}
+                          onClick={() => onEdit(event.id)}
                         >
-                          <XCircle className="mr-1 h-4 w-4" /> Cancel
+                          <Edit className="mr-1 h-4 w-4" /> Edit
                         </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-red-300 text-red-700 hover:bg-red-50"
-                        onClick={() => onDelete(event.id)}
-                      >
-                        <Trash2 className="mr-1 h-4 w-4" /> Delete
-                      </Button>
-                    </div>
-
-                    <div className="hidden md:block">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onViewAttendees(event.id)}
+                        >
+                          <Eye className="mr-1 h-4 w-4" /> Attendees
+                        </Button>
+                        {isPending && !isEnded && (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-stone-500 hover:text-stone-900"
+                            variant="outline"
+                            size="sm"
+                            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => onPublish(event.id)}
                           >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
+                            Publish
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Event Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => onEdit(event.id)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Event
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onViewAttendees(event.id)}
+                        )}
+                        {(isPublished || isEnded) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                            onClick={() => onUnpublish(event.id)}
                           >
-                            <Eye className="mr-2 h-4 w-4" /> View Attendees
-                          </DropdownMenuItem>
-                          {!isCancelled && !isEnded && (
-                            <DropdownMenuItem
-                              onClick={() => onCancel(event.id)}
-                              className="text-amber-600 focus:text-amber-700"
+                            Unpublish
+                          </Button>
+                        )}
+                        {!isCancelled && !isEnded && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                            onClick={() => onCancel(event.id)}
+                          >
+                            <XCircle className="mr-1 h-4 w-4" /> Cancel
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => onDelete(event.id)}
+                        >
+                          <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        </Button>
+                      </div>
+
+                      <div className="hidden md:block">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-stone-500 hover:text-stone-900"
                             >
-                              <XCircle className="mr-2 h-4 w-4" /> Cancel Event
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => onDelete(event.id)}
-                            className="text-red-600 focus:text-red-700"
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            side="auto"
+                            className="w-48"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Event
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
+                            <DropdownMenuLabel>Event Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => onEdit(event.id)}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit Event
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onViewAttendees(event.id)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" /> View Attendees
+                            </DropdownMenuItem>
+                            {isPending && !isEnded && (
+                              <DropdownMenuItem
+                                onClick={() => onPublish(event.id)}
+                                className="text-emerald-700 focus:text-emerald-800"
+                              >
+                                Publish Event
+                              </DropdownMenuItem>
+                            )}
+                            {(isPublished || isEnded) && (
+                              <DropdownMenuItem
+                                onClick={() => onUnpublish(event.id)}
+                                className="text-amber-700 focus:text-amber-800"
+                              >
+                                Unpublish Event
+                              </DropdownMenuItem>
+                            )}
+                            {!isCancelled && !isEnded && (
+                              <DropdownMenuItem
+                                onClick={() => onCancel(event.id)}
+                                className="text-amber-600 focus:text-amber-700"
+                              >
+                                <XCircle className="mr-2 h-4 w-4" /> Cancel
+                                Event
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onDelete(event.id)}
+                              className="text-red-600 focus:text-red-700"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Event
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {showExpandedPanel && (
+                    <tr className="bg-stone-50/70">
+                      <td colSpan={4} className="px-4 py-4 sm:px-6">
+                        {isEditExpanded
+                          ? renderExpandedEdit(event)
+                          : renderExpandedAttendees(event)}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
           </tbody>

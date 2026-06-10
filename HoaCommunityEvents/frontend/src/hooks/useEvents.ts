@@ -53,6 +53,30 @@ export function useCancelEvent() {
   });
 }
 
+export function usePublishEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => Events.publish(id),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['events'] });
+      void queryClient.invalidateQueries({ queryKey: ['event', data.id] });
+    },
+  });
+}
+
+export function useUnpublishEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => Events.unpublish(id),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ['events'] });
+      void queryClient.invalidateQueries({ queryKey: ['event', data.id] });
+    },
+  });
+}
+
 export function useDeleteEvent() {
   const queryClient = useQueryClient();
 

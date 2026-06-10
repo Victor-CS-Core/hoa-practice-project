@@ -21,6 +21,11 @@ public class AttendanceService(AppDbContext dbContext, IHubContext<EventHub> hub
             return (false, 404, "Event not found.", 0);
         }
 
+        if (!evt.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, 409, "Cannot join an event until it is published.", evt.Attendances.Count);
+        }
+
         if (evt.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
         {
             return (false, 409, "Cannot join a cancelled event.", evt.Attendances.Count);

@@ -6,7 +6,7 @@ interface EventsFilterBarProps {
 }
 
 const CATEGORIES = ["All", "Board Meeting", "Community Cleanup", "Pool Event"];
-const STATUSES = ["All", "Published", "Cancelled"];
+const STATUSES = ["All", "Published", "Ended", "Cancelled"];
 
 export function EventsFilterBar({
   filter,

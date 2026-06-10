@@ -119,18 +119,83 @@ export function DropdownMenuContent({
   children,
   className,
   align,
+  side,
 }: {
   children: ReactNode;
   className?: string;
   align?: "start" | "end";
+  side?: "top" | "bottom" | "auto";
 }) {
-  const { open } = useDropdownContext();
+  const { open, rootRef } = useDropdownContext();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const isAuto = side === "auto" || !side;
+  const [autoSide, setAutoSide] = useState<"top" | "bottom">("bottom");
+
+  useEffect(() => {
+    if (!open || !isAuto) {
+      return;
+    }
+
+    const getClippingAncestorRect = (element: HTMLElement): DOMRect | null => {
+      let parent = element.parentElement;
+      while (parent) {
+        const styles = window.getComputedStyle(parent);
+        const overflowY = styles.overflowY;
+        const overflowX = styles.overflowX;
+        const createsClipping = [overflowY, overflowX].some((value) =>
+          ["auto", "scroll", "hidden", "clip"].includes(value),
+        );
+
+        if (createsClipping) {
+          return parent.getBoundingClientRect();
+        }
+
+        parent = parent.parentElement;
+      }
+
+      return null;
+    };
+
+    const updatePosition = () => {
+      const anchor = rootRef.current;
+      const menu = contentRef.current;
+      if (!anchor || !menu) return;
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const clippingRect = getClippingAncestorRect(anchor);
+      const boundaryTop = clippingRect ? Math.max(0, clippingRect.top) : 0;
+      const boundaryBottom = clippingRect
+        ? Math.min(window.innerHeight, clippingRect.bottom)
+        : window.innerHeight;
+      const menuHeight = menu.offsetHeight || 240;
+      const spaceBelow = boundaryBottom - anchorRect.bottom;
+      const spaceAbove = anchorRect.top - boundaryTop;
+      const shouldOpenTop = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setAutoSide(shouldOpenTop ? "top" : "bottom");
+    };
+
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isAuto, open, rootRef]);
+
+  const resolvedSide = isAuto ? autoSide : side === "top" ? "top" : "bottom";
+
   if (!open) return null;
 
   return (
     <div
+      ref={contentRef}
       className={cn(
-        "absolute z-50 mt-2 min-w-44 rounded-md border theme-border-surface theme-bg-surface p-1 theme-text-primary shadow-lg",
+        "absolute z-50 min-w-44 rounded-md border theme-border-surface theme-bg-surface p-1 theme-text-primary shadow-lg",
+        resolvedSide === "top" ? "bottom-full mb-2" : "top-full mt-2",
         align === "end" ? "right-0" : "left-0",
         className,
       )}

@@ -8,13 +8,19 @@ namespace HoaCommunityEvents.Infrastructure.Services;
 
 public class EventService(AppDbContext dbContext) : IEventService
 {
-    public async Task<PagedResultDto<EventDto>> GetEventsAsync(EventFilterDto filter, string? currentUserId)
+    public async Task<PagedResultDto<EventDto>> GetEventsAsync(EventFilterDto filter, string? currentUserId, bool isAdmin)
     {
+        var now = DateTime.UtcNow;
         var query = dbContext.Events
             .AsNoTracking()
             .Include(e => e.Host)
             .Include(e => e.Attendances)
             .AsQueryable();
+
+        if (!isAdmin || !filter.IncludePending)
+        {
+            query = query.Where(e => e.Status != "Pending");
+        }
 
         if (!string.IsNullOrWhiteSpace(filter.Category))
         {
@@ -23,7 +29,22 @@ public class EventService(AppDbContext dbContext) : IEventService
 
         if (!string.IsNullOrWhiteSpace(filter.Status))
         {
-            query = query.Where(e => e.Status == filter.Status);
+            if (filter.Status.Equals("Ended", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e =>
+                    e.Status == "Published"
+                    && e.EndDate <= now);
+            }
+            else if (filter.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e =>
+                    e.Status == "Published"
+                    && e.EndDate > now);
+            }
+            else
+            {
+                query = query.Where(e => e.Status == filter.Status);
+            }
         }
 
         query = filter.SortBy?.ToLowerInvariant() switch
@@ -52,7 +73,9 @@ public class EventService(AppDbContext dbContext) : IEventService
                 ImageUrl = e.ImageUrl,
                 HostUserId = e.HostUserId,
                 HostDisplayName = e.Host != null ? e.Host.DisplayName : string.Empty,
-                Status = e.Status,
+                Status = e.Status == "Published" && e.EndDate <= now
+                    ? "Ended"
+                    : e.Status,
                 AttendeeCount = e.Attendances.Count,
                 IsCurrentUserAttending = currentUserId != null && e.Attendances.Any(a => a.UserId == currentUserId)
             })
@@ -68,9 +91,10 @@ public class EventService(AppDbContext dbContext) : IEventService
         };
     }
 
-    public async Task<EventDto?> GetEventAsync(Guid id, string? currentUserId)
+    public async Task<EventDto?> GetEventAsync(Guid id, string? currentUserId, bool isAdmin)
     {
-        return await dbContext.Events
+        var now = DateTime.UtcNow;
+        var evt = await dbContext.Events
             .AsNoTracking()
             .Include(e => e.Host)
             .Include(e => e.Attendances)
@@ -88,15 +112,34 @@ public class EventService(AppDbContext dbContext) : IEventService
                 ImageUrl = e.ImageUrl,
                 HostUserId = e.HostUserId,
                 HostDisplayName = e.Host != null ? e.Host.DisplayName : string.Empty,
-                Status = e.Status,
+                Status = e.Status == "Published" && e.EndDate <= now
+                    ? "Ended"
+                    : e.Status,
                 AttendeeCount = e.Attendances.Count,
                 IsCurrentUserAttending = currentUserId != null && e.Attendances.Any(a => a.UserId == currentUserId)
             })
             .FirstOrDefaultAsync();
+
+        if (evt is null)
+        {
+            return null;
+        }
+
+        if (!isAdmin && evt.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return evt;
     }
 
-    public async Task<EventDto> CreateEventAsync(CreateEventDto dto, string hostUserId)
+    public async Task<(bool Success, int StatusCode, string? Error, EventDto? Event)> CreateEventAsync(CreateEventDto dto, string hostUserId, bool canCreateInPast)
     {
+        if (!canCreateInPast && dto.StartDate < DateTime.UtcNow)
+        {
+            return (false, 403, "Only master admin can create events in the past.", null);
+        }
+
         var evt = new Event
         {
             Title = dto.Title,
@@ -108,14 +151,14 @@ public class EventService(AppDbContext dbContext) : IEventService
             MaxAttendees = dto.MaxAttendees,
             ImageUrl = dto.ImageUrl,
             HostUserId = hostUserId,
-            Status = "Published"
+            Status = "Pending"
         };
 
         dbContext.Events.Add(evt);
         await dbContext.SaveChangesAsync();
 
-        var created = await GetEventAsync(evt.Id, hostUserId);
-        return created!;
+        var created = await GetEventAsync(evt.Id, hostUserId, true);
+        return (true, 201, null, created);
     }
 
     public async Task<EventDto?> EditEventAsync(Guid id, EditEventDto dto, string hostUserId)
@@ -138,22 +181,77 @@ public class EventService(AppDbContext dbContext) : IEventService
 
         await dbContext.SaveChangesAsync();
 
-        return await GetEventAsync(id, hostUserId);
+        return await GetEventAsync(id, hostUserId, true);
     }
 
-    public async Task<EventDto?> CancelEventAsync(Guid id)
+    public async Task<(bool Success, int StatusCode, string? Error, EventDto? Event)> CancelEventAsync(Guid id)
     {
         var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
         if (evt is null)
         {
-            return null;
+            return (false, 404, "Event was not found.", null);
+        }
+
+        if (evt.EndDate <= DateTime.UtcNow)
+        {
+            return (false, 409, "Cannot change status for an event that already ended.", null);
         }
 
         evt.Status = "Cancelled";
         evt.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync();
 
-        return await GetEventAsync(id, null);
+        return (true, 200, null, await GetEventAsync(id, null, true));
+    }
+
+    public async Task<(bool Success, int StatusCode, string? Error, EventDto? Event)> PublishEventAsync(Guid id)
+    {
+        var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+        if (evt is null)
+        {
+            return (false, 404, "Event was not found.", null);
+        }
+
+        if (evt.EndDate <= DateTime.UtcNow)
+        {
+            return (false, 409, "Cannot change status for an event that already ended.", null);
+        }
+
+        if (evt.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, 409, "Event is already published.", null);
+        }
+
+        if (!evt.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, 409, "Only pending events can be published.", null);
+        }
+
+        evt.Status = "Published";
+        evt.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
+
+        return (true, 200, null, await GetEventAsync(id, null, true));
+    }
+
+    public async Task<(bool Success, int StatusCode, string? Error, EventDto? Event)> UnpublishEventAsync(Guid id)
+    {
+        var evt = await dbContext.Events.FirstOrDefaultAsync(e => e.Id == id);
+        if (evt is null)
+        {
+            return (false, 404, "Event was not found.", null);
+        }
+
+        if (!evt.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, 409, "Only published events can be unpublished.", null);
+        }
+
+        evt.Status = "Pending";
+        evt.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync();
+
+        return (true, 200, null, await GetEventAsync(id, null, true));
     }
 
     public async Task<bool> DeleteEventAsync(Guid id)

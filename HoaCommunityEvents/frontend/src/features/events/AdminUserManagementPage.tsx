@@ -37,8 +37,12 @@ export function AdminUserManagementPage() {
   }, [allUsers, userSearch]);
 
   const totalUsers = allUsers.length;
-  const adminUsers = allUsers.filter((user) => user.role === "hoa_admin").length;
-  const residentUsers = allUsers.filter((user) => user.role !== "hoa_admin").length;
+  const adminUsers = allUsers.filter(
+    (user) => user.role === "hoa_admin",
+  ).length;
+  const residentUsers = allUsers.filter(
+    (user) => user.role !== "hoa_admin",
+  ).length;
 
   if (!authStore.isAdmin) {
     return (
@@ -204,7 +208,8 @@ export function AdminUserManagementPage() {
                 Accounts Directory
               </h2>
               <p className="mt-1 text-sm text-stone-500">
-                Search by display name, username, or email and take role actions.
+                Search by display name, username, or email and take role
+                actions.
               </p>
             </div>
 
@@ -228,105 +233,108 @@ export function AdminUserManagementPage() {
             </p>
           )}
 
-        {usersQuery.isLoading && (
-          <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-500">
-            Loading users...
-          </p>
-        )}
-
-        {usersQuery.isError && (
-          <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Failed to load users.
-          </p>
-        )}
-
-        {!usersQuery.isLoading &&
-          !usersQuery.isError &&
-          filteredUsers.length === 0 && (
-            <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-              No users match your current search.
+          {usersQuery.isLoading && (
+            <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-500">
+              Loading users...
             </p>
           )}
 
-        {!usersQuery.isLoading &&
-          !usersQuery.isError &&
-          filteredUsers.length > 0 && (
-            <div className="space-y-2">
-              {filteredUsers.map((user) => {
-                const isAdminRole = user.role === "hoa_admin";
-                const isBusy =
-                  promoteUserMutation.isPending || deleteUserMutation.isPending;
+          {usersQuery.isError && (
+            <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              Failed to load users.
+            </p>
+          )}
 
-                return (
-                  <div
-                    key={user.email}
-                    className={`rounded-xl border border-stone-200 p-4 transition-colors ${rowHoverTone}`}
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-stone-900">
-                          {user.displayName}
-                        </p>
-                        <p className="truncate text-sm text-stone-500">
-                          @{user.username}
-                        </p>
-                        <p className="truncate text-sm text-stone-500">{user.email}</p>
-                      </div>
+          {!usersQuery.isLoading &&
+            !usersQuery.isError &&
+            filteredUsers.length === 0 && (
+              <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+                No users match your current search.
+              </p>
+            )}
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            isAdminRole
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-stone-100 text-stone-700"
-                          }`}
-                        >
-                          {user.isMasterAdmin
-                            ? "Master Admin"
-                            : isAdminRole
-                              ? "Admin"
-                              : "Resident"}
-                        </span>
+          {!usersQuery.isLoading &&
+            !usersQuery.isError &&
+            filteredUsers.length > 0 && (
+              <div className="space-y-2">
+                {filteredUsers.map((user) => {
+                  const isAdminRole = user.role === "hoa_admin";
+                  const isBusy =
+                    promoteUserMutation.isPending ||
+                    deleteUserMutation.isPending;
 
-                        {!isAdminRole && (
-                          <button
-                            type="button"
-                            onClick={() => handlePromote(user.email)}
-                            disabled={isBusy}
-                            className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                  return (
+                    <div
+                      key={user.email}
+                      className={`rounded-xl border border-stone-200 p-4 transition-colors ${rowHoverTone}`}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-stone-900">
+                            {user.displayName}
+                          </p>
+                          <p className="truncate text-sm text-stone-500">
+                            @{user.username}
+                          </p>
+                          <p className="truncate text-sm text-stone-500">
+                            {user.email}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                              isAdminRole
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-stone-100 text-stone-700"
+                            }`}
                           >
-                            {promoteUserMutation.isPending
-                              ? "Updating..."
-                              : "Promote to Admin"}
-                          </button>
-                        )}
-
-                        {user.canDelete ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDeleteUser(user.email, user.displayName)
-                            }
-                            disabled={isBusy}
-                            className="inline-flex min-h-11 items-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                          >
-                            <UserX className="h-4 w-4" />
-                            {deleteUserMutation.isPending
-                              ? "Deleting..."
-                              : "Delete User"}
-                          </button>
-                        ) : (
-                          <span className="text-xs font-medium text-stone-500">
-                            Delete locked
+                            {user.isMasterAdmin
+                              ? "Master Admin"
+                              : isAdminRole
+                                ? "Admin"
+                                : "Resident"}
                           </span>
-                        )}
+
+                          {!isAdminRole && (
+                            <button
+                              type="button"
+                              onClick={() => handlePromote(user.email)}
+                              disabled={isBusy}
+                              className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                            >
+                              {promoteUserMutation.isPending
+                                ? "Updating..."
+                                : "Promote to Admin"}
+                            </button>
+                          )}
+
+                          {user.canDelete ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDeleteUser(user.email, user.displayName)
+                              }
+                              disabled={isBusy}
+                              className="inline-flex min-h-11 items-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                            >
+                              <UserX className="h-4 w-4" />
+                              {deleteUserMutation.isPending
+                                ? "Deleting..."
+                                : "Delete User"}
+                            </button>
+                          ) : (
+                            <span className="text-xs font-medium text-stone-500">
+                              Delete locked
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
         </div>
       </div>
     </section>

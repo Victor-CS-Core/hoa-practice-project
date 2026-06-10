@@ -13,7 +13,7 @@ public class Event : BaseEntity
     public int? MaxAttendees { get; set; }
     public string? ImageUrl { get; set; }
     public string HostUserId { get; set; } = string.Empty;
-    public string Status { get; set; } = "Published";
+    public string Status { get; set; } = "Pending";
 
     public AppUser? Host { get; set; }
     public ICollection<EventAttendance> Attendances { get; set; } = new List<EventAttendance>();

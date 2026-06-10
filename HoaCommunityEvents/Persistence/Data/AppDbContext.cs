@@ -17,7 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             entity.Property(e => e.Status)
                 .HasMaxLength(30)
-                .HasDefaultValue("Published");
+                .HasDefaultValue("Pending");
 
             entity.HasOne(e => e.Host)
                 .WithMany()

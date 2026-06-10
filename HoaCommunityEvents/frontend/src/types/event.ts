@@ -18,6 +18,7 @@ export type HoaEvent = {
 export type EventFilter = {
   category?: string;
   status?: string;
+  includePending?: boolean;
   sortBy?: string;
   page?: number;
   pageSize?: number;
