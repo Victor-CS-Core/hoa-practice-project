@@ -8,6 +8,7 @@ import { ProfilePage } from "../../features/profiles/ProfilePage";
 import { EventListPage } from "../../features/events/EventListPage";
 import { EventDetailsPage } from "../../features/events/EventDetailsPage";
 import { EventFormPage } from "../../features/events/EventFormPage";
+import { AdminAttendeesPage } from "../../features/events/AdminAttendeesPage";
 import { ErrorPage } from "../../features/errors/ErrorPage";
 import { NotFoundPage } from "../../features/errors/NotFoundPage";
 import { ImplementationPage } from "../../features/home/ImplementationPage";
@@ -63,6 +64,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requireAdmin>
             <EventFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin/attendees",
+        element: (
+          <ProtectedRoute requireAdmin>
+            <AdminAttendeesPage />
           </ProtectedRoute>
         ),
       },

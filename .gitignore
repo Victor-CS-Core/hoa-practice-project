@@ -67,3 +67,6 @@ TestResults/
 # Tool caches
 .cache/
 .turbo/
+
+# DesignOS handoff inputs (reference only)
+product-plan/
