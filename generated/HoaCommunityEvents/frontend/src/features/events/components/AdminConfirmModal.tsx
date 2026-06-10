@@ -37,7 +37,7 @@ export function AdminConfirmModal({
             </div>
           </div>
 
-          <div className="pl-[3.25rem] text-sm text-stone-600">
+          <div className="pl-13 text-sm text-stone-600">
             {isDelete ? (
               <p>
                 Are you sure you want to permanently delete this event? This

@@ -33,7 +33,7 @@ export function EventsFilterBar({
                   page: 1,
                 })
               }
-              className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+              className={`inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm transition-colors ${
                 currentCategory === category
                   ? "bg-emerald-600 font-medium text-white shadow-sm"
                   : "bg-stone-100 text-stone-600 hover:bg-stone-200"
@@ -63,7 +63,7 @@ export function EventsFilterBar({
                   page: 1,
                 })
               }
-              className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+              className={`inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm transition-colors ${
                 currentStatus === status
                   ? "bg-emerald-600 font-medium text-white shadow-sm"
                   : "bg-stone-100 text-stone-600 hover:bg-stone-200"

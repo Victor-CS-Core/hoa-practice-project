@@ -186,14 +186,14 @@ export function AdminDashboardPage() {
             setFormError(null);
             setFormState({ mode: "create" });
           }}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           Create Event
         </button>
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <label
             htmlFor="admin-status-filter"
             className="text-sm text-stone-600"
@@ -206,7 +206,7 @@ export function AdminDashboardPage() {
             onChange={(event) =>
               updateFilter({ status: event.target.value || undefined, page: 1 })
             }
-            className="rounded-md border border-stone-300 px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-auto"
           >
             <option value="">All statuses</option>
             <option value="Published">Published</option>
@@ -228,7 +228,7 @@ export function AdminDashboardPage() {
                 page: 1,
               })
             }
-            className="rounded-md border border-stone-300 px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-auto"
           >
             <option value="">All categories</option>
             <option value="Board Meeting">Board Meeting</option>
@@ -246,7 +246,7 @@ export function AdminDashboardPage() {
                   page: 1,
                 })
               }
-              className="rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
+              className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
             >
               Clear Filters
             </button>

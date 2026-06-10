@@ -187,14 +187,15 @@ export function AdminEventList({
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-stone-200 bg-stone-50 px-6 py-4 text-sm text-stone-500">
+      <div className="flex flex-col gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between">
         <span>
           Showing {feed.items.length} of {feed.totalCount} results
         </span>
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="sm"
+            className="flex-1 sm:flex-none"
             aria-label="Go to previous page"
             disabled={feed.page <= 1}
             onClick={() => onPageChange(feed.page - 1)}
@@ -204,6 +205,7 @@ export function AdminEventList({
           <Button
             variant="outline"
             size="sm"
+            className="flex-1 sm:flex-none"
             aria-label="Go to next page"
             disabled={feed.page >= feed.totalPages}
             onClick={() => onPageChange(feed.page + 1)}
