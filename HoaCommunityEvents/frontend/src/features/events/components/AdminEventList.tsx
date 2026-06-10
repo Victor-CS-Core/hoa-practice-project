@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
+import { useTheme } from "../../../app/theme/theme-context";
 import type { HoaEvent, PagedResult } from "../../../types/event";
 
 interface AdminEventListProps {
@@ -37,6 +38,10 @@ export function AdminEventList({
   onViewAttendees,
   onPageChange,
 }: AdminEventListProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const now = new Date();
+
   if (!feed.items.length) return null;
 
   return (
@@ -61,11 +66,42 @@ export function AdminEventList({
             {feed.items.map((event) => {
               const startDate = new Date(event.startDate).toLocaleDateString();
               const isCancelled = event.status === "Cancelled";
+              const endDateObj = new Date(event.endDate);
+              const isEnded = !isCancelled && endDateObj.getTime() < now.getTime();
+              const statusLabel = isCancelled
+                ? "Cancelled"
+                : isEnded
+                  ? "Ended"
+                  : "Published";
+
+              const rowTone = isCancelled
+                ? isDark
+                  ? "bg-red-950/25 hover:bg-red-900/30"
+                  : "bg-red-100/70 hover:bg-red-200/60"
+                : isEnded
+                  ? isDark
+                    ? "bg-slate-900/45 hover:bg-slate-800/60"
+                    : "bg-slate-200/70 hover:bg-slate-300/60"
+                  : isDark
+                    ? "bg-emerald-950/20 hover:bg-emerald-900/25"
+                    : "bg-emerald-100/60 hover:bg-emerald-200/55";
+
+              const badgeTone = isCancelled
+                ? isDark
+                  ? "!bg-red-900/70 !text-red-100"
+                  : "!bg-red-200 !text-red-800"
+                : isEnded
+                  ? isDark
+                    ? "!bg-slate-700/80 !text-slate-100"
+                    : "!bg-slate-300 !text-slate-800"
+                  : isDark
+                    ? "!bg-emerald-900/70 !text-emerald-100"
+                    : "!bg-emerald-200 !text-emerald-800";
 
               return (
                 <tr
                   key={event.id}
-                  className={`transition-colors hover:bg-stone-50 ${isCancelled ? "opacity-70" : ""}`}
+                  className={`transition-colors ${rowTone}`}
                 >
                   <td className="px-6 py-4">
                     <div className="mb-1 font-semibold text-stone-900">
@@ -84,13 +120,9 @@ export function AdminEventList({
                   <td className="px-6 py-4">
                     <Badge
                       variant="secondary"
-                      className={
-                        isCancelled
-                          ? "bg-red-100 text-red-700"
-                          : "bg-emerald-100 text-emerald-700"
-                      }
+                      className={badgeTone}
                     >
-                      {event.status}
+                      {statusLabel}
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
@@ -118,7 +150,7 @@ export function AdminEventList({
                       >
                         <Eye className="mr-1 h-4 w-4" /> Attendees
                       </Button>
-                      {!isCancelled && (
+                      {!isCancelled && !isEnded && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -161,7 +193,7 @@ export function AdminEventList({
                           >
                             <Eye className="mr-2 h-4 w-4" /> View Attendees
                           </DropdownMenuItem>
-                          {!isCancelled && (
+                          {!isCancelled && !isEnded && (
                             <DropdownMenuItem
                               onClick={() => onCancel(event.id)}
                               className="text-amber-600 focus:text-amber-700"

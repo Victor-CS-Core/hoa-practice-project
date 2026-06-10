@@ -7,6 +7,7 @@ import {
   CardFooter,
   CardHeader,
 } from "../../../components/ui/card";
+import { useTheme } from "../../../app/theme/theme-context";
 import type { HoaEvent } from "../../../types/event";
 
 type UserRole = "guest" | "resident" | "hoa_admin";
@@ -24,8 +25,39 @@ export function EventCard({
   onJoinLeave,
   onViewDetails,
 }: EventCardProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const isCancelled = event.status === "Cancelled";
   const startDateObj = new Date(event.startDate);
+  const endDateObj = new Date(event.endDate);
+  const now = new Date();
+  const isEnded = !isCancelled && endDateObj.getTime() < now.getTime();
+  const statusLabel = isCancelled ? "Cancelled" : isEnded ? "Ended" : "Published";
+
+  const cardTone = isCancelled
+    ? isDark
+      ? "!border-red-700/60 !bg-red-950/35"
+      : "!border-red-300 !bg-red-100/80"
+    : isEnded
+      ? isDark
+        ? "!border-slate-600/70 !bg-slate-900/55"
+        : "!border-slate-300 !bg-slate-200/70"
+      : isDark
+        ? "!border-emerald-700/55 !bg-emerald-950/25"
+        : "!border-emerald-300 !bg-emerald-100/65";
+
+  const statusTone = isCancelled
+    ? isDark
+      ? "!bg-red-900/70 !text-red-100"
+      : "!bg-red-200 !text-red-800"
+    : isEnded
+      ? isDark
+        ? "!bg-slate-700/80 !text-slate-100"
+        : "!bg-slate-300 !text-slate-800"
+      : isDark
+        ? "!bg-emerald-900/70 !text-emerald-100"
+        : "!bg-emerald-200 !text-emerald-800";
+
   const formattedDate = startDateObj.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -38,9 +70,7 @@ export function EventCard({
 
   return (
     <Card
-      className={`flex h-full flex-col overflow-hidden border-stone-200 shadow-sm transition-all duration-200 hover:shadow-md ${
-        isCancelled ? "bg-stone-50 opacity-75" : "bg-white"
-      }`}
+      className={`flex h-full flex-col overflow-hidden shadow-sm transition-all duration-200 hover:shadow-md ${cardTone}`}
     >
       <CardHeader className="border-b border-stone-100 pb-3">
         <div className="mb-2 flex items-start justify-between gap-4">
@@ -52,13 +82,9 @@ export function EventCard({
           </Badge>
           <Badge
             variant="secondary"
-            className={`rounded-full font-medium ${
-              isCancelled
-                ? "bg-red-100 text-red-700"
-                : "bg-emerald-100 text-emerald-700"
-            }`}
+            className={`rounded-full font-medium ${statusTone}`}
           >
-            {event.status}
+            {statusLabel}
           </Badge>
         </div>
         <h3 className="font-heading text-xl font-semibold leading-tight text-stone-900">
@@ -103,7 +129,7 @@ export function EventCard({
           View Details
         </Button>
 
-        {role !== "guest" && !isCancelled && role !== "hoa_admin" && (
+        {role !== "guest" && !isCancelled && !isEnded && role !== "hoa_admin" && (
           <Button
             variant={event.isCurrentUserAttending ? "secondary" : "default"}
             className={`w-full sm:flex-1 ${
