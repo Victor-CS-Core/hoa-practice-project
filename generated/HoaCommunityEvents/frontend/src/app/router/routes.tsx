@@ -1,5 +1,5 @@
 import { createElement, lazy, Suspense, type ReactNode } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { ErrorPage } from "../../features/errors/ErrorPage";
@@ -64,7 +64,7 @@ function withPageLoader(element: ReactNode) {
   return <Suspense fallback={<p>Loading page...</p>}>{element}</Suspense>;
 }
 
-export const router = createBrowserRouter([
+export const appRoutes: RouteObject[] = [
   {
     path: "/",
     element: <AppLayout />,
@@ -72,11 +72,21 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: withPageLoader(createElement(homePageRoute)),
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(homePageRoute)}</ProtectedRoute>,
+        ),
+      },
+      {
+        path: "home",
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(homePageRoute)}</ProtectedRoute>,
+        ),
       },
       {
         path: "implementation",
-        element: withPageLoader(createElement(implementationPageRoute)),
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(implementationPageRoute)}</ProtectedRoute>,
+        ),
       },
       {
         path: "login",
@@ -94,11 +104,15 @@ export const router = createBrowserRouter([
       },
       {
         path: "events",
-        element: withPageLoader(createElement(eventListPageRoute)),
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(eventListPageRoute)}</ProtectedRoute>,
+        ),
       },
       {
         path: "events/:id",
-        element: withPageLoader(createElement(eventDetailsPageRoute)),
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(eventDetailsPageRoute)}</ProtectedRoute>,
+        ),
       },
       {
         path: "events/create",
@@ -134,8 +148,12 @@ export const router = createBrowserRouter([
       },
       {
         path: "*",
-        element: withPageLoader(createElement(notFoundPageRoute)),
+        element: withPageLoader(
+          <ProtectedRoute>{createElement(notFoundPageRoute)}</ProtectedRoute>,
+        ),
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(appRoutes);

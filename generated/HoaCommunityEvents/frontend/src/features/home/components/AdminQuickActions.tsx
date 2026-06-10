@@ -45,7 +45,7 @@ export function AdminQuickActions({ events }: AdminQuickActionsProps) {
   const cancelledCount = events.filter((e) => e.status === "Cancelled").length;
 
   return (
-    <section className="animate-fade-up animate-delay-300 overflow-hidden rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50/50 shadow-sm">
+    <section className="animate-fade-up animate-delay-300 overflow-hidden rounded-xl border-2 border-amber-200 bg-linear-to-br from-amber-50 to-orange-50/50 shadow-sm">
       <div className="border-b border-amber-200 bg-amber-100/50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

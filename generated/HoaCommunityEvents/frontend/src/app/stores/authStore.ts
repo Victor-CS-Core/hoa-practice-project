@@ -5,7 +5,7 @@ import type { RootStore } from './store';
 
 export class AuthStore {
     user: User | null = null;
-    loadingUser = false;
+    loadingUser = true;
     rootStore: RootStore;
 
     constructor(rootStore: RootStore) {
@@ -45,6 +45,10 @@ export class AuthStore {
     getCurrentUser = async () => {
         const token = localStorage.getItem('jwt');
         if (!token) {
+            runInAction(() => {
+                this.user = null;
+                this.loadingUser = false;
+            });
             return;
         }
 

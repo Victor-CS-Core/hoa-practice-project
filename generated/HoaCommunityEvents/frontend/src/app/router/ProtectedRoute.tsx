@@ -13,6 +13,10 @@ export const ProtectedRoute = observer(function ProtectedRoute({
 }: Props) {
   const { authStore } = useStore();
 
+  if (authStore.loadingUser) {
+    return <p>Checking session...</p>;
+  }
+
   if (!authStore.isLoggedIn) {
     return <Navigate to="/login" replace />;
   }

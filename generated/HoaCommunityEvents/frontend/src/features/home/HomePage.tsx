@@ -79,7 +79,10 @@ export const HomePage = observer(function HomePage() {
 
       {/* Quick Stats — authenticated users only */}
       {authStore.isLoggedIn && (
-        <QuickStats events={allEvents} isLoading={dashboardDataQuery.isLoading} />
+        <QuickStats
+          events={allEvents}
+          isLoading={dashboardDataQuery.isLoading}
+        />
       )}
 
       {/* Action error toast */}
@@ -117,9 +120,7 @@ export const HomePage = observer(function HomePage() {
           )}
 
           {/* Admin Quick Actions */}
-          {authStore.isAdmin && (
-            <AdminQuickActions events={allEvents} />
-          )}
+          {authStore.isAdmin && <AdminQuickActions events={allEvents} />}
         </div>
       )}
 
