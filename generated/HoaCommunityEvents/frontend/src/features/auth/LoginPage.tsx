@@ -106,12 +106,18 @@ export const LoginPage = observer(function LoginPage() {
             type="email"
             placeholder="you@example.com"
             disabled={isSubmitting}
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? "login-email-error" : undefined}
             className={
               emailError ? "border-red-300 focus-visible:ring-red-500" : ""
             }
             {...register("email", { required: true })}
           />
-          {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+          {emailError && (
+            <p id="login-email-error" className="text-sm text-red-600">
+              {emailError}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -125,13 +131,19 @@ export const LoginPage = observer(function LoginPage() {
             id="password"
             type="password"
             disabled={isSubmitting}
+            aria-invalid={!!passwordError}
+            aria-describedby={
+              passwordError ? "login-password-error" : undefined
+            }
             className={
               passwordError ? "border-red-300 focus-visible:ring-red-500" : ""
             }
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p className="text-sm text-red-600">{passwordError}</p>
+            <p id="login-password-error" className="text-sm text-red-600">
+              {passwordError}
+            </p>
           )}
         </div>
 

@@ -43,18 +43,36 @@ export function DropdownMenuTrigger({
   children: ReactNode;
   asChild?: boolean;
 }) {
-  const { setOpen } = useDropdownContext();
+  const { open, setOpen } = useDropdownContext();
 
   if (asChild) {
     return (
-      <span role="button" tabIndex={0} onClick={() => setOpen(true)}>
+      <span
+        role="button"
+        tabIndex={0}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+      >
         {children}
       </span>
     );
   }
 
   return (
-    <button type="button" onClick={() => setOpen(true)}>
+    <button
+      type="button"
+      aria-haspopup="menu"
+      aria-expanded={open}
+      onClick={() => setOpen(true)}
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+    >
       {children}
     </button>
   );
@@ -118,7 +136,7 @@ export function DropdownMenuItem({
     <button
       type="button"
       className={cn(
-        "flex w-full items-center rounded px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100",
+        "flex w-full items-center rounded px-2 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white",
         className,
       )}
       onClick={(event) => {

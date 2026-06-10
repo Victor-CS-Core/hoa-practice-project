@@ -33,7 +33,7 @@ export function EventsPagination({
         <Button
           variant="outline"
           size="sm"
-          className="h-9 border-stone-300 text-stone-700 hover:bg-stone-50"
+          className="min-h-11 border-stone-300 text-stone-700 hover:bg-stone-50 sm:h-9 sm:min-h-0"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
         >
@@ -48,7 +48,7 @@ export function EventsPagination({
         <Button
           variant="outline"
           size="sm"
-          className="h-9 border-stone-300 text-stone-700 hover:bg-stone-50"
+          className="min-h-11 border-stone-300 text-stone-700 hover:bg-stone-50 sm:h-9 sm:min-h-0"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
         >

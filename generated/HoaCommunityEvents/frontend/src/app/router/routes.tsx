@@ -5,45 +5,63 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { ErrorPage } from "../../features/errors/ErrorPage";
 
 const homePageRoute = lazy(() =>
-  import("../../features/home/HomePage").then((module) => ({ default: module.HomePage })),
+  import("../../features/home/HomePage").then((module) => ({
+    default: module.HomePage,
+  })),
 );
 const loginPageRoute = lazy(() =>
-  import("../../features/auth/LoginPage").then((module) => ({ default: module.LoginPage })),
+  import("../../features/auth/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
 );
 const registerPageRoute = lazy(() =>
-  import("../../features/auth/RegisterPage").then((module) => ({ default: module.RegisterPage })),
+  import("../../features/auth/RegisterPage").then((module) => ({
+    default: module.RegisterPage,
+  })),
 );
 const profilePageRoute = lazy(() =>
-  import("../../features/profiles/ProfilePage").then((module) => ({ default: module.ProfilePage })),
+  import("../../features/profiles/ProfilePage").then((module) => ({
+    default: module.ProfilePage,
+  })),
 );
 const eventListPageRoute = lazy(() =>
-  import("../../features/events/EventListPage").then((module) => ({ default: module.EventListPage })),
+  import("../../features/events/EventListPage").then((module) => ({
+    default: module.EventListPage,
+  })),
 );
 const eventDetailsPageRoute = lazy(() =>
-  import("../../features/events/EventDetailsPage").then((module) => ({ default: module.EventDetailsPage })),
+  import("../../features/events/EventDetailsPage").then((module) => ({
+    default: module.EventDetailsPage,
+  })),
 );
 const eventFormPageRoute = lazy(() =>
-  import("../../features/events/EventFormPage").then((module) => ({ default: module.EventFormPage })),
+  import("../../features/events/EventFormPage").then((module) => ({
+    default: module.EventFormPage,
+  })),
 );
 const adminAttendeesPageRoute = lazy(() =>
-  import("../../features/events/AdminAttendeesPage").then((module) => ({ default: module.AdminAttendeesPage })),
+  import("../../features/events/AdminAttendeesPage").then((module) => ({
+    default: module.AdminAttendeesPage,
+  })),
 );
 const adminDashboardPageRoute = lazy(() =>
-  import("../../features/events/AdminDashboardPage").then((module) => ({ default: module.AdminDashboardPage })),
+  import("../../features/events/AdminDashboardPage").then((module) => ({
+    default: module.AdminDashboardPage,
+  })),
 );
 const notFoundPageRoute = lazy(() =>
-  import("../../features/errors/NotFoundPage").then((module) => ({ default: module.NotFoundPage })),
+  import("../../features/errors/NotFoundPage").then((module) => ({
+    default: module.NotFoundPage,
+  })),
 );
 const implementationPageRoute = lazy(() =>
-  import("../../features/home/ImplementationPage").then((module) => ({ default: module.ImplementationPage })),
+  import("../../features/home/ImplementationPage").then((module) => ({
+    default: module.ImplementationPage,
+  })),
 );
 
 function withPageLoader(element: ReactNode) {
-  return (
-    <Suspense fallback={<p>Loading page...</p>}>
-      {element}
-    </Suspense>
-  );
+  return <Suspense fallback={<p>Loading page...</p>}>{element}</Suspense>;
 }
 
 export const router = createBrowserRouter([
@@ -71,9 +89,7 @@ export const router = createBrowserRouter([
       {
         path: "profile/:username",
         element: withPageLoader(
-          <ProtectedRoute>
-            {createElement(profilePageRoute)}
-          </ProtectedRoute>,
+          <ProtectedRoute>{createElement(profilePageRoute)}</ProtectedRoute>,
         ),
       },
       {

@@ -103,45 +103,82 @@ export function AdminEventList({
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    <div className="flex flex-wrap justify-end gap-2 md:hidden">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEdit(event.id)}
+                      >
+                        <Edit className="mr-1 h-4 w-4" /> Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewAttendees(event.id)}
+                      >
+                        <Eye className="mr-1 h-4 w-4" /> Attendees
+                      </Button>
+                      {!isCancelled && (
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-stone-500 hover:text-stone-900"
+                          variant="outline"
+                          size="sm"
+                          className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                          onClick={() => onCancel(event.id)}
                         >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
+                          <XCircle className="mr-1 h-4 w-4" /> Cancel
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Event Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onEdit(event.id)}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit Event
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onViewAttendees(event.id)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" /> View Attendees
-                        </DropdownMenuItem>
-                        {!isCancelled && (
-                          <DropdownMenuItem
-                            onClick={() => onCancel(event.id)}
-                            className="text-amber-600 focus:text-amber-700"
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={() => onDelete(event.id)}
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" /> Delete
+                      </Button>
+                    </div>
+
+                    <div className="hidden md:block">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-stone-500 hover:text-stone-900"
                           >
-                            <XCircle className="mr-2 h-4 w-4" /> Cancel Event
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Event Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => onEdit(event.id)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Event
                           </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => onDelete(event.id)}
-                          className="text-red-600 focus:text-red-700"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Event
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <DropdownMenuItem
+                            onClick={() => onViewAttendees(event.id)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" /> View Attendees
+                          </DropdownMenuItem>
+                          {!isCancelled && (
+                            <DropdownMenuItem
+                              onClick={() => onCancel(event.id)}
+                              className="text-amber-600 focus:text-amber-700"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" /> Cancel Event
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onDelete(event.id)}
+                            className="text-red-600 focus:text-red-700"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Event
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               );
@@ -158,6 +195,7 @@ export function AdminEventList({
           <Button
             variant="outline"
             size="sm"
+            aria-label="Go to previous page"
             disabled={feed.page <= 1}
             onClick={() => onPageChange(feed.page - 1)}
           >
@@ -166,6 +204,7 @@ export function AdminEventList({
           <Button
             variant="outline"
             size="sm"
+            aria-label="Go to next page"
             disabled={feed.page >= feed.totalPages}
             onClick={() => onPageChange(feed.page + 1)}
           >

@@ -194,8 +194,14 @@ export function AdminDashboardPage() {
 
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-sm text-stone-600">Status</label>
+          <label
+            htmlFor="admin-status-filter"
+            className="text-sm text-stone-600"
+          >
+            Status
+          </label>
           <select
+            id="admin-status-filter"
             value={status}
             onChange={(event) =>
               updateFilter({ status: event.target.value || undefined, page: 1 })
@@ -207,8 +213,14 @@ export function AdminDashboardPage() {
             <option value="Cancelled">Cancelled</option>
           </select>
 
-          <label className="text-sm text-stone-600">Category</label>
+          <label
+            htmlFor="admin-category-filter"
+            className="text-sm text-stone-600"
+          >
+            Category
+          </label>
           <select
+            id="admin-category-filter"
             value={category}
             onChange={(event) =>
               updateFilter({

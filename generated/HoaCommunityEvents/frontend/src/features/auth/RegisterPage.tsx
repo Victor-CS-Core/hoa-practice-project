@@ -81,6 +81,10 @@ export const RegisterPage = observer(function RegisterPage() {
             id="displayName"
             type="text"
             disabled={isSubmitting}
+            aria-invalid={!!displayNameError}
+            aria-describedby={
+              displayNameError ? "register-displayName-error" : undefined
+            }
             className={
               displayNameError
                 ? "border-red-300 focus-visible:ring-red-500"
@@ -89,7 +93,9 @@ export const RegisterPage = observer(function RegisterPage() {
             {...register("displayName", { required: true })}
           />
           {displayNameError && (
-            <p className="text-sm text-red-600">{displayNameError}</p>
+            <p id="register-displayName-error" className="text-sm text-red-600">
+              {displayNameError}
+            </p>
           )}
         </div>
 
@@ -104,13 +110,19 @@ export const RegisterPage = observer(function RegisterPage() {
             id="username"
             type="text"
             disabled={isSubmitting}
+            aria-invalid={!!usernameError}
+            aria-describedby={
+              usernameError ? "register-username-error" : undefined
+            }
             className={
               usernameError ? "border-red-300 focus-visible:ring-red-500" : ""
             }
             {...register("username", { required: true })}
           />
           {usernameError && (
-            <p className="text-sm text-red-600">{usernameError}</p>
+            <p id="register-username-error" className="text-sm text-red-600">
+              {usernameError}
+            </p>
           )}
         </div>
 
@@ -125,12 +137,18 @@ export const RegisterPage = observer(function RegisterPage() {
             id="email"
             type="email"
             disabled={isSubmitting}
+            aria-invalid={!!emailError}
+            aria-describedby={emailError ? "register-email-error" : undefined}
             className={
               emailError ? "border-red-300 focus-visible:ring-red-500" : ""
             }
             {...register("email", { required: true })}
           />
-          {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+          {emailError && (
+            <p id="register-email-error" className="text-sm text-red-600">
+              {emailError}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -144,13 +162,19 @@ export const RegisterPage = observer(function RegisterPage() {
             id="password"
             type="password"
             disabled={isSubmitting}
+            aria-invalid={!!passwordError}
+            aria-describedby={
+              passwordError ? "register-password-error" : undefined
+            }
             className={
               passwordError ? "border-red-300 focus-visible:ring-red-500" : ""
             }
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p className="text-sm text-red-600">{passwordError}</p>
+            <p id="register-password-error" className="text-sm text-red-600">
+              {passwordError}
+            </p>
           )}
         </div>
 
