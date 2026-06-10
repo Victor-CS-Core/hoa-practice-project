@@ -38,7 +38,6 @@ export const AppLayout = observer(function AppLayout() {
   const baseLinks: NavItem[] = [
     { to: "/", label: "Home", end: true },
     { to: "/events", label: "Events" },
-    { to: "/implementation", label: "Implementation Status" },
   ];
 
   const userLinks: NavItem[] =

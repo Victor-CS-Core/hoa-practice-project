@@ -54,11 +54,6 @@ const notFoundPageRoute = lazy(() =>
     default: module.NotFoundPage,
   })),
 );
-const implementationPageRoute = lazy(() =>
-  import("../../features/home/ImplementationPage").then((module) => ({
-    default: module.ImplementationPage,
-  })),
-);
 
 function withPageLoader(element: ReactNode) {
   return <Suspense fallback={<p>Loading page...</p>}>{element}</Suspense>;
@@ -80,12 +75,6 @@ export const appRoutes: RouteObject[] = [
         path: "home",
         element: withPageLoader(
           <ProtectedRoute>{createElement(homePageRoute)}</ProtectedRoute>,
-        ),
-      },
-      {
-        path: "implementation",
-        element: withPageLoader(
-          <ProtectedRoute>{createElement(implementationPageRoute)}</ProtectedRoute>,
         ),
       },
       {
