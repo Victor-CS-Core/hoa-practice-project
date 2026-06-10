@@ -257,7 +257,7 @@ export function AdminDashboardPage() {
             onChange={(event) =>
               updateFilter({ status: event.target.value || undefined, page: 1 })
             }
-            className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-auto"
+            className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:w-auto"
           >
             <option value="">All statuses</option>
             <option value="Published">Published</option>
@@ -279,7 +279,7 @@ export function AdminDashboardPage() {
                 page: 1,
               })
             }
-            className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm sm:w-auto"
+            className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:w-auto"
           >
             <option value="">All categories</option>
             <option value="Board Meeting">Board Meeting</option>
