@@ -1,42 +1,190 @@
 import { useForm } from "react-hook-form";
 import { observer } from "mobx-react-lite";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useStore } from "../../app/stores/store";
 import type { RegisterFormValues } from "../../types/user";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { AuthLayout } from "./components/AuthLayout";
+import { AuthBanner } from "./components/AuthBanner";
+import {
+  getFieldError,
+  toApiError,
+  type ApiErrorEnvelope,
+} from "./authApiError";
 
 export const RegisterPage = observer(function RegisterPage() {
   const { authStore } = useStore();
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm<RegisterFormValues>();
+  const [apiError, setApiError] = useState<ApiErrorEnvelope | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<RegisterFormValues>();
+
+  useEffect(() => {
+    if (authStore.isLoggedIn) {
+      navigate("/", { replace: true });
+    }
+  }, [authStore.isLoggedIn, navigate]);
 
   const onSubmit = async (values: RegisterFormValues) => {
-    await authStore.register(values);
-    navigate("/");
+    setApiError(null);
+
+    try {
+      await authStore.register(values);
+      navigate("/");
+    } catch (error) {
+      const next = toApiError(error);
+      setApiError(
+        next ?? { message: "Unable to create account. Please try again." },
+      );
+    }
   };
 
+  const displayNameError = getFieldError(apiError?.details, "DisplayName");
+  const usernameError = getFieldError(apiError?.details, "Username");
+  const emailError = getFieldError(apiError?.details, "Email");
+  const passwordError = getFieldError(apiError?.details, "Password");
+
+  const showValidationBanner = apiError?.code === "validation_failed";
+  const showMessageBanner = !!apiError?.message && !showValidationBanner;
+
   return (
-    <section>
-      <h2>Register</h2>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        style={{ display: "grid", gap: 8, maxWidth: 360 }}
-      >
-        <input
-          placeholder="Display Name"
-          {...register("displayName", { required: true })}
+    <AuthLayout
+      title="Create account"
+      subtitle="Join your HOA community platform to view and manage events."
+    >
+      {showValidationBanner && (
+        <AuthBanner type="error" message="Please fix the highlighted fields." />
+      )}
+      {showMessageBanner && (
+        <AuthBanner
+          type="error"
+          message={apiError?.message ?? "Registration failed."}
         />
-        <input
-          placeholder="Username"
-          {...register("username", { required: true })}
-        />
-        <input placeholder="Email" {...register("email", { required: true })} />
-        <input
-          placeholder="Password"
-          type="password"
-          {...register("password", { required: true })}
-        />
-        <button type="submit">Create Account</button>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-2">
+          <label
+            htmlFor="displayName"
+            className={`text-sm ${displayNameError ? "text-red-600" : "text-stone-700"}`}
+          >
+            Display Name
+          </label>
+          <Input
+            id="displayName"
+            type="text"
+            disabled={isSubmitting}
+            className={
+              displayNameError
+                ? "border-red-300 focus-visible:ring-red-500"
+                : ""
+            }
+            {...register("displayName", { required: true })}
+          />
+          {displayNameError && (
+            <p className="text-sm text-red-600">{displayNameError}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="username"
+            className={`text-sm ${usernameError ? "text-red-600" : "text-stone-700"}`}
+          >
+            Username
+          </label>
+          <Input
+            id="username"
+            type="text"
+            disabled={isSubmitting}
+            className={
+              usernameError ? "border-red-300 focus-visible:ring-red-500" : ""
+            }
+            {...register("username", { required: true })}
+          />
+          {usernameError && (
+            <p className="text-sm text-red-600">{usernameError}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="email"
+            className={`text-sm ${emailError ? "text-red-600" : "text-stone-700"}`}
+          >
+            Email address
+          </label>
+          <Input
+            id="email"
+            type="email"
+            disabled={isSubmitting}
+            className={
+              emailError ? "border-red-300 focus-visible:ring-red-500" : ""
+            }
+            {...register("email", { required: true })}
+          />
+          {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="password"
+            className={`text-sm ${passwordError ? "text-red-600" : "text-stone-700"}`}
+          >
+            Password
+          </label>
+          <Input
+            id="password"
+            type="password"
+            disabled={isSubmitting}
+            className={
+              passwordError ? "border-red-300 focus-visible:ring-red-500" : ""
+            }
+            {...register("password", { required: true })}
+          />
+          {passwordError && (
+            <p className="text-sm text-red-600">{passwordError}</p>
+          )}
+        </div>
+
+        <p className="text-xs text-stone-500">
+          Your data is securely stored for community management only.
+        </p>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="h-auto w-full py-2.5 text-white disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create account"
+          )}
+        </Button>
       </form>
-    </section>
+
+      <div className="mt-8 text-center">
+        <p className="text-sm text-stone-600">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-emerald-600 hover:text-emerald-700"
+          >
+            Log in
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
   );
 });

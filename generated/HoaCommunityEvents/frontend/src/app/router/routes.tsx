@@ -9,6 +9,7 @@ import { EventListPage } from "../../features/events/EventListPage";
 import { EventDetailsPage } from "../../features/events/EventDetailsPage";
 import { EventFormPage } from "../../features/events/EventFormPage";
 import { AdminAttendeesPage } from "../../features/events/AdminAttendeesPage";
+import { AdminDashboardPage } from "../../features/events/AdminDashboardPage";
 import { ErrorPage } from "../../features/errors/ErrorPage";
 import { NotFoundPage } from "../../features/errors/NotFoundPage";
 import { ImplementationPage } from "../../features/home/ImplementationPage";
@@ -64,6 +65,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requireAdmin>
             <EventFormPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin/events",
+        element: (
+          <ProtectedRoute requireAdmin>
+            <AdminDashboardPage />
           </ProtectedRoute>
         ),
       },

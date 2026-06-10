@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Button } from "../../components/ui/button";
 import {
   useCancelEvent,
   useDeleteEvent,
@@ -14,6 +15,9 @@ import {
 import { useStore } from "../../app/stores/store";
 import { useSignalR } from "../../hooks/useSignalR";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
+import { AttendanceActionCard } from "./components/AttendanceActionCard";
+import { EventInfoPanel } from "./components/EventInfoPanel";
+import { AdminAttendeeList } from "./components/AdminAttendeeList";
 
 export function EventDetailsPage() {
   const { id } = useParams();
@@ -29,8 +33,32 @@ export function EventDetailsPage() {
 
   useSignalR(id);
 
-  if (isLoading) return <p>Loading event...</p>;
-  if (isError || !data) return <p>Event not found.</p>;
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+        Loading event...
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
+        <h2 className="font-heading text-2xl font-bold text-stone-900">
+          Event not found
+        </h2>
+        <p className="mt-2 text-stone-600">
+          The event may have been removed or is unavailable.
+        </p>
+        <Link
+          to="/events"
+          className="mt-4 inline-block text-emerald-700 underline hover:text-emerald-800"
+        >
+          Back to events
+        </Link>
+      </div>
+    );
+  }
 
   const handleCancel = async () => {
     setActionError(null);
@@ -72,60 +100,94 @@ export function EventDetailsPage() {
     }
   };
 
-  const canJoinOrLeave = authStore.isLoggedIn && !authStore.isAdmin;
+  const isGuest = !authStore.isLoggedIn;
+  const canJoin =
+    authStore.isLoggedIn && !authStore.isAdmin && !data.isCurrentUserAttending;
+  const canLeave =
+    authStore.isLoggedIn && !authStore.isAdmin && data.isCurrentUserAttending;
 
   return (
-    <section>
-      <Link to="/events">Back to events</Link>
-      <h2>{data.title}</h2>
-      <p>{data.description}</p>
-      <p>Category: {data.category}</p>
-      <p>Location: {data.locationWithinCommunity}</p>
-      <p>Host: {data.hostDisplayName}</p>
-      <p>Status: {data.status}</p>
-      <p>Starts: {new Date(data.startDate).toLocaleString()}</p>
-      <p>Ends: {new Date(data.endDate).toLocaleString()}</p>
-      <p>Attendees: {data.attendeeCount}</p>
-      {actionError && <p>{actionError}</p>}
-      {canJoinOrLeave && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          {!data.isCurrentUserAttending ? (
-            <button type="button" onClick={handleJoin}>
-              Join Event
-            </button>
-          ) : (
-            <button type="button" onClick={handleLeave}>
-              Leave Event
-            </button>
+    <section className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <Link
+          to="/events"
+          className="text-sm font-medium text-emerald-700 underline hover:text-emerald-800"
+        >
+          Back to events
+        </Link>
+
+        {authStore.isAdmin && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to={`/events/${data.id}/edit`}
+              className="inline-flex rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
+            >
+              Edit
+            </Link>
+            <Button
+              className="bg-amber-600 text-white hover:bg-amber-700"
+              onClick={handleCancel}
+              disabled={cancelMutation.isPending}
+            >
+              {cancelMutation.isPending ? "Cancelling..." : "Cancel Event"}
+            </Button>
+            <Button
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Event"}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+          <EventInfoPanel event={data} />
+
+          {authStore.isAdmin && (
+            <div>
+              {attendeesQuery.isLoading && (
+                <p className="mt-8 text-stone-500">Loading attendees...</p>
+              )}
+              {attendeesQuery.isError && (
+                <p className="mt-8 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+                  Failed to load attendees.
+                </p>
+              )}
+              {attendeesQuery.data && (
+                <AdminAttendeeList
+                  attendees={attendeesQuery.data}
+                  totalCount={attendeesQuery.data.length}
+                />
+              )}
+            </div>
           )}
         </div>
-      )}
-      {authStore.isAdmin && (
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link to={`/events/${data.id}/edit`}>Edit</Link>
-            <button type="button" onClick={handleCancel}>
-              Cancel Event
-            </button>
-            <button type="button" onClick={handleDelete}>
-              Delete Event
-            </button>
-          </div>
 
-          <div>
-            <h3>Attendee List</h3>
-            {attendeesQuery.isLoading && <p>Loading attendees...</p>}
-            {attendeesQuery.isError && <p>Failed to load attendees.</p>}
-            {attendeesQuery.data && (
-              <ul>
-                {attendeesQuery.data.map((a) => (
-                  <li key={a.userId + a.joinedAt}>{a.displayName}</li>
-                ))}
-              </ul>
-            )}
+        <AttendanceActionCard
+          event={data}
+          canJoin={canJoin}
+          canLeave={canLeave}
+          isGuest={isGuest}
+          errorMsg={actionError}
+          onJoin={handleJoin}
+          onLeave={handleLeave}
+        />
+      </div>
+
+      {joinMutation.isPending || leaveMutation.isPending ? (
+        <div className="text-sm text-stone-500">Updating attendance...</div>
+      ) : null}
+
+      {authStore.isLoggedIn &&
+        !authStore.isAdmin &&
+        data.status === "Cancelled" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
+            This event is cancelled. Joining is disabled.
           </div>
-        </div>
-      )}
+        )}
     </section>
   );
 }

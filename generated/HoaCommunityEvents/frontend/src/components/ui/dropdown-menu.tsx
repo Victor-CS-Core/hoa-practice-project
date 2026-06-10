@@ -18,7 +18,9 @@ const DropdownContext = createContext<MenuCtx | null>(null);
 function useDropdownContext() {
   const ctx = useContext(DropdownContext);
   if (!ctx) {
-    throw new Error("DropdownMenu components must be used inside DropdownMenu.");
+    throw new Error(
+      "DropdownMenu components must be used inside DropdownMenu.",
+    );
   }
   return ctx;
 }
@@ -84,11 +86,25 @@ export function DropdownMenuContent({
   );
 }
 
-export function DropdownMenuLabel({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-2 py-1.5 text-xs font-semibold text-stone-500", className)} {...props} />;
+export function DropdownMenuLabel({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        "px-2 py-1.5 text-xs font-semibold text-stone-500",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
-export function DropdownMenuSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function DropdownMenuSeparator({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("my-1 h-px bg-stone-200", className)} {...props} />;
 }
 

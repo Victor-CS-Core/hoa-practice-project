@@ -40,13 +40,15 @@ export const AppLayout = observer(function AppLayout() {
     { to: "/implementation", label: "Implementation Status" },
   ];
 
-  const userLinks: NavItem[] = authStore.isLoggedIn && authStore.user
-    ? [{ to: `/profile/${authStore.user.username}`, label: "My Profile" }]
-    : [];
+  const userLinks: NavItem[] =
+    authStore.isLoggedIn && authStore.user
+      ? [{ to: `/profile/${authStore.user.username}`, label: "My Profile" }]
+      : [];
 
   const adminLinks: NavItem[] = authStore.isAdmin
     ? [
-        { to: "/events/create", label: "Create Event" },
+        { to: "/admin/events", label: "Admin Dashboard" },
+        { to: "/events/create", label: "Quick Create" },
         { to: "/admin/attendees", label: "Admin Attendees" },
       ]
     : [];
@@ -86,7 +88,10 @@ export const AppLayout = observer(function AppLayout() {
           <div className="hidden items-center gap-3 md:flex">
             {!authStore.isLoggedIn && (
               <>
-                <Link to="/login" className="text-sm font-medium text-stone-600 hover:text-emerald-700">
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-stone-600 hover:text-emerald-700"
+                >
                   Login
                 </Link>
                 <Link
@@ -140,10 +145,18 @@ export const AppLayout = observer(function AppLayout() {
 
               {!authStore.isLoggedIn && (
                 <>
-                  <NavLink to="/login" onClick={closeMobile} className={({ isActive }) => navClass(isActive)}>
+                  <NavLink
+                    to="/login"
+                    onClick={closeMobile}
+                    className={({ isActive }) => navClass(isActive)}
+                  >
                     Login
                   </NavLink>
-                  <NavLink to="/register" onClick={closeMobile} className={({ isActive }) => navClass(isActive)}>
+                  <NavLink
+                    to="/register"
+                    onClick={closeMobile}
+                    className={({ isActive }) => navClass(isActive)}
+                  >
                     Register
                   </NavLink>
                 </>

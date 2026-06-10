@@ -23,6 +23,7 @@ agent.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
         if (error.response?.status === 401) {
+            sessionStorage.setItem('sessionExpired', '1');
             localStorage.removeItem('jwt');
         }
         return Promise.reject(error);
