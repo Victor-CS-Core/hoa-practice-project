@@ -18,6 +18,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers();
+        services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
         services.Configure<ApiBehaviorOptions>(options =>

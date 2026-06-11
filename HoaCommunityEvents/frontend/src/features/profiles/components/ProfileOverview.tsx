@@ -1,4 +1,4 @@
-import { Edit3, Settings, User } from "lucide-react";
+import { AtSign, Edit3, Mail, ShieldCheck, User } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import type { Profile } from "../../../types/profile";
@@ -14,14 +14,24 @@ export function ProfileOverview({
   isOwner,
   onEditClick,
 }: ProfileOverviewProps) {
+  const roleLabel = profile.role === "hoa_admin" ? "HOA Admin" : "Resident";
+
   return (
-    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm">
-      <div className="relative flex flex-col items-center border-b theme-border-surface theme-bg-surface-muted p-8">
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
+      <div
+        className="relative overflow-hidden border-b theme-border-surface px-6 pb-8 pt-6 sm:px-8"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(6,95,70,0.9) 0%, rgba(4,120,87,0.85) 45%, rgba(20,184,166,0.75) 100%)",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_55%)]" />
+
         {isOwner && (
-          <div className="absolute right-4 top-4">
+          <div className="absolute right-4 top-4 z-10">
             <Button
               variant="outline"
-              className="theme-border-surface theme-bg-surface theme-text-muted"
+              className="border-white/40 bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
               onClick={onEditClick}
             >
               <Edit3 className="mr-2 h-4 w-4" />
@@ -30,58 +40,82 @@ export function ProfileOverview({
           </div>
         )}
 
-        <div className="mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 theme-border-base theme-bg-surface-muted shadow-md">
-          {profile.profileImageUrl ? (
-            <img
-              src={profile.profileImageUrl}
-              alt={profile.displayName}
-              className="h-full w-full object-cover"
-            />
+        <div className="relative z-10 mt-8 flex flex-col items-center text-center sm:items-start sm:text-left">
+          <div className="mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/60 bg-white/90 shadow-lg">
+            {profile.profileImageUrl ? (
+              <img
+                src={profile.profileImageUrl}
+                alt={profile.displayName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="h-14 w-14 text-emerald-700" />
+            )}
+          </div>
+
+          <h1 className="font-heading text-3xl font-bold text-white">
+            {profile.displayName}
+          </h1>
+          <p className="mt-1 text-sm font-medium text-emerald-100">
+            @{profile.username}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="bg-white/85 text-emerald-800">
+              {roleLabel}
+            </Badge>
+            {isOwner && (
+              <Badge
+                variant="outline"
+                className="border-white/55 bg-white/15 text-white"
+              >
+                Your profile
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[2fr_1fr]">
+        <div className="rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <h3 className="mb-3 font-heading text-lg font-semibold theme-text-primary">
+            About
+          </h3>
+          {profile.bio ? (
+            <p className="whitespace-pre-line leading-relaxed theme-text-muted">
+              {profile.bio}
+            </p>
           ) : (
-            <User className="h-16 w-16 theme-text-muted" />
+            <p className="italic theme-text-muted">
+              This user hasn&apos;t added a bio yet.
+            </p>
           )}
         </div>
 
-        <h1 className="font-heading text-2xl font-bold theme-text-primary">
-          {profile.displayName}
-        </h1>
-        <p className="mb-3 font-medium theme-text-muted">@{profile.username}</p>
-
-        {profile.role && profile.role !== "resident" && (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-            {profile.role === "hoa_admin" ? "HOA Admin" : profile.role}
-          </Badge>
-        )}
-      </div>
-
-      <div className="p-8">
-        <h3 className="mb-3 font-heading text-lg font-semibold theme-text-primary">
-          About
-        </h3>
-        {profile.bio ? (
-          <p className="whitespace-pre-line leading-relaxed theme-text-muted">
-            {profile.bio}
-          </p>
-        ) : (
-          <p className="italic theme-text-muted">
-            This user hasn&apos;t added a bio yet.
-          </p>
-        )}
+        <div className="rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <h3 className="mb-3 font-heading text-lg font-semibold theme-text-primary">
+            Profile Details
+          </h3>
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-center gap-2 theme-text-muted">
+              <AtSign className="h-4 w-4" />
+              <span className="truncate">{profile.username}</span>
+            </li>
+            <li className="flex items-center gap-2 theme-text-muted">
+              <Mail className="h-4 w-4" />
+              <span className="truncate">{profile.email}</span>
+            </li>
+            <li className="flex items-center gap-2 theme-text-muted">
+              <ShieldCheck className="h-4 w-4" />
+              <span>{roleLabel}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {isOwner && (
-        <div className="flex items-center justify-between border-t theme-border-surface theme-bg-surface-muted p-6 text-sm">
-          <span className="theme-text-muted">
-            This is how your profile appears to the community.
-          </span>
-          <Button
-            variant="ghost"
-            className="theme-text-muted theme-hover-text-primary"
-            disabled
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Account Settings
-          </Button>
+        <div className="border-t theme-border-surface theme-bg-surface-muted p-6 text-sm theme-text-muted">
+          This is how your profile appears to the community.
         </div>
       )}
     </div>

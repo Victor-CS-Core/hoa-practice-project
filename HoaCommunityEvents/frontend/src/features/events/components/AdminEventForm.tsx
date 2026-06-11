@@ -1,7 +1,8 @@
 import { AlertCircle } from "lucide-react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
+import { Uploads } from "../../../app/api/agent";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { getFieldError, type ApiErrorEnvelope } from "../../auth/authApiError";
@@ -15,6 +16,9 @@ interface AdminEventFormProps {
   onCancel: () => void;
   onSubmit: (values: CreateEventFormValues) => void;
 }
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function toLocalDateInput(value?: string | null) {
   if (!value) return "";
@@ -46,14 +50,88 @@ export function AdminEventForm({
     Boolean(initialValues?.imageUrl),
   );
   const [imageSource, setImageSource] = useState<"url" | "upload">("url");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset } = useForm<CreateEventFormValues>({
-    defaultValues: buildDefaults(initialValues),
-  });
+  const { register, handleSubmit, reset, setValue, control } =
+    useForm<CreateEventFormValues>({
+      defaultValues: buildDefaults(initialValues),
+    });
+
+  const imageUrlValue = useWatch({ control, name: "imageUrl" })?.trim() ?? "";
+  const canShowPreview =
+    bannerEnabled &&
+    imageUrlValue.length > 0 &&
+    failedPreviewUrl !== imageUrlValue;
 
   useEffect(() => {
     reset(buildDefaults(initialValues));
   }, [initialValues, reset]);
+
+  const handleCloudinaryUpload = async () => {
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    if (!uploadFile) {
+      setUploadError("Select an image file first.");
+      return;
+    }
+
+    if (!ACCEPTED_IMAGE_MIME_TYPES.includes(uploadFile.type)) {
+      setUploadError("Only JPG, PNG, and WebP images are supported.");
+      return;
+    }
+
+    if (uploadFile.size > MAX_IMAGE_SIZE_BYTES) {
+      setUploadError("Image must be 5MB or smaller.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const signed = await Uploads.getCloudinarySignature();
+
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("api_key", signed.apiKey);
+      formData.append("timestamp", String(signed.timestamp));
+      formData.append("signature", signed.signature);
+      formData.append("folder", signed.folder);
+      formData.append("public_id", signed.publicId);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const payload = (await response.json()) as {
+        secure_url?: string;
+        error?: { message?: string };
+      };
+
+      if (!response.ok || !payload.secure_url) {
+        throw new Error(payload.error?.message || "Image upload failed.");
+      }
+
+      setValue("imageUrl", payload.secure_url, { shouldDirty: true });
+      setFailedPreviewUrl(null);
+      setImageSource("url");
+      setUploadFile(null);
+      setUploadSuccess("Image uploaded successfully.");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Image upload failed.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
@@ -247,7 +325,19 @@ export function AdminEventForm({
                 type="button"
                 variant={bannerEnabled ? "default" : "outline"}
                 className="min-w-26"
-                onClick={() => setBannerEnabled((prev) => !prev)}
+                onClick={() => {
+                  setBannerEnabled((prev) => {
+                    const next = !prev;
+                    if (!next) {
+                      setValue("imageUrl", "", { shouldDirty: true });
+                      setFailedPreviewUrl(null);
+                      setUploadError(null);
+                      setUploadSuccess(null);
+                      setUploadFile(null);
+                    }
+                    return next;
+                  });
+                }}
               >
                 {bannerEnabled ? "Enabled" : "Disabled"}
               </Button>
@@ -286,7 +376,13 @@ export function AdminEventForm({
                       Image URL
                     </label>
                     <Input
-                      {...register("imageUrl")}
+                      {...register("imageUrl", {
+                        onChange: () => {
+                          setFailedPreviewUrl(null);
+                          setUploadError(null);
+                          setUploadSuccess(null);
+                        },
+                      })}
                       placeholder="https://example.com/banner.jpg"
                       className={
                         getFieldError(apiError?.details, "ImageUrl")
@@ -302,13 +398,104 @@ export function AdminEventForm({
                   </div>
                 ) : (
                   <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-                    Upload mode is scaffolded for Cloudinary integration.
-                    Connect this button to your signed upload flow when ready.
+                    Upload directly to Cloudinary using a signed request.
                     <div className="mt-2">
-                      <Button type="button" variant="outline" disabled>
-                        Upload to Cloudinary (coming soon)
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          if (
+                            file &&
+                            !ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)
+                          ) {
+                            setUploadFile(null);
+                            setUploadError(
+                              "Only JPG, PNG, and WebP images are supported.",
+                            );
+                            setUploadSuccess(null);
+                            return;
+                          }
+
+                          if (file && file.size > MAX_IMAGE_SIZE_BYTES) {
+                            setUploadFile(null);
+                            setUploadError("Image must be 5MB or smaller.");
+                            setUploadSuccess(null);
+                            return;
+                          }
+
+                          setUploadFile(file);
+                          setUploadError(null);
+                          setUploadSuccess(null);
+                        }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-stone-500">
+                      Accepted: JPG, PNG, WebP. Max size: 5MB.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void handleCloudinaryUpload()}
+                        disabled={!uploadFile || isUploading}
+                      >
+                        {isUploading ? "Uploading..." : "Upload to Cloudinary"}
+                      </Button>
+                      {uploadFile && (
+                        <span className="text-xs text-stone-500">
+                          Selected: {uploadFile.name}
+                        </span>
+                      )}
+                    </div>
+                    {uploadSuccess && (
+                      <p className="mt-2 text-xs font-medium text-emerald-700">
+                        {uploadSuccess}
+                      </p>
+                    )}
+                    {uploadError && (
+                      <p className="mt-2 text-xs font-medium text-red-600">
+                        {uploadError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {bannerEnabled && imageUrlValue && (
+                  <div className="rounded-md border border-stone-200 bg-white p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-stone-600">
+                        Banner preview
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-8 px-2 text-xs"
+                        onClick={() => {
+                          setValue("imageUrl", "", { shouldDirty: true });
+                          setFailedPreviewUrl(null);
+                          setUploadError(null);
+                          setUploadSuccess(null);
+                        }}
+                      >
+                        Remove image
                       </Button>
                     </div>
+
+                    {canShowPreview ? (
+                      <img
+                        src={imageUrlValue}
+                        alt="Event banner preview"
+                        className="h-36 w-full rounded-md border border-stone-200 object-cover"
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setFailedPreviewUrl(imageUrlValue)}
+                      />
+                    ) : (
+                      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        Unable to preview this image URL.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

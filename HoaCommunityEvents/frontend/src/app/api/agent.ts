@@ -43,6 +43,15 @@ const requests = {
     getWithParams: <T>(url: string, params: object) => agent.get<T>(url, { params }).then(responseBody),
 };
 
+export type CloudinaryUploadSignature = {
+    cloudName: string;
+    apiKey: string;
+    timestamp: number;
+    folder: string;
+    publicId: string;
+    signature: string;
+};
+
 type ValidationEnvelope = {
     code?: string;
     message?: string;
@@ -94,6 +103,10 @@ export const Attendance = {
 export const Profiles = {
     detail: (username: string) => requests.get<Profile>(`/profiles/${username}`),
     update: (username: string, values: UpdateProfileValues) => requests.put<Profile>(`/profiles/${username}`, values),
+};
+
+export const Uploads = {
+    getCloudinarySignature: () => requests.post<CloudinaryUploadSignature>('/uploads/cloudinary/signature', {}),
 };
 
 export const Diagnostics = {

@@ -62,6 +62,17 @@ export const ProfilePage = observer(function ProfilePage() {
 
   return (
     <section className="space-y-6">
+      <div className="rounded-2xl border theme-border-surface theme-bg-surface p-6 shadow-sm animate-fade-up">
+        <h1 className="font-heading text-3xl font-bold theme-text-primary">
+          {isOwnProfile ? "My Profile" : `${data.displayName}'s Profile`}
+        </h1>
+        <p className="mt-2 text-sm theme-text-muted">
+          {isOwnProfile
+            ? "Manage your public profile details and avatar."
+            : "Community member profile overview."}
+        </p>
+      </div>
+
       {isEditing ? (
         <ProfileEditForm
           key={`${data.username}-${data.displayName}-${data.bio ?? ""}-${data.profileImageUrl ?? ""}`}
