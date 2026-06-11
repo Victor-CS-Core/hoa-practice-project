@@ -507,8 +507,12 @@ export function AdminEventForm({
                           zoom={imageZoom}
                           heightClassName="h-36"
                           onPositionChange={(x, y) => {
-                            setValue("imagePositionX", x, { shouldDirty: true });
-                            setValue("imagePositionY", y, { shouldDirty: true });
+                            setValue("imagePositionX", x, {
+                              shouldDirty: true,
+                            });
+                            setValue("imagePositionY", y, {
+                              shouldDirty: true,
+                            });
                           }}
                           onZoomChange={(nextZoom) => {
                             setValue("imageZoom", clampZoom(nextZoom), {

@@ -327,7 +327,9 @@ export function ProfileEditForm({
           <div className="mx-auto flex w-full flex-col items-center gap-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
             <div className="flex h-34 w-34 items-center justify-center overflow-hidden rounded-full border-4 border-white/70 bg-white/90 shadow-md">
               {canShowPreview ? (
-                <div className={`h-full w-full ${previewPulse ? "animate-zoom-in" : ""}`}>
+                <div
+                  className={`h-full w-full ${previewPulse ? "animate-zoom-in" : ""}`}
+                >
                   <ImageCropEditor
                     imageUrl={imageUrl}
                     aspect={1}
@@ -805,10 +807,10 @@ export function ProfileEditForm({
                 ? (formValues.profileImageUrl?.trim() ?? "") || undefined
                 : undefined,
               profileImagePositionX: avatarEnabled
-                ? formValues.profileImagePositionX ?? 50
+                ? (formValues.profileImagePositionX ?? 50)
                 : undefined,
               profileImagePositionY: avatarEnabled
-                ? formValues.profileImagePositionY ?? 50
+                ? (formValues.profileImagePositionY ?? 50)
                 : undefined,
               profileImageZoom: avatarEnabled
                 ? clampZoom(formValues.profileImageZoom ?? 1)
