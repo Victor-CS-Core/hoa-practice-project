@@ -415,27 +415,29 @@ export function AdminDashboardPage() {
           expandedEditEventId={editingEvent?.id ?? null}
           expandedAttendeesEventId={selectedAttendeesEventId}
           renderExpandedEdit={(event) => (
-            <AdminEventForm
-              key={`edit-${event.id}`}
-              mode="edit"
-              initialValues={{
-                title: event.title,
-                description: event.description,
-                category: event.category,
-                locationWithinCommunity: event.locationWithinCommunity,
-                startDate: event.startDate,
-                endDate: event.endDate,
-                maxAttendees: event.maxAttendees ?? undefined,
-                imageUrl: event.imageUrl ?? undefined,
-              }}
-              isSubmitting={isEditingForm}
-              apiError={formError}
-              onCancel={() => {
-                setFormError(null);
-                setFormState(null);
-              }}
-              onSubmit={handleEdit}
-            />
+            <div className="animate-fade-up animate-delay-100">
+              <AdminEventForm
+                key={`edit-${event.id}`}
+                mode="edit"
+                initialValues={{
+                  title: event.title,
+                  description: event.description,
+                  category: event.category,
+                  locationWithinCommunity: event.locationWithinCommunity,
+                  startDate: event.startDate,
+                  endDate: event.endDate,
+                  maxAttendees: event.maxAttendees ?? undefined,
+                  imageUrl: event.imageUrl ?? undefined,
+                }}
+                isSubmitting={isEditingForm}
+                apiError={formError}
+                onCancel={() => {
+                  setFormError(null);
+                  setFormState(null);
+                }}
+                onSubmit={handleEdit}
+              />
+            </div>
           )}
           renderExpandedAttendees={(event) => (
             <div className="rounded-xl border border-stone-200 bg-white p-4">

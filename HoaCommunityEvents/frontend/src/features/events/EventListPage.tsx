@@ -133,16 +133,18 @@ export function EventListPage() {
           )}
 
           {createOpen && (
-            <AdminEventForm
-              mode="create"
-              isSubmitting={createMutation.isPending}
-              apiError={createError}
-              onCancel={() => {
-                setCreateOpen(false);
-                setCreateError(null);
-              }}
-              onSubmit={handleCreateSubmit}
-            />
+            <div className="animate-fade-up animate-delay-100">
+              <AdminEventForm
+                mode="create"
+                isSubmitting={createMutation.isPending}
+                apiError={createError}
+                onCancel={() => {
+                  setCreateOpen(false);
+                  setCreateError(null);
+                }}
+                onSubmit={handleCreateSubmit}
+              />
+            </div>
           )}
         </div>
       )}

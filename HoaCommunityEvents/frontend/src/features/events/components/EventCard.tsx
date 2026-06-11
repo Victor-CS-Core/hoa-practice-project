@@ -1,4 +1,5 @@
 import { Calendar, CheckCircle2, MapPin, User, Users } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import {
@@ -25,6 +26,7 @@ export function EventCard({
   onJoinLeave,
   onViewDetails,
 }: EventCardProps) {
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const isCancelled = event.status === "Cancelled";
@@ -74,8 +76,20 @@ export function EventCard({
 
   return (
     <Card
-      className={`flex h-full flex-col overflow-hidden shadow-sm transition-all duration-200 hover:shadow-md ${cardTone}`}
+      className={`animate-zoom-in flex h-full flex-col overflow-hidden shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${cardTone}`}
     >
+      {event.imageUrl && failedImageUrl !== event.imageUrl && (
+        <div className="h-40 w-full overflow-hidden border-b border-stone-200">
+          <img
+            src={event.imageUrl}
+            alt={`${event.title} banner`}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+            onError={() => setFailedImageUrl(event.imageUrl ?? null)}
+          />
+        </div>
+      )}
       <CardHeader className="border-b border-stone-100 pb-3">
         <div className="mb-2 flex items-start justify-between gap-4">
           <Badge

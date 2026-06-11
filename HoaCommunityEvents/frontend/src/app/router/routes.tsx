@@ -38,11 +38,6 @@ const eventDetailsPageRoute = lazy(() =>
     default: module.EventDetailsPage,
   })),
 );
-const eventFormPageRoute = lazy(() =>
-  import("../../features/events/EventFormPage").then((module) => ({
-    default: module.EventFormPage,
-  })),
-);
 const adminAttendeesPageRoute = lazy(() =>
   import("../../features/events/AdminAttendeesPage").then((module) => ({
     default: module.AdminAttendeesPage,
@@ -126,7 +121,7 @@ export const appRoutes: RouteObject[] = [
         path: "events/:id/edit",
         element: withPageLoader(
           <ProtectedRoute requireAdmin>
-            {createElement(eventFormPageRoute)}
+            <Navigate to="../" relative="path" replace />
           </ProtectedRoute>,
         ),
       },

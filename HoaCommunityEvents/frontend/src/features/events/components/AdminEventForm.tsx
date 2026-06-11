@@ -1,4 +1,6 @@
 import { AlertCircle } from "lucide-react";
+import { useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -14,6 +16,24 @@ interface AdminEventFormProps {
   onSubmit: (values: CreateEventFormValues) => void;
 }
 
+function toLocalDateInput(value?: string | null) {
+  if (!value) return "";
+  return value.slice(0, 16);
+}
+
+function buildDefaults(values?: CreateEventFormValues): CreateEventFormValues {
+  return {
+    title: values?.title ?? "",
+    description: values?.description ?? "",
+    category: values?.category ?? "",
+    locationWithinCommunity: values?.locationWithinCommunity ?? "",
+    startDate: toLocalDateInput(values?.startDate),
+    endDate: toLocalDateInput(values?.endDate),
+    maxAttendees: values?.maxAttendees ?? undefined,
+    imageUrl: values?.imageUrl ?? "",
+  };
+}
+
 export function AdminEventForm({
   mode,
   initialValues,
@@ -22,23 +42,18 @@ export function AdminEventForm({
   onCancel,
   onSubmit,
 }: AdminEventFormProps) {
-  const { register, handleSubmit } = useForm<CreateEventFormValues>({
-    defaultValues: initialValues ?? {
-      title: "",
-      description: "",
-      category: "",
-      locationWithinCommunity: "",
-      startDate: "",
-      endDate: "",
-      maxAttendees: undefined,
-      imageUrl: "",
-    },
+  const [bannerEnabled, setBannerEnabled] = useState(
+    Boolean(initialValues?.imageUrl),
+  );
+  const [imageSource, setImageSource] = useState<"url" | "upload">("url");
+
+  const { register, handleSubmit, reset } = useForm<CreateEventFormValues>({
+    defaultValues: buildDefaults(initialValues),
   });
 
-  const toLocalDateInput = (value?: string | null) => {
-    if (!value) return "";
-    return value.slice(0, 16);
-  };
+  useEffect(() => {
+    reset(buildDefaults(initialValues));
+  }, [initialValues, reset]);
 
   return (
     <div className="w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
@@ -52,6 +67,9 @@ export function AdminEventForm({
         onSubmit={handleSubmit((values) => {
           const next: CreateEventFormValues = {
             ...values,
+            imageUrl: bannerEnabled
+              ? (values.imageUrl?.trim() ?? "") || undefined
+              : undefined,
             maxAttendees:
               typeof values.maxAttendees === "number" &&
               Number.isFinite(values.maxAttendees)
@@ -119,7 +137,6 @@ export function AdminEventForm({
               </label>
               <Input
                 type="datetime-local"
-                defaultValue={toLocalDateInput(initialValues?.startDate)}
                 {...register("startDate")}
                 className={
                   getFieldError(apiError?.details, "StartDate")
@@ -140,7 +157,6 @@ export function AdminEventForm({
               </label>
               <Input
                 type="datetime-local"
-                defaultValue={toLocalDateInput(initialValues?.endDate)}
                 {...register("endDate")}
                 className={
                   getFieldError(apiError?.details, "EndDate")
@@ -201,7 +217,6 @@ export function AdminEventForm({
               </label>
               <Input
                 type="number"
-                defaultValue={initialValues?.maxAttendees ?? undefined}
                 {...register("maxAttendees", { valueAsNumber: true })}
                 placeholder="e.g., 50"
                 className={
@@ -216,21 +231,88 @@ export function AdminEventForm({
                 </p>
               )}
             </div>
+          </div>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
-                Image URL (Optional)
-              </label>
-              <Input
-                {...register("imageUrl")}
-                placeholder="https://example.com/banner.jpg"
-                className={
-                  getFieldError(apiError?.details, "ImageUrl")
-                    ? "border-red-300 focus-visible:ring-red-500"
-                    : ""
-                }
-              />
+          <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-stone-800">
+                  Banner image
+                </p>
+                <p className="text-xs text-stone-500">
+                  Add a hero image for event cards and details.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant={bannerEnabled ? "default" : "outline"}
+                className="min-w-26"
+                onClick={() => setBannerEnabled((prev) => !prev)}
+              >
+                {bannerEnabled ? "Enabled" : "Disabled"}
+              </Button>
             </div>
+
+            {bannerEnabled && (
+              <div className="space-y-3">
+                <div className="inline-flex rounded-md border border-stone-300 bg-white p-1">
+                  <button
+                    type="button"
+                    onClick={() => setImageSource("url")}
+                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                      imageSource === "url"
+                        ? "bg-emerald-600 text-white"
+                        : "text-stone-600 hover:bg-stone-100"
+                    }`}
+                  >
+                    URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageSource("upload")}
+                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                      imageSource === "upload"
+                        ? "bg-emerald-600 text-white"
+                        : "text-stone-600 hover:bg-stone-100"
+                    }`}
+                  >
+                    Upload
+                  </button>
+                </div>
+
+                {imageSource === "url" ? (
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-stone-700">
+                      Image URL
+                    </label>
+                    <Input
+                      {...register("imageUrl")}
+                      placeholder="https://example.com/banner.jpg"
+                      className={
+                        getFieldError(apiError?.details, "ImageUrl")
+                          ? "border-red-300 focus-visible:ring-red-500"
+                          : ""
+                      }
+                    />
+                    {getFieldError(apiError?.details, "ImageUrl") && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {getFieldError(apiError?.details, "ImageUrl")}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
+                    Upload mode is scaffolded for Cloudinary integration.
+                    Connect this button to your signed upload flow when ready.
+                    <div className="mt-2">
+                      <Button type="button" variant="outline" disabled>
+                        Upload to Cloudinary (coming soon)
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -297,7 +297,9 @@ export function AdminEventList({
                   </tr>
 
                   {showExpandedPanel && (
-                    <tr className="bg-stone-50/70">
+                    <tr
+                      className={isDark ? "bg-stone-900/45" : "bg-stone-50/70"}
+                    >
                       <td colSpan={4} className="px-4 py-4 sm:px-6">
                         {isEditExpanded
                           ? renderExpandedEdit(event)

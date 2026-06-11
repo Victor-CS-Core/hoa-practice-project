@@ -17,7 +17,7 @@ export function AdminAttendeeList({
         <h3 className="font-heading text-lg font-semibold text-amber-900">
           Admin: Attendee Roster
         </h3>
-        <span className="rounded-full bg-amber-200 px-2.5 py-1 text-xs font-bold text-amber-800">
+        <span className="rounded-full border border-amber-300 bg-amber-300 px-2.5 py-1 text-xs font-bold text-amber-950">
           {totalCount} Total
         </span>
       </CardHeader>
