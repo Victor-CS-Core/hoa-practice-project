@@ -1,4 +1,5 @@
 import { AtSign, Edit3, Mail, ShieldCheck, User } from "lucide-react";
+import { FramedImage } from "../../../components/media/FramedImage";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import type { Profile } from "../../../types/profile";
@@ -27,16 +28,15 @@ export function ProfileOverview({
         }}
       >
         {profile.bannerImageUrl && (
-          <img
-            src={profile.bannerImageUrl}
-            alt={`${profile.displayName} banner`}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{
-              objectPosition: `${profile.bannerImagePositionX}% ${profile.bannerImagePositionY}%`,
-              transform: `scale(${profile.bannerImageZoom})`,
-              transformOrigin: "center",
-            }}
-          />
+          <div className="absolute inset-0">
+            <FramedImage
+              src={profile.bannerImageUrl}
+              alt={`${profile.displayName} banner`}
+              positionX={profile.bannerImagePositionX}
+              positionY={profile.bannerImagePositionY}
+              zoom={profile.bannerImageZoom}
+            />
+          </div>
         )}
         <div className="pointer-events-none absolute inset-0 bg-black/25" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_55%)]" />
@@ -57,15 +57,12 @@ export function ProfileOverview({
         <div className="relative z-10 mt-8 flex flex-col items-center text-center sm:items-start sm:text-left">
           <div className="mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/60 bg-white/90 shadow-lg">
             {profile.profileImageUrl ? (
-              <img
+              <FramedImage
                 src={profile.profileImageUrl}
                 alt={profile.displayName}
-                className="h-full w-full object-cover"
-                style={{
-                  objectPosition: `${profile.profileImagePositionX}% ${profile.profileImagePositionY}%`,
-                  transform: `scale(${profile.profileImageZoom})`,
-                  transformOrigin: "center",
-                }}
+                positionX={profile.profileImagePositionX}
+                positionY={profile.profileImagePositionY}
+                zoom={profile.profileImageZoom}
               />
             ) : (
               <User className="h-14 w-14 text-emerald-700" />

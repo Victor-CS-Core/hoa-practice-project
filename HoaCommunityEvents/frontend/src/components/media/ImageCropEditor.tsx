@@ -51,7 +51,10 @@ export function ImageCropEditor({
       return null;
     }
 
-    const cropWidth = Math.min(100, (cropSize.width / (mediaSize.width * zoom)) * 100);
+    const cropWidth = Math.min(
+      100,
+      (cropSize.width / (mediaSize.width * zoom)) * 100,
+    );
     const cropHeight = Math.min(
       100,
       (cropSize.height / (mediaSize.height * zoom)) * 100,
