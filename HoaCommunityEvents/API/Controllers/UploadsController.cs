@@ -5,6 +5,7 @@ using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace HoaCommunityEvents.API.Controllers;
@@ -13,6 +14,7 @@ namespace HoaCommunityEvents.API.Controllers;
 public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) : BaseApiController
 {
     [HttpPost("cloudinary/signature")]
+    [EnableRateLimiting("upload-signature")]
     public ActionResult<CloudinarySignatureResponse> CreateCloudinarySignature([FromBody] CreateCloudinarySignatureRequest? request)
     {
         var settings = cloudinaryOptions.Value;

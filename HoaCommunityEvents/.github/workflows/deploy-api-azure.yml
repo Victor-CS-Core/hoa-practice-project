@@ -2,20 +2,15 @@ name: Deploy API to Azure App Service
 
 "on":
   workflow_dispatch:
-    inputs:
-      target:
-        description: Deployment target
-        required: true
-        type: choice
-        options:
-          - demo
-          - production
 
 jobs:
   deploy:
     name: Deploy API
     runs-on: ubuntu-latest
-    environment: ${{ inputs.target }}
+    env:
+      APP_NAME: ${{ secrets['AZURE_WEBAPP_NAME_PRODUCTION'] }}
+      PUBLISH_PROFILE: ${{ secrets['AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION'] }}
+      SQL_CONNECTION: ${{ secrets['AZURE_SQL_CONNECTION_STRING_PRODUCTION'] }}
 
     steps:
       - name: Checkout
@@ -29,28 +24,21 @@ jobs:
       - name: Publish API
         run: dotnet publish API/HoaCommunityEvents.API.csproj -c Release -o ${{ github.workspace }}/api-publish
 
-      - name: Resolve deployment target
-        id: target
+      - name: Optionally apply database migrations
         shell: bash
         run: |
-          if [ "${{ inputs.target }}" = "production" ]; then
-            echo "app_name=${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}" >> "$GITHUB_OUTPUT"
-            echo "slot_name=production" >> "$GITHUB_OUTPUT"
-            echo "publish_profile<<EOF" >> "$GITHUB_OUTPUT"
-            echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-          else
-            echo "app_name=${{ secrets.AZURE_WEBAPP_NAME_DEMO }}" >> "$GITHUB_OUTPUT"
-            echo "slot_name=${{ secrets.AZURE_WEBAPP_SLOT_DEMO }}" >> "$GITHUB_OUTPUT"
-            echo "publish_profile<<EOF" >> "$GITHUB_OUTPUT"
-            echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_DEMO }}" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
+          if [ -z "$SQL_CONNECTION" ]; then
+            echo "No SQL connection secret configured. Skipping migrations."
+            exit 0
           fi
+
+          dotnet tool install --global dotnet-ef --version 10.0.8
+          export PATH="$PATH:/home/runner/.dotnet/tools"
+          dotnet ef database update -p Persistence -s API --connection "$SQL_CONNECTION"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ steps.target.outputs.app_name }}
-          slot-name: ${{ steps.target.outputs.slot_name }}
-          publish-profile: ${{ steps.target.outputs.publish_profile }}
+          app-name: ${{ env.APP_NAME }}
+          publish-profile: ${{ env.PUBLISH_PROFILE }}
           package: ${{ github.workspace }}/api-publish

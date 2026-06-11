@@ -10,6 +10,7 @@ using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
+using System.Threading.RateLimiting;
 
 namespace HoaCommunityEvents.API.Extensions;
 
@@ -17,6 +18,14 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        var configuredCorsOrigins = configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray() ?? [];
+
         services.AddControllers();
         services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
         services.AddFluentValidationAutoValidation();
@@ -79,10 +88,55 @@ public static class ApplicationServiceExtensions
             });
         });
         services.AddSignalR();
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+            });
+
+            options.AddPolicy("upload-signature", context =>
+            {
+                var partitionKey = context.User.Identity?.Name
+                    ?? context.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+            });
+        });
+
         services.AddCors(options =>
         {
             options.AddPolicy("Frontend", policy =>
             {
+                if (configuredCorsOrigins.Length > 0)
+                {
+                    policy
+                        .WithOrigins(configuredCorsOrigins)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                    return;
+                }
+
                 policy
                     .SetIsOriginAllowed(origin =>
                     {

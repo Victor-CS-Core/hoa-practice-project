@@ -129,6 +129,7 @@ Set these required settings in Azure for the API app:
 - `Cloudinary__ApiKey=<value>`
 - `Cloudinary__ApiSecret=<value>`
 - `Cloudinary__UploadFolder=hoa-events`
+- `Cors__AllowedOrigins__0=<your-frontend-origin>`
 - `Seed__EnableBootstrap=false`
 - `Seed__EnableDemoData=false`
 
@@ -140,14 +141,8 @@ Optional one-time production bootstrap (if you need to create first admin/roles)
 2. Restart app and confirm admin exists.
 3. Immediately set `Seed__EnableBootstrap=false` and remove `AdminSeed__*` settings.
 
-For demo/staging slots:
-
-- Use a separate Azure SQL database from production.
-- Keep `Seed__EnableDemoData=true` only in those non-production slots.
-
 ## Production Readiness Checklist
 
-- Production has a dedicated database (no shared DB with demo/staging).
 - `ASPNETCORE_ENVIRONMENT` is `Production`.
 - Seed toggles in production are both `false`.
 - Secrets are managed through Azure App Service settings or Key Vault references.
@@ -169,20 +164,17 @@ This validation runs before middleware pipeline execution.
 Workflows added:
 
 - `.github/workflows/ci.yml`: backend build + frontend lint/build on push/PR.
-- `.github/workflows/deploy-api-azure.yml`: manual deploy to `demo` or `production` target.
+- `.github/workflows/deploy-api-azure.yml`: manual production deploy.
 
 Create GitHub Environments:
 
-- `demo`
 - `production`
 
 Set environment secrets:
 
 - `AZURE_WEBAPP_NAME_PRODUCTION`
 - `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION`
-- `AZURE_WEBAPP_NAME_DEMO`
-- `AZURE_WEBAPP_SLOT_DEMO`
-- `AZURE_WEBAPP_PUBLISH_PROFILE_DEMO`
+- `AZURE_SQL_CONNECTION_STRING_PRODUCTION` (optional, enables migration step)
 
 App settings for each Azure target should still be managed directly in App Service configuration (or Key Vault references), including:
 
@@ -190,5 +182,11 @@ App settings for each Azure target should still be managed directly in App Servi
 - `ConnectionStrings__DefaultConnection`
 - `TokenKey`
 - `Cloudinary__*`
+- `Cors__AllowedOrigins__*`
 - `Seed__EnableBootstrap`
 - `Seed__EnableDemoData`
+
+Migration behavior in deploy workflow:
+
+- If `AZURE_SQL_CONNECTION_STRING_PRODUCTION` is set, workflow runs `dotnet ef database update` before deploy.
+- If it is omitted, deploy still runs and migration step is skipped.
