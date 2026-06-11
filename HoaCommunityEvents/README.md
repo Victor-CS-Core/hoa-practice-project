@@ -98,3 +98,97 @@ HoaCommunityEvents/
    npm run build
    npm run lint
    ```
+
+## Environment Strategy (Demo vs Production)
+
+The API now uses explicit seed toggles so demo data cannot accidentally appear in production.
+
+- `Seed:EnableBootstrap`: creates required roles and seeded admin account.
+- `Seed:EnableDemoData`: inserts sample events for demo/testing.
+
+Recommended values by environment:
+
+- Development: `EnableBootstrap=true`, `EnableDemoData=true`
+- Demo/Staging: `EnableBootstrap=true`, `EnableDemoData=true`
+- Production: `EnableBootstrap=false`, `EnableDemoData=false`
+
+Safety rule:
+
+- If `Seed:EnableDemoData=true` in Production, the API will fail at startup.
+
+## Azure Deployment Baseline (App Service)
+
+Use Azure App Service with environment variables in Application Settings (never commit secrets).
+
+Set these required settings in Azure for the API app:
+
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ConnectionStrings__DefaultConnection=<azure-sql-connection-string>`
+- `TokenKey=<long-random-key-64+chars>`
+- `Cloudinary__CloudName=<value>`
+- `Cloudinary__ApiKey=<value>`
+- `Cloudinary__ApiSecret=<value>`
+- `Cloudinary__UploadFolder=hoa-events`
+- `Seed__EnableBootstrap=false`
+- `Seed__EnableDemoData=false`
+
+Optional one-time production bootstrap (if you need to create first admin/roles):
+
+1. Temporarily set:
+   - `Seed__EnableBootstrap=true`
+   - `AdminSeed__Email`, `AdminSeed__Username`, `AdminSeed__Password`, `AdminSeed__DisplayName`
+2. Restart app and confirm admin exists.
+3. Immediately set `Seed__EnableBootstrap=false` and remove `AdminSeed__*` settings.
+
+For demo/staging slots:
+
+- Use a separate Azure SQL database from production.
+- Keep `Seed__EnableDemoData=true` only in those non-production slots.
+
+## Production Readiness Checklist
+
+- Production has a dedicated database (no shared DB with demo/staging).
+- `ASPNETCORE_ENVIRONMENT` is `Production`.
+- Seed toggles in production are both `false`.
+- Secrets are managed through Azure App Service settings or Key Vault references.
+- Swagger/OpenAPI is only enabled in Development (already enforced).
+
+## Startup Safety Validation
+
+At startup, the API validates deployment safety settings and fails fast on unsafe production config.
+
+- `Seed:EnableBootstrap` cannot be `true` in Production.
+- `Seed:EnableDemoData` cannot be `true` in Production.
+- `AdminSeed:*` values cannot be present in Production.
+- If `Seed:EnableBootstrap=true`, `AdminSeed:*` values are required.
+
+This validation runs before middleware pipeline execution.
+
+## GitHub Actions (Azure)
+
+Workflows added:
+
+- `.github/workflows/ci.yml`: backend build + frontend lint/build on push/PR.
+- `.github/workflows/deploy-api-azure.yml`: manual deploy to `demo` or `production` target.
+
+Create GitHub Environments:
+
+- `demo`
+- `production`
+
+Set environment secrets:
+
+- `AZURE_WEBAPP_NAME_PRODUCTION`
+- `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION`
+- `AZURE_WEBAPP_NAME_DEMO`
+- `AZURE_WEBAPP_SLOT_DEMO`
+- `AZURE_WEBAPP_PUBLISH_PROFILE_DEMO`
+
+App settings for each Azure target should still be managed directly in App Service configuration (or Key Vault references), including:
+
+- `ASPNETCORE_ENVIRONMENT`
+- `ConnectionStrings__DefaultConnection`
+- `TokenKey`
+- `Cloudinary__*`
+- `Seed__EnableBootstrap`
+- `Seed__EnableDemoData`

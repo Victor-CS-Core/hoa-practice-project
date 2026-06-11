@@ -1,0 +1,56 @@
+name: Deploy API to Azure App Service
+
+"on":
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target
+        required: true
+        type: choice
+        options:
+          - demo
+          - production
+
+jobs:
+  deploy:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish API
+        run: dotnet publish API/HoaCommunityEvents.API.csproj -c Release -o ${{ github.workspace }}/api-publish
+
+      - name: Resolve deployment target
+        id: target
+        shell: bash
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            echo "app_name=${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}" >> "$GITHUB_OUTPUT"
+            echo "slot_name=production" >> "$GITHUB_OUTPUT"
+            echo "publish_profile<<EOF" >> "$GITHUB_OUTPUT"
+            echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_name=${{ secrets.AZURE_WEBAPP_NAME_DEMO }}" >> "$GITHUB_OUTPUT"
+            echo "slot_name=${{ secrets.AZURE_WEBAPP_SLOT_DEMO }}" >> "$GITHUB_OUTPUT"
+            echo "publish_profile<<EOF" >> "$GITHUB_OUTPUT"
+            echo "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_DEMO }}" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ steps.target.outputs.app_name }}
+          slot-name: ${{ steps.target.outputs.slot_name }}
+          publish-profile: ${{ steps.target.outputs.publish_profile }}
+          package: ${{ github.workspace }}/api-publish

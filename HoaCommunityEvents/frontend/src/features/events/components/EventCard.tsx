@@ -1,5 +1,6 @@
 import { Calendar, CheckCircle2, MapPin, User, Users } from "lucide-react";
 import { useState } from "react";
+import { FramedImage } from "../../../components/media/FramedImage";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import {
@@ -80,19 +81,15 @@ export function EventCard({
     >
       {event.imageUrl && failedImageUrl !== event.imageUrl && (
         <div className="h-40 w-full overflow-hidden border-b border-stone-200">
-          <img
+          <FramedImage
             src={event.imageUrl}
             alt={`${event.title} banner`}
-            loading="lazy"
-            decoding="async"
-            className={`h-full w-full object-cover ${
+            positionX={event.imagePositionX}
+            positionY={event.imagePositionY}
+            zoom={event.imageZoom}
+            imageClassName={
               isCancelled || isEnded ? "grayscale-82 brightness-70" : ""
-            }`}
-            style={{
-              objectPosition: `${event.imagePositionX}% ${event.imagePositionY}%`,
-              transform: `scale(${event.imageZoom})`,
-              transformOrigin: "center",
-            }}
+            }
             onError={() => setFailedImageUrl(event.imageUrl ?? null)}
           />
         </div>

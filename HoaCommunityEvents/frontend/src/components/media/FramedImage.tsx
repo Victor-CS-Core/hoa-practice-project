@@ -8,6 +8,7 @@ interface FramedImageProps {
   zoom: number;
   containerClassName?: string;
   imageClassName?: string;
+  onError?: () => void;
 }
 
 interface Size {
@@ -26,6 +27,7 @@ export function FramedImage({
   zoom,
   containerClassName,
   imageClassName,
+  onError,
 }: FramedImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<Size | null>(null);
@@ -85,6 +87,7 @@ export function FramedImage({
         alt={alt}
         loading="lazy"
         decoding="async"
+        onError={() => onError?.()}
         onLoad={(event) => {
           const target = event.currentTarget;
           setMediaSize({

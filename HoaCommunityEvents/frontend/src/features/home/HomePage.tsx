@@ -104,15 +104,6 @@ export const HomePage = observer(function HomePage() {
         </div>
       )}
 
-      {/* Upcoming Events Preview */}
-      <UpcomingEventsPreview
-        events={upcomingEvents}
-        isLoading={upcomingPreviewQuery.isLoading}
-        isError={upcomingPreviewQuery.isError}
-        role={role}
-        onJoinLeave={authStore.isLoggedIn ? handleJoinLeave : undefined}
-      />
-
       {/* Conditional role sections rendered side by side on wider screens */}
       {authStore.isLoggedIn && (
         <div
@@ -132,6 +123,15 @@ export const HomePage = observer(function HomePage() {
           {showAdminSection && <AdminQuickActions events={allEvents} />}
         </div>
       )}
+
+      {/* Upcoming Events Preview */}
+      <UpcomingEventsPreview
+        events={upcomingEvents}
+        isLoading={upcomingPreviewQuery.isLoading}
+        isError={upcomingPreviewQuery.isError}
+        role={role}
+        onJoinLeave={authStore.isLoggedIn ? handleJoinLeave : undefined}
+      />
 
       {/* Community Info Footer */}
       <CommunityInfo />

@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
+import { LoadingState } from "../../components/ui/loading-state";
 import { useStore } from "../stores/store";
 
 type Props = {
@@ -14,7 +15,7 @@ export const ProtectedRoute = observer(function ProtectedRoute({
   const { authStore } = useStore();
 
   if (authStore.loadingUser) {
-    return <p>Checking session...</p>;
+    return <LoadingState label="Checking session..." compact />;
   }
 
   if (!authStore.isLoggedIn) {

@@ -21,6 +21,7 @@ import { AdminAttendeeList } from "./components/AdminAttendeeList";
 import { AdminConfirmModal } from "./components/AdminConfirmModal";
 import { AdminEventForm } from "./components/AdminEventForm";
 import { AdminEventList } from "./components/AdminEventList";
+import { LoadingState } from "../../components/ui/loading-state";
 
 type FormState = { mode: "create" } | { mode: "edit"; event: HoaEvent } | null;
 
@@ -361,11 +362,7 @@ export function AdminDashboardPage() {
         </div>
       )}
 
-      {eventsQuery.isLoading && (
-        <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
-          Loading events...
-        </div>
-      )}
+      {eventsQuery.isLoading && <LoadingState label="Loading events..." />}
 
       {eventsQuery.isError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
@@ -461,7 +458,7 @@ export function AdminDashboardPage() {
               </p>
 
               {attendeesQuery.isLoading && (
-                <p className="text-stone-500">Loading attendees...</p>
+                <LoadingState label="Loading attendees..." compact />
               )}
               {attendeesQuery.isError && (
                 <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">

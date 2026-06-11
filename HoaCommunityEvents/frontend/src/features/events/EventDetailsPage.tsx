@@ -2,9 +2,11 @@ import { ArrowLeft, Calendar, Clock3, MapPin, User, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { FramedImage } from "../../components/media/FramedImage";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader } from "../../components/ui/card";
+import { LoadingState } from "../../components/ui/loading-state";
 import {
   useCancelEvent,
   useDeleteEvent,
@@ -45,11 +47,7 @@ export function EventDetailsPage() {
   useSignalR(id);
 
   if (isLoading) {
-    return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center text-stone-600">
-        Loading event...
-      </div>
-    );
+    return <LoadingState label="Loading event..." />;
   }
 
   if (isError || !data) {
@@ -199,17 +197,12 @@ export function EventDetailsPage() {
           {data.imageUrl && failedImageUrl !== data.imageUrl && (
             <div className="-mx-6 -mt-6 md:-mx-8 md:-mt-8">
               <div className="h-52 w-full overflow-hidden border-b border-stone-200 md:h-64">
-                <img
+                <FramedImage
                   src={data.imageUrl}
                   alt={`${data.title} banner`}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                  style={{
-                    objectPosition: `${data.imagePositionX}% ${data.imagePositionY}%`,
-                    transform: `scale(${data.imageZoom})`,
-                    transformOrigin: "center",
-                  }}
+                  positionX={data.imagePositionX}
+                  positionY={data.imagePositionY}
+                  zoom={data.imageZoom}
                   onError={() => setFailedImageUrl(data.imageUrl ?? null)}
                 />
               </div>

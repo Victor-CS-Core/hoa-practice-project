@@ -5,8 +5,10 @@ import {
   type RouteObject,
 } from "react-router-dom";
 import { AppLayout } from "../layout/AppLayout";
+import { LoadingState } from "../../components/ui/loading-state";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { ErrorPage } from "../../features/errors/ErrorPage";
+import { RouteTransition } from "./RouteTransition";
 
 const homePageRoute = lazy(() =>
   import("../../features/home/HomePage").then((module) => ({
@@ -60,7 +62,11 @@ const notFoundPageRoute = lazy(() =>
 );
 
 function withPageLoader(element: ReactNode) {
-  return <Suspense fallback={<p>Loading page...</p>}>{element}</Suspense>;
+  return (
+    <Suspense fallback={<LoadingState label="Loading page..." compact />}>
+      <RouteTransition>{element}</RouteTransition>
+    </Suspense>
+  );
 }
 
 export const appRoutes: RouteObject[] = [

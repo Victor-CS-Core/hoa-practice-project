@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useStore } from "../../app/stores/store";
+import { LoadingState } from "../../components/ui/loading-state";
 import { useProfile, useUpdateProfile } from "../../hooks/useProfile";
 import type { UpdateProfileValues } from "../../types/profile";
 import { ProfileEditForm } from "./components/ProfileEditForm";
@@ -25,11 +26,7 @@ export const ProfilePage = observer(function ProfilePage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
-        Loading profile...
-      </div>
-    );
+    return <LoadingState label="Loading profile..." />;
   }
 
   if (isError || !data) {

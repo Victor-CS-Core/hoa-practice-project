@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Shield, UserCheck, UserX } from "lucide-react";
 import { useStore } from "../../app/stores/store";
 import { useTheme } from "../../app/theme/theme-context";
+import { LoadingState } from "../../components/ui/loading-state";
 import {
   useAdminUsers,
   useDeleteUser,
@@ -234,9 +235,7 @@ export function AdminUserManagementPage() {
           )}
 
           {usersQuery.isLoading && (
-            <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-500">
-              Loading users...
-            </p>
+            <LoadingState label="Loading users..." compact />
           )}
 
           {usersQuery.isError && (

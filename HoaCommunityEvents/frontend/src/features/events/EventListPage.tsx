@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useCreateEvent, useEvents } from "../../hooks/useEvents";
 import { useStore } from "../../app/stores/store";
 import { EventCard } from "./components/EventCard";
+import { LoadingState } from "../../components/ui/loading-state";
 import { EventsFilterBar } from "./components/EventsFilterBar";
 import { EventsPagination } from "./components/EventsPagination";
 import { AdminEventForm } from "./components/AdminEventForm";
@@ -151,11 +152,7 @@ export function EventListPage() {
 
       <EventsFilterBar filter={filter} onFilterChange={updateFilter} />
 
-      {isLoading && (
-        <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
-          Loading events...
-        </div>
-      )}
+      {isLoading && <LoadingState label="Loading events..." />}
 
       {isError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
