@@ -68,18 +68,19 @@ export const ProfilePage = observer(function ProfilePage() {
         </h1>
         <p className="mt-2 text-sm theme-text-muted">
           {isOwnProfile
-            ? "Manage your public profile details and avatar."
+            ? "Manage your public profile details, avatar, and banner image."
             : "Community member profile overview."}
         </p>
       </div>
 
       {isEditing ? (
         <ProfileEditForm
-          key={`${data.username}-${data.displayName}-${data.bio ?? ""}-${data.profileImageUrl ?? ""}`}
+          key={`${data.username}-${data.displayName}-${data.bio ?? ""}-${data.profileImageUrl ?? ""}-${data.bannerImageUrl ?? ""}`}
           initialValues={{
             displayName: data.displayName,
             bio: data.bio ?? "",
             profileImageUrl: data.profileImageUrl ?? "",
+            bannerImageUrl: data.bannerImageUrl ?? "",
           }}
           isSubmitting={updateMutation.isPending}
           apiError={apiError}

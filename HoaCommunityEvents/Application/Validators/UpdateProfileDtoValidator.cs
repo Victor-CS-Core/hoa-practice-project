@@ -19,6 +19,11 @@ public class UpdateProfileDtoValidator : AbstractValidator<UpdateProfileDto>
             .Must(BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.ProfileImageUrl))
             .WithMessage("ProfileImageUrl must be a valid absolute URL.");
+
+        RuleFor(x => x.BannerImageUrl)
+            .Must(BeValidUrl)
+            .When(x => !string.IsNullOrWhiteSpace(x.BannerImageUrl))
+            .WithMessage("BannerImageUrl must be a valid absolute URL.");
     }
 
     private static bool BeValidUrl(string? value)

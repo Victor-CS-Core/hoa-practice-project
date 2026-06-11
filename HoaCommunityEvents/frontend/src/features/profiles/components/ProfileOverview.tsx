@@ -17,14 +17,23 @@ export function ProfileOverview({
   const roleLabel = profile.role === "hoa_admin" ? "HOA Admin" : "Resident";
 
   return (
-    <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
+    <div className="w-full overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
       <div
         className="relative overflow-hidden border-b theme-border-surface px-6 pb-8 pt-6 sm:px-8"
         style={{
-          background:
-            "linear-gradient(135deg, rgba(6,95,70,0.9) 0%, rgba(4,120,87,0.85) 45%, rgba(20,184,166,0.75) 100%)",
+          background: profile.bannerImageUrl
+            ? "linear-gradient(135deg, rgba(6,95,70,0.6) 0%, rgba(4,120,87,0.55) 45%, rgba(20,184,166,0.45) 100%)"
+            : "linear-gradient(135deg, rgba(6,95,70,0.9) 0%, rgba(4,120,87,0.85) 45%, rgba(20,184,166,0.75) 100%)",
         }}
       >
+        {profile.bannerImageUrl && (
+          <img
+            src={profile.bannerImageUrl}
+            alt={`${profile.displayName} banner`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-black/25" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_55%)]" />
 
         {isOwner && (

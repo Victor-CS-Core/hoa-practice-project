@@ -4,6 +4,7 @@ export type Profile = {
   email: string;
   bio?: string | null;
   profileImageUrl?: string | null;
+  bannerImageUrl?: string | null;
   role: string;
 };
 
@@ -11,4 +12,5 @@ export type UpdateProfileValues = {
   displayName: string;
   bio?: string | null;
   profileImageUrl?: string | null;
+  bannerImageUrl?: string | null;
 };

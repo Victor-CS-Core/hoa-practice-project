@@ -45,13 +45,22 @@ public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) :
                 "Upload scope must be either 'event' or 'profile'.");
         }
 
+            var normalizedProfileAssetType = (request?.ProfileAssetType ?? "avatar").Trim().ToLowerInvariant();
+            if (normalizedScope == "profile" && normalizedProfileAssetType is not ("avatar" or "banner"))
+            {
+                return ApiError(
+                StatusCodes.Status400BadRequest,
+                "invalid_profile_asset_type",
+                "Profile asset type must be either 'avatar' or 'banner'.");
+            }
+
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var baseFolder = string.IsNullOrWhiteSpace(settings.UploadFolder)
             ? "hoa-events"
             : settings.UploadFolder.Trim().Trim('/');
         var userSegment = SanitizeFolderSegment(userId);
         var folder = normalizedScope == "profile"
-            ? $"{baseFolder}/profiles/{userSegment}"
+            ? $"{baseFolder}/profiles/{userSegment}/{normalizedProfileAssetType}s"
             : $"{baseFolder}/events/{userSegment}";
         var publicId = Guid.NewGuid().ToString("N");
 
@@ -89,6 +98,7 @@ public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) :
     public class CreateCloudinarySignatureRequest
     {
         public string Scope { get; init; } = "event";
+        public string ProfileAssetType { get; init; } = "avatar";
     }
 
     public class CloudinarySignatureResponse

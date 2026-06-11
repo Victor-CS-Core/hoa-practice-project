@@ -85,7 +85,9 @@ export function EventCard({
             alt={`${event.title} banner`}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover"
+            className={`h-full w-full object-cover ${
+              isCancelled || isEnded ? "grayscale-82 brightness-70" : ""
+            }`}
             onError={() => setFailedImageUrl(event.imageUrl ?? null)}
           />
         </div>

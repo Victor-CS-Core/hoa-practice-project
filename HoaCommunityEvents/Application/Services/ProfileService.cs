@@ -40,6 +40,7 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
         currentUser.DisplayName = dto.DisplayName;
         currentUser.Bio = dto.Bio;
         currentUser.ProfileImageUrl = dto.ProfileImageUrl;
+        currentUser.BannerImageUrl = dto.BannerImageUrl;
 
         var updateResult = await userManager.UpdateAsync(currentUser);
         if (!updateResult.Succeeded)
@@ -61,6 +62,7 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
             Email = user.Email ?? string.Empty,
             Bio = user.Bio,
             ProfileImageUrl = user.ProfileImageUrl,
+            BannerImageUrl = user.BannerImageUrl,
             Role = roles.FirstOrDefault() ?? AppRoles.Resident
         };
     }

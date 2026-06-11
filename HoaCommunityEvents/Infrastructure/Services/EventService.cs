@@ -222,9 +222,12 @@ public class EventService(AppDbContext dbContext) : IEventService
             return (false, 409, "Event is already published.", null);
         }
 
-        if (!evt.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+        var isPending = evt.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase);
+        var isCancelled = evt.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
+
+        if (!isPending && !isCancelled)
         {
-            return (false, 409, "Only pending events can be published.", null);
+            return (false, 409, "Only pending or cancelled events can be published.", null);
         }
 
         evt.Status = "Published";

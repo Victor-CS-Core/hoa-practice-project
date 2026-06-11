@@ -10,6 +10,7 @@ import {
   useDeleteEvent,
   useEditEvent,
   useEvent,
+  usePublishEvent,
 } from "../../hooks/useEvents";
 import {
   useAttendees,
@@ -30,6 +31,7 @@ export function EventDetailsPage() {
   const { authStore } = useStore();
   const { data, isLoading, isError } = useEvent(id);
   const cancelMutation = useCancelEvent();
+  const publishMutation = usePublishEvent();
   const deleteMutation = useDeleteEvent();
   const editMutation = useEditEvent();
   const joinMutation = useJoinEvent();
@@ -88,6 +90,15 @@ export function EventDetailsPage() {
       navigate("/events");
     } catch (error) {
       setActionError(getApiErrorMessage(error, "Failed to delete event."));
+    }
+  };
+
+  const handlePublish = async () => {
+    setActionError(null);
+    try {
+      await publishMutation.mutateAsync(data.id);
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, "Failed to publish event."));
     }
   };
 
@@ -369,11 +380,25 @@ export function EventDetailsPage() {
                   {editOpen ? "Close editor" : "Edit event"}
                 </Button>
                 <Button
-                  className="w-full justify-start bg-amber-600 text-white hover:bg-amber-700"
-                  onClick={handleCancel}
-                  disabled={cancelMutation.isPending}
+                  className={`w-full justify-start text-white ${
+                    isCancelled
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                  onClick={isCancelled ? handlePublish : handleCancel}
+                  disabled={
+                    isCancelled
+                      ? publishMutation.isPending
+                      : cancelMutation.isPending
+                  }
                 >
-                  {cancelMutation.isPending ? "Cancelling..." : "Cancel event"}
+                  {isCancelled
+                    ? publishMutation.isPending
+                      ? "Publishing..."
+                      : "Publish event"
+                    : cancelMutation.isPending
+                      ? "Cancelling..."
+                      : "Cancel event"}
                 </Button>
                 <Button
                   className="w-full justify-start bg-red-600 text-white hover:bg-red-700"
