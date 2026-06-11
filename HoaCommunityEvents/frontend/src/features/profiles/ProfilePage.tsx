@@ -75,12 +75,18 @@ export const ProfilePage = observer(function ProfilePage() {
 
       {isEditing ? (
         <ProfileEditForm
-          key={`${data.username}-${data.displayName}-${data.bio ?? ""}-${data.profileImageUrl ?? ""}-${data.bannerImageUrl ?? ""}`}
+          key={`${data.username}-${data.displayName}-${data.bio ?? ""}-${data.profileImageUrl ?? ""}-${data.profileImagePositionX}-${data.profileImagePositionY}-${data.profileImageZoom}-${data.bannerImageUrl ?? ""}-${data.bannerImagePositionX}-${data.bannerImagePositionY}-${data.bannerImageZoom}`}
           initialValues={{
             displayName: data.displayName,
             bio: data.bio ?? "",
             profileImageUrl: data.profileImageUrl ?? "",
+            profileImagePositionX: data.profileImagePositionX,
+            profileImagePositionY: data.profileImagePositionY,
+            profileImageZoom: data.profileImageZoom,
             bannerImageUrl: data.bannerImageUrl ?? "",
+            bannerImagePositionX: data.bannerImagePositionX,
+            bannerImagePositionY: data.bannerImagePositionY,
+            bannerImageZoom: data.bannerImageZoom,
           }}
           isSubmitting={updateMutation.isPending}
           apiError={apiError}

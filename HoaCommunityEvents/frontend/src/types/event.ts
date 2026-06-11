@@ -8,6 +8,9 @@ export type HoaEvent = {
   endDate: string;
   maxAttendees?: number | null;
   imageUrl?: string | null;
+  imagePositionX: number;
+  imagePositionY: number;
+  imageZoom: number;
   hostUserId: string;
   hostDisplayName: string;
   status: string;
@@ -41,6 +44,9 @@ export type CreateEventFormValues = {
   endDate: string;
   maxAttendees?: number | null;
   imageUrl?: string | null;
+  imagePositionX?: number | null;
+  imagePositionY?: number | null;
+  imageZoom?: number | null;
 };
 
 export type EditEventFormValues = CreateEventFormValues;

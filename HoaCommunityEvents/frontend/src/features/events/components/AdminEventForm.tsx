@@ -1,8 +1,8 @@
 import { AlertCircle } from "lucide-react";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Uploads } from "../../../app/api/agent";
+import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { getFieldError, type ApiErrorEnvelope } from "../../auth/authApiError";
@@ -20,6 +20,8 @@ interface AdminEventFormProps {
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const clampZoom = (value: number) => Math.max(1, Math.min(3, value));
+
 function toLocalDateInput(value?: string | null) {
   if (!value) return "";
   return value.slice(0, 16);
@@ -35,6 +37,9 @@ function buildDefaults(values?: CreateEventFormValues): CreateEventFormValues {
     endDate: toLocalDateInput(values?.endDate),
     maxAttendees: values?.maxAttendees ?? undefined,
     imageUrl: values?.imageUrl ?? "",
+    imagePositionX: values?.imagePositionX ?? 50,
+    imagePositionY: values?.imagePositionY ?? 50,
+    imageZoom: values?.imageZoom ?? 1,
   };
 }
 
@@ -54,7 +59,6 @@ export function AdminEventForm({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
-  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, setValue, control } =
     useForm<CreateEventFormValues>({
@@ -62,10 +66,10 @@ export function AdminEventForm({
     });
 
   const imageUrlValue = useWatch({ control, name: "imageUrl" })?.trim() ?? "";
-  const canShowPreview =
-    bannerEnabled &&
-    imageUrlValue.length > 0 &&
-    failedPreviewUrl !== imageUrlValue;
+  const imagePositionX = useWatch({ control, name: "imagePositionX" }) ?? 50;
+  const imagePositionY = useWatch({ control, name: "imagePositionY" }) ?? 50;
+  const imageZoom = useWatch({ control, name: "imageZoom" }) ?? 1;
+  const canShowPreview = bannerEnabled && imageUrlValue.length > 0;
 
   useEffect(() => {
     reset(buildDefaults(initialValues));
@@ -120,7 +124,6 @@ export function AdminEventForm({
       }
 
       setValue("imageUrl", payload.secure_url, { shouldDirty: true });
-      setFailedPreviewUrl(null);
       setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Image uploaded successfully.");
@@ -147,6 +150,15 @@ export function AdminEventForm({
             ...values,
             imageUrl: bannerEnabled
               ? (values.imageUrl?.trim() ?? "") || undefined
+              : undefined,
+            imagePositionX: bannerEnabled
+              ? (values.imagePositionX ?? 50)
+              : undefined,
+            imagePositionY: bannerEnabled
+              ? (values.imagePositionY ?? 50)
+              : undefined,
+            imageZoom: bannerEnabled
+              ? clampZoom(values.imageZoom ?? 1)
               : undefined,
             maxAttendees:
               typeof values.maxAttendees === "number" &&
@@ -330,7 +342,9 @@ export function AdminEventForm({
                     const next = !prev;
                     if (!next) {
                       setValue("imageUrl", "", { shouldDirty: true });
-                      setFailedPreviewUrl(null);
+                      setValue("imagePositionX", 50, { shouldDirty: true });
+                      setValue("imagePositionY", 50, { shouldDirty: true });
+                      setValue("imageZoom", 1, { shouldDirty: true });
                       setUploadError(null);
                       setUploadSuccess(null);
                       setUploadFile(null);
@@ -378,7 +392,6 @@ export function AdminEventForm({
                     <Input
                       {...register("imageUrl", {
                         onChange: () => {
-                          setFailedPreviewUrl(null);
                           setUploadError(null);
                           setUploadSuccess(null);
                         },
@@ -473,7 +486,9 @@ export function AdminEventForm({
                         className="h-8 px-2 text-xs"
                         onClick={() => {
                           setValue("imageUrl", "", { shouldDirty: true });
-                          setFailedPreviewUrl(null);
+                          setValue("imagePositionX", 50, { shouldDirty: true });
+                          setValue("imagePositionY", 50, { shouldDirty: true });
+                          setValue("imageZoom", 1, { shouldDirty: true });
                           setUploadError(null);
                           setUploadSuccess(null);
                         }}
@@ -483,14 +498,40 @@ export function AdminEventForm({
                     </div>
 
                     {canShowPreview ? (
-                      <img
-                        src={imageUrlValue}
-                        alt="Event banner preview"
-                        className="h-36 w-full rounded-md border border-stone-200 object-cover"
-                        loading="lazy"
-                        decoding="async"
-                        onError={() => setFailedPreviewUrl(imageUrlValue)}
-                      />
+                      <>
+                        <ImageCropEditor
+                          imageUrl={imageUrlValue}
+                          aspect={16 / 9}
+                          positionX={imagePositionX}
+                          positionY={imagePositionY}
+                          zoom={imageZoom}
+                          heightClassName="h-36"
+                          onPositionChange={(x, y) => {
+                            setValue("imagePositionX", x, { shouldDirty: true });
+                            setValue("imagePositionY", y, { shouldDirty: true });
+                          }}
+                          onZoomChange={(nextZoom) => {
+                            setValue("imageZoom", clampZoom(nextZoom), {
+                              shouldDirty: true,
+                            });
+                          }}
+                        />
+                        <div className="mt-3">
+                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                            Zoom ({imageZoom.toFixed(2)}x)
+                          </label>
+                          <input
+                            type="range"
+                            min={1}
+                            max={3}
+                            step={0.05}
+                            {...register("imageZoom", {
+                              valueAsNumber: true,
+                            })}
+                            className="w-full accent-emerald-600"
+                          />
+                        </div>
+                      </>
                     ) : (
                       <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                         Unable to preview this image URL.

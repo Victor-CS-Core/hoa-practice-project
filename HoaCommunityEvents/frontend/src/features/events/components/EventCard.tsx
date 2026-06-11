@@ -88,6 +88,11 @@ export function EventCard({
             className={`h-full w-full object-cover ${
               isCancelled || isEnded ? "grayscale-82 brightness-70" : ""
             }`}
+            style={{
+              objectPosition: `${event.imagePositionX}% ${event.imagePositionY}%`,
+              transform: `scale(${event.imageZoom})`,
+              transformOrigin: "center",
+            }}
             onError={() => setFailedImageUrl(event.imageUrl ?? null)}
           />
         </div>

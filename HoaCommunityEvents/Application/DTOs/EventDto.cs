@@ -11,6 +11,9 @@ public class EventDto
     public DateTime EndDate { get; set; }
     public int? MaxAttendees { get; set; }
     public string? ImageUrl { get; set; }
+    public double ImagePositionX { get; set; } = 50;
+    public double ImagePositionY { get; set; } = 50;
+    public double ImageZoom { get; set; } = 1;
     public string HostUserId { get; set; } = string.Empty;
     public string HostDisplayName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;

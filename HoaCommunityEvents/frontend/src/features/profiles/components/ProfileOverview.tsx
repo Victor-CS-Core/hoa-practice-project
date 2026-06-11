@@ -31,6 +31,11 @@ export function ProfileOverview({
             src={profile.bannerImageUrl}
             alt={`${profile.displayName} banner`}
             className="absolute inset-0 h-full w-full object-cover"
+            style={{
+              objectPosition: `${profile.bannerImagePositionX}% ${profile.bannerImagePositionY}%`,
+              transform: `scale(${profile.bannerImageZoom})`,
+              transformOrigin: "center",
+            }}
           />
         )}
         <div className="pointer-events-none absolute inset-0 bg-black/25" />
@@ -56,6 +61,11 @@ export function ProfileOverview({
                 src={profile.profileImageUrl}
                 alt={profile.displayName}
                 className="h-full w-full object-cover"
+                style={{
+                  objectPosition: `${profile.profileImagePositionX}% ${profile.profileImagePositionY}%`,
+                  transform: `scale(${profile.profileImageZoom})`,
+                  transformOrigin: "center",
+                }}
               />
             ) : (
               <User className="h-14 w-14 text-emerald-700" />

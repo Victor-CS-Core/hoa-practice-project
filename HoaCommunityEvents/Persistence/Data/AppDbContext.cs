@@ -19,10 +19,40 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 .HasMaxLength(30)
                 .HasDefaultValue("Pending");
 
+            entity.Property(e => e.ImagePositionX)
+                .HasDefaultValue(50d);
+
+            entity.Property(e => e.ImagePositionY)
+                .HasDefaultValue(50d);
+
+            entity.Property(e => e.ImageZoom)
+                .HasDefaultValue(1d);
+
             entity.HasOne(e => e.Host)
                 .WithMany()
                 .HasForeignKey(e => e.HostUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AppUser>(entity =>
+        {
+            entity.Property(u => u.ProfileImagePositionX)
+                .HasDefaultValue(50d);
+
+            entity.Property(u => u.ProfileImagePositionY)
+                .HasDefaultValue(50d);
+
+            entity.Property(u => u.ProfileImageZoom)
+                .HasDefaultValue(1d);
+
+            entity.Property(u => u.BannerImagePositionX)
+                .HasDefaultValue(50d);
+
+            entity.Property(u => u.BannerImagePositionY)
+                .HasDefaultValue(50d);
+
+            entity.Property(u => u.BannerImageZoom)
+                .HasDefaultValue(1d);
         });
 
         builder.Entity<EventAttendance>(entity =>

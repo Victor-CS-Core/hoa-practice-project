@@ -40,7 +40,13 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
         currentUser.DisplayName = dto.DisplayName;
         currentUser.Bio = dto.Bio;
         currentUser.ProfileImageUrl = dto.ProfileImageUrl;
+        currentUser.ProfileImagePositionX = dto.ProfileImagePositionX ?? 50;
+        currentUser.ProfileImagePositionY = dto.ProfileImagePositionY ?? 50;
+        currentUser.ProfileImageZoom = dto.ProfileImageZoom ?? 1;
         currentUser.BannerImageUrl = dto.BannerImageUrl;
+        currentUser.BannerImagePositionX = dto.BannerImagePositionX ?? 50;
+        currentUser.BannerImagePositionY = dto.BannerImagePositionY ?? 50;
+        currentUser.BannerImageZoom = dto.BannerImageZoom ?? 1;
 
         var updateResult = await userManager.UpdateAsync(currentUser);
         if (!updateResult.Succeeded)
@@ -62,7 +68,13 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
             Email = user.Email ?? string.Empty,
             Bio = user.Bio,
             ProfileImageUrl = user.ProfileImageUrl,
+            ProfileImagePositionX = user.ProfileImagePositionX,
+            ProfileImagePositionY = user.ProfileImagePositionY,
+            ProfileImageZoom = user.ProfileImageZoom,
             BannerImageUrl = user.BannerImageUrl,
+            BannerImagePositionX = user.BannerImagePositionX,
+            BannerImagePositionY = user.BannerImagePositionY,
+            BannerImageZoom = user.BannerImageZoom,
             Role = roles.FirstOrDefault() ?? AppRoles.Resident
         };
     }

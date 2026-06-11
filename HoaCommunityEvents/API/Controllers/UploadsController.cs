@@ -45,14 +45,14 @@ public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) :
                 "Upload scope must be either 'event' or 'profile'.");
         }
 
-            var normalizedProfileAssetType = (request?.ProfileAssetType ?? "avatar").Trim().ToLowerInvariant();
-            if (normalizedScope == "profile" && normalizedProfileAssetType is not ("avatar" or "banner"))
-            {
-                return ApiError(
-                StatusCodes.Status400BadRequest,
-                "invalid_profile_asset_type",
-                "Profile asset type must be either 'avatar' or 'banner'.");
-            }
+        var normalizedProfileAssetType = (request?.ProfileAssetType ?? "avatar").Trim().ToLowerInvariant();
+        if (normalizedScope == "profile" && normalizedProfileAssetType is not ("avatar" or "banner"))
+        {
+            return ApiError(
+            StatusCodes.Status400BadRequest,
+            "invalid_profile_asset_type",
+            "Profile asset type must be either 'avatar' or 'banner'.");
+        }
 
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var baseFolder = string.IsNullOrWhiteSpace(settings.UploadFolder)

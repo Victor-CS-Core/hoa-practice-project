@@ -71,6 +71,9 @@ public class EventService(AppDbContext dbContext) : IEventService
                 EndDate = e.EndDate,
                 MaxAttendees = e.MaxAttendees,
                 ImageUrl = e.ImageUrl,
+                ImagePositionX = e.ImagePositionX,
+                ImagePositionY = e.ImagePositionY,
+                ImageZoom = e.ImageZoom,
                 HostUserId = e.HostUserId,
                 HostDisplayName = e.Host != null ? e.Host.DisplayName : string.Empty,
                 Status = e.Status == "Published" && e.EndDate <= now
@@ -110,6 +113,9 @@ public class EventService(AppDbContext dbContext) : IEventService
                 EndDate = e.EndDate,
                 MaxAttendees = e.MaxAttendees,
                 ImageUrl = e.ImageUrl,
+                ImagePositionX = e.ImagePositionX,
+                ImagePositionY = e.ImagePositionY,
+                ImageZoom = e.ImageZoom,
                 HostUserId = e.HostUserId,
                 HostDisplayName = e.Host != null ? e.Host.DisplayName : string.Empty,
                 Status = e.Status == "Published" && e.EndDate <= now
@@ -150,6 +156,9 @@ public class EventService(AppDbContext dbContext) : IEventService
             EndDate = dto.EndDate,
             MaxAttendees = dto.MaxAttendees,
             ImageUrl = dto.ImageUrl,
+            ImagePositionX = dto.ImagePositionX ?? 50,
+            ImagePositionY = dto.ImagePositionY ?? 50,
+            ImageZoom = dto.ImageZoom ?? 1,
             HostUserId = hostUserId,
             Status = "Pending"
         };
@@ -177,6 +186,9 @@ public class EventService(AppDbContext dbContext) : IEventService
         evt.EndDate = dto.EndDate;
         evt.MaxAttendees = dto.MaxAttendees;
         evt.ImageUrl = dto.ImageUrl;
+        evt.ImagePositionX = dto.ImagePositionX ?? 50;
+        evt.ImagePositionY = dto.ImagePositionY ?? 50;
+        evt.ImageZoom = dto.ImageZoom ?? 1;
         evt.UpdatedAt = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync();

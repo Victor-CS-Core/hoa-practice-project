@@ -4,6 +4,7 @@ using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HoaCommunityEvents.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611165130_AddImageRecenterFocus")]
+    partial class AddImageRecenterFocus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,22 +34,15 @@ namespace HoaCommunityEvents.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<double>("BannerImagePositionX")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(50.0);
 
                     b.Property<double>("BannerImagePositionY")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(50.0);
 
                     b.Property<string>("BannerImageUrl")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("BannerImageZoom")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(1.0);
 
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(max)");
@@ -92,23 +88,8 @@ namespace HoaCommunityEvents.Persistence.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<double>("ProfileImagePositionX")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(50.0);
-
-                    b.Property<double>("ProfileImagePositionY")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(50.0);
-
                     b.Property<string>("ProfileImageUrl")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("ProfileImageZoom")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(1.0);
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -158,22 +139,15 @@ namespace HoaCommunityEvents.Persistence.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<double>("ImagePositionX")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(50.0);
 
                     b.Property<double>("ImagePositionY")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("float")
                         .HasDefaultValue(50.0);
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("ImageZoom")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(1.0);
 
                     b.Property<string>("LocationWithinCommunity")
                         .IsRequired()

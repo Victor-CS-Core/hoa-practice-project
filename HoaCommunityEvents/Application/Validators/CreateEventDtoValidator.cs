@@ -38,6 +38,21 @@ public class CreateEventDtoValidator : AbstractValidator<CreateEventDto>
             .Must(BeValidUrl)
             .When(x => !string.IsNullOrWhiteSpace(x.ImageUrl))
             .WithMessage("ImageUrl must be a valid absolute URL.");
+
+        RuleFor(x => x.ImagePositionX)
+            .InclusiveBetween(0, 100)
+            .When(x => x.ImagePositionX.HasValue)
+            .WithMessage("ImagePositionX must be between 0 and 100.");
+
+        RuleFor(x => x.ImagePositionY)
+            .InclusiveBetween(0, 100)
+            .When(x => x.ImagePositionY.HasValue)
+            .WithMessage("ImagePositionY must be between 0 and 100.");
+
+        RuleFor(x => x.ImageZoom)
+            .InclusiveBetween(1, 3)
+            .When(x => x.ImageZoom.HasValue)
+            .WithMessage("ImageZoom must be between 1 and 3.");
     }
 
     private static bool BeValidUrl(string? value)

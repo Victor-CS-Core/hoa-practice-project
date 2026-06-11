@@ -428,6 +428,9 @@ export function AdminDashboardPage() {
                   endDate: event.endDate,
                   maxAttendees: event.maxAttendees ?? undefined,
                   imageUrl: event.imageUrl ?? undefined,
+                  imagePositionX: event.imagePositionX,
+                  imagePositionY: event.imagePositionY,
+                  imageZoom: event.imageZoom,
                 }}
                 isSubmitting={isEditingForm}
                 apiError={formError}

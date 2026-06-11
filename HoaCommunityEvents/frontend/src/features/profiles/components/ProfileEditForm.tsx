@@ -1,7 +1,7 @@
 import { AlertCircle, Image, User } from "lucide-react";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Uploads } from "../../../app/api/agent";
+import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import type { UpdateProfileValues } from "../../../types/profile";
@@ -19,6 +19,8 @@ interface ProfileEditFormProps {
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const clampZoom = (value: number) => Math.max(1, Math.min(3, value));
+
 export function ProfileEditForm({
   initialValues,
   isSubmitting,
@@ -26,8 +28,15 @@ export function ProfileEditForm({
   onCancel,
   onSubmit,
 }: ProfileEditFormProps) {
-  const [formValues, setFormValues] =
-    useState<UpdateProfileValues>(initialValues);
+  const [formValues, setFormValues] = useState<UpdateProfileValues>({
+    ...initialValues,
+    profileImagePositionX: initialValues.profileImagePositionX ?? 50,
+    profileImagePositionY: initialValues.profileImagePositionY ?? 50,
+    profileImageZoom: initialValues.profileImageZoom ?? 1,
+    bannerImagePositionX: initialValues.bannerImagePositionX ?? 50,
+    bannerImagePositionY: initialValues.bannerImagePositionY ?? 50,
+    bannerImageZoom: initialValues.bannerImageZoom ?? 1,
+  });
   const [avatarEnabled, setAvatarEnabled] = useState(
     Boolean(initialValues.profileImageUrl),
   );
@@ -35,9 +44,9 @@ export function ProfileEditForm({
     Boolean(initialValues.bannerImageUrl),
   );
   const [imageSource, setImageSource] = useState<"url" | "upload">("url");
-  const [bannerImageSource, setBannerImageSource] = useState<
-    "url" | "upload"
-  >("url");
+  const [bannerImageSource, setBannerImageSource] = useState<"url" | "upload">(
+    "url",
+  );
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [bannerUploadFile, setBannerUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -50,10 +59,6 @@ export function ProfileEditForm({
   const [bannerUploadSuccess, setBannerUploadSuccess] = useState<string | null>(
     null,
   );
-  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
-  const [failedBannerPreviewUrl, setFailedBannerPreviewUrl] = useState<
-    string | null
-  >(null);
   const [previewPulse, setPreviewPulse] = useState(false);
 
   const displayNameError = getFieldError(apiError?.details, "DisplayName");
@@ -63,12 +68,8 @@ export function ProfileEditForm({
 
   const imageUrl = formValues.profileImageUrl?.trim() ?? "";
   const bannerImageUrl = formValues.bannerImageUrl?.trim() ?? "";
-  const canShowPreview =
-    avatarEnabled && imageUrl.length > 0 && failedPreviewUrl !== imageUrl;
-  const canShowBannerPreview =
-    bannerEnabled &&
-    bannerImageUrl.length > 0 &&
-    failedBannerPreviewUrl !== bannerImageUrl;
+  const canShowPreview = avatarEnabled && imageUrl.length > 0;
+  const canShowBannerPreview = bannerEnabled && bannerImageUrl.length > 0;
 
   useEffect(() => {
     if (!previewPulse) {
@@ -143,7 +144,6 @@ export function ProfileEditForm({
         ...prev,
         profileImageUrl: secureUrl,
       }));
-      setFailedPreviewUrl(null);
       setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Avatar uploaded successfully.");
@@ -184,7 +184,6 @@ export function ProfileEditForm({
         ...prev,
         bannerImageUrl: secureUrl,
       }));
-      setFailedBannerPreviewUrl(null);
       setBannerImageSource("url");
       setBannerUploadFile(null);
       setBannerUploadSuccess("Banner uploaded successfully.");
@@ -219,9 +218,9 @@ export function ProfileEditForm({
         </div>
       </div>
 
-      <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.45fr_1fr]">
+      <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-2">
         {apiError && apiError.code !== "validation_failed" && (
-          <div className="lg:col-span-2 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 lg:col-span-2">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <p className="font-semibold">
               {apiError.message ?? "Failed to update profile."}
@@ -229,7 +228,7 @@ export function ProfileEditForm({
           </div>
         )}
 
-        <div className="animate-fade-up animate-delay-100 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+        <div className="animate-fade-up animate-delay-100 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5 lg:col-span-2">
           <div>
             <h3 className="font-heading text-lg font-semibold theme-text-primary">
               Account Identity
@@ -286,204 +285,71 @@ export function ProfileEditForm({
               <p className="mt-1 text-xs text-red-500">{bioError}</p>
             )}
           </div>
-
-          <div className="rounded-lg border theme-border-surface theme-bg-surface p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold theme-text-primary">
-                  Profile banner
-                </p>
-                <p className="text-xs theme-text-muted">
-                  Stored in your Cloudinary profile folder under banners.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant={bannerEnabled ? "default" : "outline"}
-                className="min-w-26"
-                onClick={() => {
-                  setBannerEnabled((prev) => {
-                    const next = !prev;
-                    if (!next) {
-                      setFormValues((current) => ({
-                        ...current,
-                        bannerImageUrl: "",
-                      }));
-                      setFailedBannerPreviewUrl(null);
-                      setBannerUploadError(null);
-                      setBannerUploadSuccess(null);
-                      setBannerUploadFile(null);
-                    }
-                    return next;
-                  });
-                }}
-              >
-                {bannerEnabled ? "Enabled" : "Disabled"}
-              </Button>
-            </div>
-
-            {bannerEnabled && (
-              <div className="space-y-3">
-                <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
-                  <button
-                    type="button"
-                    onClick={() => setBannerImageSource("url")}
-                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                      bannerImageSource === "url"
-                        ? "bg-emerald-600 text-white"
-                        : "theme-text-muted theme-hover-bg-surface-muted"
-                    }`}
-                  >
-                    URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBannerImageSource("upload")}
-                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                      bannerImageSource === "upload"
-                        ? "bg-emerald-600 text-white"
-                        : "theme-text-muted theme-hover-bg-surface-muted"
-                    }`}
-                  >
-                    Upload
-                  </button>
-                </div>
-
-                {bannerImageSource === "url" ? (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium theme-text-primary">
-                      Banner Image URL
-                    </label>
-                    <Input
-                      value={formValues.bannerImageUrl ?? ""}
-                      onChange={(event) => {
-                        setFailedBannerPreviewUrl(null);
-                        setBannerUploadError(null);
-                        setBannerUploadSuccess(null);
-                        setFormValues((prev) => ({
-                          ...prev,
-                          bannerImageUrl: event.target.value,
-                        }));
-                      }}
-                      placeholder="https://example.com/profile-banner.jpg"
-                      className={
-                        bannerImageError
-                          ? "border-red-300 focus-visible:ring-red-500"
-                          : ""
-                      }
-                    />
-                    {bannerImageError && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {bannerImageError}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                    Upload banner to Cloudinary using a signed request.
-                    <div className="mt-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null;
-                          if (
-                            file &&
-                            !ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)
-                          ) {
-                            setBannerUploadFile(null);
-                            setBannerUploadError(
-                              "Only JPG, PNG, and WebP images are supported.",
-                            );
-                            setBannerUploadSuccess(null);
-                            return;
-                          }
-
-                          if (file && file.size > MAX_IMAGE_SIZE_BYTES) {
-                            setBannerUploadFile(null);
-                            setBannerUploadError("Image must be 5MB or smaller.");
-                            setBannerUploadSuccess(null);
-                            return;
-                          }
-
-                          setBannerUploadFile(file);
-                          setBannerUploadError(null);
-                          setBannerUploadSuccess(null);
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-xs theme-text-muted">
-                      Accepted: JPG, PNG, WebP. Max size: 5MB.
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => void handleBannerCloudinaryUpload()}
-                        disabled={!bannerUploadFile || isBannerUploading}
-                      >
-                        {isBannerUploading
-                          ? "Uploading..."
-                          : "Upload banner to Cloudinary"}
-                      </Button>
-                      {bannerUploadFile && (
-                        <span className="text-xs theme-text-muted">
-                          Selected: {bannerUploadFile.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {bannerImageUrl && (
-                  <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
-                    <p className="truncate text-xs theme-text-muted">
-                      Current banner URL: {bannerImageUrl}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => {
-                        setFormValues((current) => ({
-                          ...current,
-                          bannerImageUrl: "",
-                        }));
-                        setFailedBannerPreviewUrl(null);
-                        setBannerUploadError(null);
-                        setBannerUploadSuccess(null);
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                )}
-
-                {bannerUploadSuccess && (
-                  <p className="text-xs font-medium text-emerald-700">
-                    {bannerUploadSuccess}
-                  </p>
-                )}
-                {bannerUploadError && (
-                  <p className="text-xs font-medium text-red-600">
-                    {bannerUploadError}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
-        <div className="animate-fade-up animate-delay-200 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
-          <div className="mx-auto flex w-full flex-col items-center gap-3">
+        <div className="animate-fade-up animate-delay-200 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-heading text-lg font-semibold theme-text-primary">
+                Avatar Image
+              </h3>
+              <p className="mt-1 text-xs theme-text-muted">
+                Upload to Cloudinary or use a direct image URL.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant={avatarEnabled ? "default" : "outline"}
+              className="min-w-26"
+              onClick={() => {
+                setAvatarEnabled((prev) => {
+                  const next = !prev;
+                  if (!next) {
+                    setFormValues((current) => ({
+                      ...current,
+                      profileImageUrl: "",
+                      profileImagePositionX: 50,
+                      profileImagePositionY: 50,
+                      profileImageZoom: 1,
+                    }));
+                    setUploadError(null);
+                    setUploadSuccess(null);
+                    setUploadFile(null);
+                  }
+                  return next;
+                });
+              }}
+            >
+              {avatarEnabled ? "Enabled" : "Disabled"}
+            </Button>
+          </div>
+
+          <div className="mx-auto flex w-full flex-col items-center gap-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
             <div className="flex h-34 w-34 items-center justify-center overflow-hidden rounded-full border-4 border-white/70 bg-white/90 shadow-md">
               {canShowPreview ? (
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className={`h-full w-full object-cover ${previewPulse ? "animate-zoom-in" : ""}`}
-                  onError={() => setFailedPreviewUrl(imageUrl)}
-                />
+                <div className={`h-full w-full ${previewPulse ? "animate-zoom-in" : ""}`}>
+                  <ImageCropEditor
+                    imageUrl={imageUrl}
+                    aspect={1}
+                    positionX={formValues.profileImagePositionX ?? 50}
+                    positionY={formValues.profileImagePositionY ?? 50}
+                    zoom={formValues.profileImageZoom ?? 1}
+                    heightClassName="h-full"
+                    onPositionChange={(x, y) => {
+                      setFormValues((prev) => ({
+                        ...prev,
+                        profileImagePositionX: x,
+                        profileImagePositionY: y,
+                      }));
+                    }}
+                    onZoomChange={(nextZoom) => {
+                      setFormValues((prev) => ({
+                        ...prev,
+                        profileImageZoom: clampZoom(nextZoom),
+                      }));
+                    }}
+                  />
+                </div>
               ) : (
                 <User className="h-12 w-12 text-emerald-700" />
               )}
@@ -493,17 +359,246 @@ export function ProfileEditForm({
             </span>
           </div>
 
+          {avatarEnabled && (
+            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
+              <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
+                <button
+                  type="button"
+                  onClick={() => setImageSource("url")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    imageSource === "url"
+                      ? "bg-emerald-600 text-white"
+                      : "theme-text-muted theme-hover-bg-surface-muted"
+                  }`}
+                >
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageSource("upload")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    imageSource === "upload"
+                      ? "bg-emerald-600 text-white"
+                      : "theme-text-muted theme-hover-bg-surface-muted"
+                  }`}
+                >
+                  Upload
+                </button>
+              </div>
+
+              {imageSource === "url" ? (
+                <div>
+                  <label className="mb-1 block text-sm font-medium theme-text-primary">
+                    Avatar Image URL
+                  </label>
+                  <Input
+                    value={formValues.profileImageUrl ?? ""}
+                    onChange={(event) => {
+                      setUploadError(null);
+                      setUploadSuccess(null);
+                      setFormValues((prev) => ({
+                        ...prev,
+                        profileImageUrl: event.target.value,
+                      }));
+                    }}
+                    placeholder="https://example.com/avatar.jpg"
+                    className={
+                      profileImageError
+                        ? "border-red-300 focus-visible:ring-red-500"
+                        : ""
+                    }
+                  />
+                  {profileImageError && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {profileImageError}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
+                  Upload directly to Cloudinary using a signed request.
+                  <div className="mt-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (
+                          file &&
+                          !ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)
+                        ) {
+                          setUploadFile(null);
+                          setUploadError(
+                            "Only JPG, PNG, and WebP images are supported.",
+                          );
+                          setUploadSuccess(null);
+                          return;
+                        }
+
+                        if (file && file.size > MAX_IMAGE_SIZE_BYTES) {
+                          setUploadFile(null);
+                          setUploadError("Image must be 5MB or smaller.");
+                          setUploadSuccess(null);
+                          return;
+                        }
+
+                        setUploadFile(file);
+                        setUploadError(null);
+                        setUploadSuccess(null);
+                      }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs theme-text-muted">
+                    Accepted: JPG, PNG, WebP. Max size: 5MB.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleCloudinaryUpload()}
+                      disabled={!uploadFile || isUploading}
+                    >
+                      {isUploading ? "Uploading..." : "Upload to Cloudinary"}
+                    </Button>
+                    {uploadFile && (
+                      <span className="text-xs theme-text-muted">
+                        Selected: {uploadFile.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {imageUrl && (
+                <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
+                  <p className="truncate text-xs theme-text-muted">
+                    Current avatar URL: {imageUrl}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => {
+                      setFormValues((current) => ({
+                        ...current,
+                        profileImageUrl: "",
+                        profileImagePositionX: 50,
+                        profileImagePositionY: 50,
+                        profileImageZoom: 1,
+                      }));
+                      setUploadError(null);
+                      setUploadSuccess(null);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+
+              {canShowPreview && (
+                <div className="space-y-3 rounded-md border theme-border-surface theme-bg-surface-muted p-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide theme-text-muted">
+                      Zoom ({(formValues.profileImageZoom ?? 1).toFixed(2)}x)
+                    </label>
+                    <input
+                      type="range"
+                      min={1}
+                      max={3}
+                      step={0.05}
+                      value={formValues.profileImageZoom ?? 1}
+                      onChange={(event) => {
+                        const next = Number(event.target.value);
+                        setFormValues((prev) => ({
+                          ...prev,
+                          profileImageZoom: Number.isFinite(next)
+                            ? clampZoom(next)
+                            : 1,
+                        }));
+                      }}
+                      className="w-full accent-emerald-600"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {uploadSuccess && (
+                <p className="text-xs font-medium text-emerald-700">
+                  {uploadSuccess}
+                </p>
+              )}
+              {uploadError && (
+                <p className="text-xs font-medium text-red-600">
+                  {uploadError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="animate-fade-up animate-delay-[240ms] space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-heading text-lg font-semibold theme-text-primary">
+                Profile Banner
+              </h3>
+              <p className="mt-1 text-xs theme-text-muted">
+                Stored in your Cloudinary profile folder under banners.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant={bannerEnabled ? "default" : "outline"}
+              className="min-w-26"
+              onClick={() => {
+                setBannerEnabled((prev) => {
+                  const next = !prev;
+                  if (!next) {
+                    setFormValues((current) => ({
+                      ...current,
+                      bannerImageUrl: "",
+                      bannerImagePositionX: 50,
+                      bannerImagePositionY: 50,
+                      bannerImageZoom: 1,
+                    }));
+                    setBannerUploadError(null);
+                    setBannerUploadSuccess(null);
+                    setBannerUploadFile(null);
+                  }
+                  return next;
+                });
+              }}
+            >
+              {bannerEnabled ? "Enabled" : "Disabled"}
+            </Button>
+          </div>
+
           <div className="space-y-2 rounded-lg border theme-border-surface theme-bg-surface p-3">
             <span className="text-xs font-medium uppercase tracking-wider theme-text-muted">
               Banner Preview
             </span>
-            <div className="flex h-28 w-full items-center justify-center overflow-hidden rounded-md border theme-border-surface theme-bg-surface-muted">
+            <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-md border theme-border-surface theme-bg-surface-muted">
               {canShowBannerPreview ? (
-                <img
-                  src={bannerImageUrl}
-                  alt="Banner preview"
-                  className="h-full w-full object-cover"
-                  onError={() => setFailedBannerPreviewUrl(bannerImageUrl)}
+                <ImageCropEditor
+                  imageUrl={bannerImageUrl}
+                  aspect={16 / 9}
+                  positionX={formValues.bannerImagePositionX ?? 50}
+                  positionY={formValues.bannerImagePositionY ?? 50}
+                  zoom={formValues.bannerImageZoom ?? 1}
+                  heightClassName="h-full"
+                  onPositionChange={(x, y) => {
+                    setFormValues((prev) => ({
+                      ...prev,
+                      bannerImagePositionX: x,
+                      bannerImagePositionY: y,
+                    }));
+                  }}
+                  onZoomChange={(nextZoom) => {
+                    setFormValues((prev) => ({
+                      ...prev,
+                      bannerImageZoom: clampZoom(nextZoom),
+                    }));
+                  }}
                 />
               ) : (
                 <Image className="h-8 w-8 theme-text-muted" />
@@ -511,189 +606,183 @@ export function ProfileEditForm({
             </div>
           </div>
 
-          <div className="rounded-lg border theme-border-surface theme-bg-surface p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          {bannerEnabled && bannerImageUrl && (
+            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-3">
               <div>
-                <p className="text-sm font-semibold theme-text-primary">
-                  Avatar image
-                </p>
-                <p className="text-xs theme-text-muted">
-                  Upload to Cloudinary or use a direct image URL.
-                </p>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide theme-text-muted">
+                  Zoom ({(formValues.bannerImageZoom ?? 1).toFixed(2)}x)
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={formValues.bannerImageZoom ?? 1}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    setFormValues((prev) => ({
+                      ...prev,
+                      bannerImageZoom: Number.isFinite(next)
+                        ? clampZoom(next)
+                        : 1,
+                    }));
+                  }}
+                  className="w-full accent-emerald-600"
+                />
               </div>
-              <Button
-                type="button"
-                variant={avatarEnabled ? "default" : "outline"}
-                className="min-w-26"
-                onClick={() => {
-                  setAvatarEnabled((prev) => {
-                    const next = !prev;
-                    if (!next) {
-                      setFormValues((current) => ({
-                        ...current,
-                        profileImageUrl: "",
-                      }));
-                      setFailedPreviewUrl(null);
-                      setUploadError(null);
-                      setUploadSuccess(null);
-                      setUploadFile(null);
-                    }
-                    return next;
-                  });
-                }}
-              >
-                {avatarEnabled ? "Enabled" : "Disabled"}
-              </Button>
             </div>
+          )}
 
-            {avatarEnabled && (
-              <div className="space-y-3">
-                <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
-                  <button
-                    type="button"
-                    onClick={() => setImageSource("url")}
-                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                      imageSource === "url"
-                        ? "bg-emerald-600 text-white"
-                        : "theme-text-muted theme-hover-bg-surface-muted"
-                    }`}
-                  >
-                    URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageSource("upload")}
-                    className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                      imageSource === "upload"
-                        ? "bg-emerald-600 text-white"
-                        : "theme-text-muted theme-hover-bg-surface-muted"
-                    }`}
-                  >
-                    Upload
-                  </button>
+          {bannerEnabled && (
+            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
+              <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
+                <button
+                  type="button"
+                  onClick={() => setBannerImageSource("url")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    bannerImageSource === "url"
+                      ? "bg-emerald-600 text-white"
+                      : "theme-text-muted theme-hover-bg-surface-muted"
+                  }`}
+                >
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBannerImageSource("upload")}
+                  className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    bannerImageSource === "upload"
+                      ? "bg-emerald-600 text-white"
+                      : "theme-text-muted theme-hover-bg-surface-muted"
+                  }`}
+                >
+                  Upload
+                </button>
+              </div>
+
+              {bannerImageSource === "url" ? (
+                <div>
+                  <label className="mb-1 block text-sm font-medium theme-text-primary">
+                    Banner Image URL
+                  </label>
+                  <Input
+                    value={formValues.bannerImageUrl ?? ""}
+                    onChange={(event) => {
+                      setBannerUploadError(null);
+                      setBannerUploadSuccess(null);
+                      setFormValues((prev) => ({
+                        ...prev,
+                        bannerImageUrl: event.target.value,
+                      }));
+                    }}
+                    placeholder="https://example.com/profile-banner.jpg"
+                    className={
+                      bannerImageError
+                        ? "border-red-300 focus-visible:ring-red-500"
+                        : ""
+                    }
+                  />
+                  {bannerImageError && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {bannerImageError}
+                    </p>
+                  )}
                 </div>
-
-                {imageSource === "url" ? (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium theme-text-primary">
-                      Avatar Image URL
-                    </label>
+              ) : (
+                <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
+                  Upload banner to Cloudinary using a signed request.
+                  <div className="mt-2">
                     <Input
-                      value={formValues.profileImageUrl ?? ""}
+                      type="file"
+                      accept="image/*"
                       onChange={(event) => {
-                        setFailedPreviewUrl(null);
-                        setUploadError(null);
-                        setUploadSuccess(null);
-                        setFormValues((prev) => ({
-                          ...prev,
-                          profileImageUrl: event.target.value,
-                        }));
+                        const file = event.target.files?.[0] ?? null;
+                        if (
+                          file &&
+                          !ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)
+                        ) {
+                          setBannerUploadFile(null);
+                          setBannerUploadError(
+                            "Only JPG, PNG, and WebP images are supported.",
+                          );
+                          setBannerUploadSuccess(null);
+                          return;
+                        }
+
+                        if (file && file.size > MAX_IMAGE_SIZE_BYTES) {
+                          setBannerUploadFile(null);
+                          setBannerUploadError("Image must be 5MB or smaller.");
+                          setBannerUploadSuccess(null);
+                          return;
+                        }
+
+                        setBannerUploadFile(file);
+                        setBannerUploadError(null);
+                        setBannerUploadSuccess(null);
                       }}
-                      placeholder="https://example.com/avatar.jpg"
-                      className={
-                        profileImageError
-                          ? "border-red-300 focus-visible:ring-red-500"
-                          : ""
-                      }
                     />
-                    {profileImageError && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {profileImageError}
-                      </p>
-                    )}
                   </div>
-                ) : (
-                  <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                    Upload directly to Cloudinary using a signed request.
-                    <div className="mt-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null;
-                          if (
-                            file &&
-                            !ACCEPTED_IMAGE_MIME_TYPES.includes(file.type)
-                          ) {
-                            setUploadFile(null);
-                            setUploadError(
-                              "Only JPG, PNG, and WebP images are supported.",
-                            );
-                            setUploadSuccess(null);
-                            return;
-                          }
-
-                          if (file && file.size > MAX_IMAGE_SIZE_BYTES) {
-                            setUploadFile(null);
-                            setUploadError("Image must be 5MB or smaller.");
-                            setUploadSuccess(null);
-                            return;
-                          }
-
-                          setUploadFile(file);
-                          setUploadError(null);
-                          setUploadSuccess(null);
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-xs theme-text-muted">
-                      Accepted: JPG, PNG, WebP. Max size: 5MB.
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => void handleCloudinaryUpload()}
-                        disabled={!uploadFile || isUploading}
-                      >
-                        {isUploading ? "Uploading..." : "Upload to Cloudinary"}
-                      </Button>
-                      {uploadFile && (
-                        <span className="text-xs theme-text-muted">
-                          Selected: {uploadFile.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {imageUrl && (
-                  <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
-                    <p className="truncate text-xs theme-text-muted">
-                      Current avatar URL: {imageUrl}
-                    </p>
+                  <p className="mt-2 text-xs theme-text-muted">
+                    Accepted: JPG, PNG, WebP. Max size: 5MB.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => {
-                        setFormValues((current) => ({
-                          ...current,
-                          profileImageUrl: "",
-                        }));
-                        setFailedPreviewUrl(null);
-                        setUploadError(null);
-                        setUploadSuccess(null);
-                      }}
+                      onClick={() => void handleBannerCloudinaryUpload()}
+                      disabled={!bannerUploadFile || isBannerUploading}
                     >
-                      Remove
+                      {isBannerUploading
+                        ? "Uploading..."
+                        : "Upload banner to Cloudinary"}
                     </Button>
+                    {bannerUploadFile && (
+                      <span className="text-xs theme-text-muted">
+                        Selected: {bannerUploadFile.name}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {uploadSuccess && (
-                  <p className="text-xs font-medium text-emerald-700">
-                    {uploadSuccess}
+              {bannerImageUrl && (
+                <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
+                  <p className="truncate text-xs theme-text-muted">
+                    Current banner URL: {bannerImageUrl}
                   </p>
-                )}
-                {uploadError && (
-                  <p className="text-xs font-medium text-red-600">
-                    {uploadError}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => {
+                      setFormValues((current) => ({
+                        ...current,
+                        bannerImageUrl: "",
+                        bannerImagePositionX: 50,
+                        bannerImagePositionY: 50,
+                        bannerImageZoom: 1,
+                      }));
+                      setBannerUploadError(null);
+                      setBannerUploadSuccess(null);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+
+              {bannerUploadSuccess && (
+                <p className="text-xs font-medium text-emerald-700">
+                  {bannerUploadSuccess}
+                </p>
+              )}
+              {bannerUploadError && (
+                <p className="text-xs font-medium text-red-600">
+                  {bannerUploadError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -715,8 +804,26 @@ export function ProfileEditForm({
               profileImageUrl: avatarEnabled
                 ? (formValues.profileImageUrl?.trim() ?? "") || undefined
                 : undefined,
+              profileImagePositionX: avatarEnabled
+                ? formValues.profileImagePositionX ?? 50
+                : undefined,
+              profileImagePositionY: avatarEnabled
+                ? formValues.profileImagePositionY ?? 50
+                : undefined,
+              profileImageZoom: avatarEnabled
+                ? clampZoom(formValues.profileImageZoom ?? 1)
+                : undefined,
               bannerImageUrl: bannerEnabled
                 ? (formValues.bannerImageUrl?.trim() ?? "") || undefined
+                : undefined,
+              bannerImagePositionX: bannerEnabled
+                ? (formValues.bannerImagePositionX ?? 50)
+                : undefined,
+              bannerImagePositionY: bannerEnabled
+                ? (formValues.bannerImagePositionY ?? 50)
+                : undefined,
+              bannerImageZoom: bannerEnabled
+                ? clampZoom(formValues.bannerImageZoom ?? 1)
                 : undefined,
             })
           }

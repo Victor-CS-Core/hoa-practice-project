@@ -129,6 +129,9 @@ export function EventDetailsPage() {
     endDate: string;
     maxAttendees?: number | null;
     imageUrl?: string | null;
+    imagePositionX?: number | null;
+    imagePositionY?: number | null;
+    imageZoom?: number | null;
   }) => {
     setEditError(null);
     setActionError(null);
@@ -202,6 +205,11 @@ export function EventDetailsPage() {
                   loading="lazy"
                   decoding="async"
                   className="h-full w-full object-cover"
+                  style={{
+                    objectPosition: `${data.imagePositionX}% ${data.imagePositionY}%`,
+                    transform: `scale(${data.imageZoom})`,
+                    transformOrigin: "center",
+                  }}
                   onError={() => setFailedImageUrl(data.imageUrl ?? null)}
                 />
               </div>
@@ -292,6 +300,9 @@ export function EventDetailsPage() {
                   endDate: data.endDate,
                   maxAttendees: data.maxAttendees ?? undefined,
                   imageUrl: data.imageUrl ?? "",
+                  imagePositionX: data.imagePositionX,
+                  imagePositionY: data.imagePositionY,
+                  imageZoom: data.imageZoom,
                 }}
                 isSubmitting={editMutation.isPending}
                 apiError={editError}
