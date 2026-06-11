@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import { AdminEventList } from "./AdminEventList";
 import type { HoaEvent, PagedResult } from "../../../types/event";
 
+vi.mock("../../../app/theme/theme-context", () => ({
+  useTheme: () => ({
+    resolvedTheme: "light",
+  }),
+}));
+
 function makeEvent(overrides: Partial<HoaEvent> = {}): HoaEvent {
   return {
     id: "evt-1",

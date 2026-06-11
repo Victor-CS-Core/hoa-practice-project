@@ -10,6 +10,8 @@ const mockUseEvents = vi.fn();
 const mockUseCreateEvent = vi.fn();
 const mockUseEditEvent = vi.fn();
 const mockUseCancelEvent = vi.fn();
+const mockUsePublishEvent = vi.fn();
+const mockUseUnpublishEvent = vi.fn();
 const mockUseDeleteEvent = vi.fn();
 const mockUseAttendees = vi.fn();
 const mockUseAdminUsers = vi.fn();
@@ -25,6 +27,8 @@ vi.mock("../../hooks/useEvents", () => ({
   useCreateEvent: () => mockUseCreateEvent(),
   useEditEvent: () => mockUseEditEvent(),
   useCancelEvent: () => mockUseCancelEvent(),
+  usePublishEvent: () => mockUsePublishEvent(),
+  useUnpublishEvent: () => mockUseUnpublishEvent(),
   useDeleteEvent: () => mockUseDeleteEvent(),
 }));
 
@@ -37,6 +41,12 @@ vi.mock("../../hooks/useAdminUsers", () => ({
   useAdminUsers: () => mockUseAdminUsers(),
   usePromoteUserToAdmin: () => mockUsePromoteUserToAdmin(),
   useDeleteUser: () => mockUseDeleteUser(),
+}));
+
+vi.mock("../../app/theme/theme-context", () => ({
+  useTheme: () => ({
+    resolvedTheme: "light",
+  }),
 }));
 
 function makeEvent(overrides: Partial<HoaEvent> = {}): HoaEvent {
@@ -93,6 +103,14 @@ function setupDefaults() {
     mutateAsync: vi.fn(),
   });
   mockUseCancelEvent.mockReturnValue({
+    isPending: false,
+    mutateAsync: vi.fn(),
+  });
+  mockUsePublishEvent.mockReturnValue({
+    isPending: false,
+    mutateAsync: vi.fn(),
+  });
+  mockUseUnpublishEvent.mockReturnValue({
     isPending: false,
     mutateAsync: vi.fn(),
   });
@@ -230,42 +248,19 @@ describe("AdminDashboardPage", () => {
     expect(window.location.search).toBe("");
   });
 
-  it("shows delete controls based on permission and deletes when confirmed", async () => {
+  it("opens delete confirmation and deletes when confirmed", async () => {
     setupDefaults();
     const user = userEvent.setup();
-    const deleteSpy = vi.fn().mockResolvedValue({ message: "Deleted" });
-
-    mockUseAdminUsers.mockReturnValue({
-      data: [
-        {
-          displayName: "Resident One",
-          username: "resident1",
-          email: "resident1@hoa.local",
-          role: "resident",
-          profileImageUrl: null,
-          isMasterAdmin: false,
-          canDelete: true,
-        },
-        {
-          displayName: "Admin Locked",
-          username: "adminlocked",
-          email: "adminlocked@hoa.local",
-          role: "hoa_admin",
-          profileImageUrl: null,
-          isMasterAdmin: false,
-          canDelete: false,
-        },
-      ],
-      isLoading: false,
-      isError: false,
-    });
+    const deleteSpy = vi.fn().mockResolvedValue(undefined);
 
     mockUseDeleteUser.mockReturnValue({
       isPending: false,
+      mutateAsync: vi.fn(),
+    });
+    mockUseDeleteEvent.mockReturnValue({
+      isPending: false,
       mutateAsync: deleteSpy,
     });
-
-    const confirmMock = vi.spyOn(window, "confirm").mockReturnValue(true);
 
     render(
       <MemoryRouter>
@@ -273,13 +268,11 @@ describe("AdminDashboardPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/Delete locked/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    expect(screen.getByRole("heading", { name: /delete event/i })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /delete user/i }));
+    await user.click(screen.getByRole("button", { name: /yes, delete/i }));
 
-    expect(confirmMock).toHaveBeenCalled();
-    expect(deleteSpy).toHaveBeenCalledWith("resident1@hoa.local");
-
-    confirmMock.mockRestore();
+    expect(deleteSpy).toHaveBeenCalledWith("evt-1");
   });
 });

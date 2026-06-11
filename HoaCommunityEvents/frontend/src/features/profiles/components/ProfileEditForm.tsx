@@ -66,7 +66,7 @@ export function ProfileEditForm({
 
     try {
       setIsUploading(true);
-      const signed = await Uploads.getCloudinarySignature();
+      const signed = await Uploads.getCloudinarySignature("profile");
 
       const formData = new FormData();
       formData.append("file", uploadFile);

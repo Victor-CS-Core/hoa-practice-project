@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using HoaCommunityEvents.API.Extensions;
@@ -12,7 +13,7 @@ namespace HoaCommunityEvents.API.Controllers;
 public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) : BaseApiController
 {
     [HttpPost("cloudinary/signature")]
-    public ActionResult<CloudinarySignatureResponse> CreateCloudinarySignature()
+    public ActionResult<CloudinarySignatureResponse> CreateCloudinarySignature([FromBody] CreateCloudinarySignatureRequest? request)
     {
         var settings = cloudinaryOptions.Value;
 
@@ -26,10 +27,32 @@ public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) :
                 "Cloudinary is not configured on the server.");
         }
 
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("nameid");
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return ApiError(
+                StatusCodes.Status401Unauthorized,
+                "unauthorized",
+                "Unable to determine current user for upload signature.");
+        }
+
+        var normalizedScope = (request?.Scope ?? "event").Trim().ToLowerInvariant();
+        if (normalizedScope is not ("event" or "profile"))
+        {
+            return ApiError(
+                StatusCodes.Status400BadRequest,
+                "invalid_upload_scope",
+                "Upload scope must be either 'event' or 'profile'.");
+        }
+
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var folder = string.IsNullOrWhiteSpace(settings.UploadFolder)
+        var baseFolder = string.IsNullOrWhiteSpace(settings.UploadFolder)
             ? "hoa-events"
-            : settings.UploadFolder.Trim();
+            : settings.UploadFolder.Trim().Trim('/');
+        var userSegment = SanitizeFolderSegment(userId);
+        var folder = normalizedScope == "profile"
+            ? $"{baseFolder}/profiles/{userSegment}"
+            : $"{baseFolder}/events/{userSegment}";
         var publicId = Guid.NewGuid().ToString("N");
 
         // Cloudinary signature must be SHA1 over sorted upload params + API secret.
@@ -52,6 +75,20 @@ public class UploadsController(IOptions<CloudinarySettings> cloudinaryOptions) :
         var bytes = Encoding.UTF8.GetBytes(payload + apiSecret);
         var hash = SHA1.HashData(bytes);
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static string SanitizeFolderSegment(string value)
+    {
+        var chars = value
+            .Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_')
+            .ToArray();
+        var sanitized = new string(chars).Trim('_');
+        return string.IsNullOrWhiteSpace(sanitized) ? "unknown-user" : sanitized;
+    }
+
+    public class CreateCloudinarySignatureRequest
+    {
+        public string Scope { get; init; } = "event";
     }
 
     public class CloudinarySignatureResponse

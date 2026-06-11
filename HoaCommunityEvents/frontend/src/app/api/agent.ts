@@ -52,6 +52,8 @@ export type CloudinaryUploadSignature = {
     signature: string;
 };
 
+export type CloudinaryUploadScope = 'event' | 'profile';
+
 type ValidationEnvelope = {
     code?: string;
     message?: string;
@@ -106,7 +108,8 @@ export const Profiles = {
 };
 
 export const Uploads = {
-    getCloudinarySignature: () => requests.post<CloudinaryUploadSignature>('/uploads/cloudinary/signature', {}),
+    getCloudinarySignature: (scope: CloudinaryUploadScope) =>
+        requests.post<CloudinaryUploadSignature>('/uploads/cloudinary/signature', { scope }),
 };
 
 export const Diagnostics = {

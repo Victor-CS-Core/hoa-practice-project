@@ -6,6 +6,7 @@ import { EventListPage } from "./EventListPage";
 import type { HoaEvent, PagedResult } from "../../types/event";
 
 const mockUseEvents = vi.fn();
+const mockUseCreateEvent = vi.fn();
 const mockUseJoinEvent = vi.fn();
 const mockUseLeaveEvent = vi.fn();
 const mockUseStore = vi.fn();
@@ -13,6 +14,7 @@ const mockNavigate = vi.fn();
 
 vi.mock("../../hooks/useEvents", () => ({
   useEvents: (filter: unknown) => mockUseEvents(filter),
+  useCreateEvent: () => mockUseCreateEvent(),
 }));
 
 vi.mock("../../hooks/useAttendance", () => ({
@@ -22,6 +24,12 @@ vi.mock("../../hooks/useAttendance", () => ({
 
 vi.mock("../../app/stores/store", () => ({
   useStore: () => mockUseStore(),
+}));
+
+vi.mock("../../app/theme/theme-context", () => ({
+  useTheme: () => ({
+    resolvedTheme: "light",
+  }),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -81,6 +89,7 @@ function setupAuth(isAdmin: boolean) {
 describe("EventListPage", () => {
   it("shows loading state", () => {
     setupAuth(false);
+    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -100,6 +109,7 @@ describe("EventListPage", () => {
 
   it("shows error state", () => {
     setupAuth(false);
+    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -123,6 +133,7 @@ describe("EventListPage", () => {
 
   it("shows filtered empty-state message", () => {
     setupAuth(false);
+    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -144,6 +155,7 @@ describe("EventListPage", () => {
 
   it("renders events and supports joining", async () => {
     setupAuth(false);
+    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
     const joinMutateAsync = vi.fn().mockResolvedValue(undefined);
     const leaveMutateAsync = vi.fn().mockResolvedValue(undefined);
 
@@ -171,8 +183,9 @@ describe("EventListPage", () => {
     expect(leaveMutateAsync).not.toHaveBeenCalled();
   });
 
-  it("shows create event link for admins", () => {
+  it("shows create event button for admins", () => {
     setupAuth(true);
+    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -188,7 +201,7 @@ describe("EventListPage", () => {
     );
 
     expect(
-      screen.getByRole("link", { name: /create new event/i }),
+      screen.getByRole("button", { name: /create new event/i }),
     ).toBeInTheDocument();
   });
 });

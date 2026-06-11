@@ -92,7 +92,7 @@ export function AdminEventForm({
 
     try {
       setIsUploading(true);
-      const signed = await Uploads.getCloudinarySignature();
+      const signed = await Uploads.getCloudinarySignature("event");
 
       const formData = new FormData();
       formData.append("file", uploadFile);
