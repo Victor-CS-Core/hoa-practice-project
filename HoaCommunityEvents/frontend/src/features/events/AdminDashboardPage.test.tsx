@@ -269,7 +269,9 @@ describe("AdminDashboardPage", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /^delete$/i }));
-    expect(screen.getByRole("heading", { name: /delete event/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /delete event/i }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /yes, delete/i }));
 

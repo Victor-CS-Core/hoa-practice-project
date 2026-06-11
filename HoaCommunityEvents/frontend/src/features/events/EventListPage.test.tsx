@@ -89,7 +89,10 @@ function setupAuth(isAdmin: boolean) {
 describe("EventListPage", () => {
   it("shows loading state", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    mockUseCreateEvent.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -109,7 +112,10 @@ describe("EventListPage", () => {
 
   it("shows error state", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    mockUseCreateEvent.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -133,7 +139,10 @@ describe("EventListPage", () => {
 
   it("shows filtered empty-state message", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    mockUseCreateEvent.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -155,7 +164,10 @@ describe("EventListPage", () => {
 
   it("renders events and supports joining", async () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    mockUseCreateEvent.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
     const joinMutateAsync = vi.fn().mockResolvedValue(undefined);
     const leaveMutateAsync = vi.fn().mockResolvedValue(undefined);
 
@@ -185,7 +197,10 @@ describe("EventListPage", () => {
 
   it("shows create event button for admins", () => {
     setupAuth(true);
-    mockUseCreateEvent.mockReturnValue({ isPending: false, mutateAsync: vi.fn() });
+    mockUseCreateEvent.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
