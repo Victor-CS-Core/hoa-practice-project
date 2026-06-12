@@ -20,8 +20,6 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const clampZoom = (value: number) => Math.max(1, Math.min(3, value));
-const isCloudinaryManagedUrl = (value?: string | null) =>
-  /^https?:\/\/res\.cloudinary\.com\//i.test(value?.trim() ?? "");
 
 export function ProfileEditForm({
   initialValues,
@@ -49,12 +47,6 @@ export function ProfileEditForm({
   const [bannerImageSource, setBannerImageSource] = useState<"url" | "upload">(
     "url",
   );
-  const [uploadedAvatarImageUrl, setUploadedAvatarImageUrl] = useState<
-    string | null
-  >(null);
-  const [uploadedBannerImageUrl, setUploadedBannerImageUrl] = useState<
-    string | null
-  >(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [bannerUploadFile, setBannerUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -74,16 +66,8 @@ export function ProfileEditForm({
   const profileImageError = getFieldError(apiError?.details, "ProfileImageUrl");
   const bannerImageError = getFieldError(apiError?.details, "BannerImageUrl");
 
-  const imageUrl =
-    formValues.profileImageUrl?.trim() || uploadedAvatarImageUrl || "";
-  const bannerImageUrl =
-    formValues.bannerImageUrl?.trim() || uploadedBannerImageUrl || "";
-  const isAvatarCloudinaryManaged = isCloudinaryManagedUrl(
-    formValues.profileImageUrl,
-  );
-  const isBannerCloudinaryManaged = isCloudinaryManagedUrl(
-    formValues.bannerImageUrl,
-  );
+  const imageUrl = formValues.profileImageUrl?.trim() ?? "";
+  const bannerImageUrl = formValues.bannerImageUrl?.trim() ?? "";
   const canShowPreview = avatarEnabled && imageUrl.length > 0;
   const canShowBannerPreview = bannerEnabled && bannerImageUrl.length > 0;
 
@@ -103,12 +87,34 @@ export function ProfileEditForm({
     file: File,
     assetType: "avatar" | "banner",
   ) => {
-    const response = await Uploads.uploadImage(file, "profile", assetType);
-    if (!response.secureUrl) {
-      throw new Error("Image upload failed.");
+    const signed = await Uploads.getCloudinarySignature("profile", assetType);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", signed.apiKey);
+    formData.append("timestamp", String(signed.timestamp));
+    formData.append("signature", signed.signature);
+    formData.append("folder", signed.folder);
+    formData.append("public_id", signed.publicId);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    const payload = (await response.json()) as {
+      secure_url?: string;
+      error?: { message?: string };
+    };
+
+    if (!response.ok || !payload.secure_url) {
+      throw new Error(payload.error?.message || "Image upload failed.");
     }
 
-    return response.secureUrl;
+    return payload.secure_url;
   };
 
   const handleCloudinaryUpload = async () => {
@@ -136,15 +142,16 @@ export function ProfileEditForm({
 
       setFormValues((prev) => ({
         ...prev,
-        profileImageUrl: "",
+        profileImageUrl: secureUrl,
       }));
-      setUploadedAvatarImageUrl(secureUrl);
-      setImageSource("upload");
+      setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Avatar uploaded successfully.");
       setPreviewPulse(true);
-    } catch {
-      setUploadError("Image upload failed. Please try again.");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Image upload failed.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -175,14 +182,15 @@ export function ProfileEditForm({
 
       setFormValues((prev) => ({
         ...prev,
-        bannerImageUrl: "",
+        bannerImageUrl: secureUrl,
       }));
-      setUploadedBannerImageUrl(secureUrl);
-      setBannerImageSource("upload");
+      setBannerImageSource("url");
       setBannerUploadFile(null);
       setBannerUploadSuccess("Banner uploaded successfully.");
-    } catch {
-      setBannerUploadError("Image upload failed. Please try again.");
+    } catch (error) {
+      setBannerUploadError(
+        error instanceof Error ? error.message : "Image upload failed.",
+      );
     } finally {
       setIsBannerUploading(false);
     }
@@ -286,7 +294,7 @@ export function ProfileEditForm({
                 Avatar Image
               </h3>
               <p className="mt-1 text-xs theme-text-muted">
-                Upload an image or use a direct image URL.
+                Upload to Cloudinary or use a direct image URL.
               </p>
             </div>
             <Button
@@ -304,7 +312,6 @@ export function ProfileEditForm({
                       profileImagePositionY: 50,
                       profileImageZoom: 1,
                     }));
-                    setUploadedAvatarImageUrl(null);
                     setUploadError(null);
                     setUploadSuccess(null);
                     setUploadFile(null);
@@ -387,36 +394,22 @@ export function ProfileEditForm({
                     Avatar Image URL
                   </label>
                   <Input
-                    value={
-                      isAvatarCloudinaryManaged
-                        ? ""
-                        : (formValues.profileImageUrl ?? "")
-                    }
+                    value={formValues.profileImageUrl ?? ""}
                     onChange={(event) => {
                       setUploadError(null);
                       setUploadSuccess(null);
-                      setUploadedAvatarImageUrl(null);
                       setFormValues((prev) => ({
                         ...prev,
                         profileImageUrl: event.target.value,
                       }));
                     }}
-                    placeholder={
-                      isAvatarCloudinaryManaged
-                        ? "Uploaded avatar URL is hidden"
-                        : "https://example.com/avatar.jpg"
-                    }
+                    placeholder="https://example.com/avatar.jpg"
                     className={
                       profileImageError
                         ? "border-red-300 focus-visible:ring-red-500"
                         : ""
                     }
                   />
-                  {isAvatarCloudinaryManaged && (
-                    <p className="mt-1 text-xs theme-text-muted">
-                      An uploaded avatar is set. The direct link is hidden.
-                    </p>
-                  )}
                   {profileImageError && (
                     <p className="mt-1 text-xs text-red-500">
                       {profileImageError}
@@ -425,7 +418,7 @@ export function ProfileEditForm({
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                  Upload an image using a secure upload request.
+                  Upload directly to Cloudinary using a signed request.
                   <div className="mt-2">
                     <Input
                       type="file"
@@ -467,7 +460,7 @@ export function ProfileEditForm({
                       onClick={() => void handleCloudinaryUpload()}
                       disabled={!uploadFile || isUploading}
                     >
-                      {isUploading ? "Uploading..." : "Upload Image"}
+                      {isUploading ? "Uploading..." : "Upload to Cloudinary"}
                     </Button>
                     {uploadFile && (
                       <span className="break-all text-xs theme-text-muted">
@@ -480,8 +473,8 @@ export function ProfileEditForm({
 
               {imageUrl && (
                 <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs theme-text-muted">
-                    Current avatar image is set.
+                  <p className="break-all text-xs theme-text-muted">
+                    Current avatar URL: {imageUrl}
                   </p>
                   <Button
                     type="button"
@@ -495,7 +488,6 @@ export function ProfileEditForm({
                         profileImagePositionY: 50,
                         profileImageZoom: 1,
                       }));
-                      setUploadedAvatarImageUrl(null);
                       setUploadError(null);
                       setUploadSuccess(null);
                     }}
@@ -553,7 +545,7 @@ export function ProfileEditForm({
                 Profile Banner
               </h3>
               <p className="mt-1 text-xs theme-text-muted">
-                Stored in your profile media library.
+                Stored in your Cloudinary profile folder under banners.
               </p>
             </div>
             <Button
@@ -571,7 +563,6 @@ export function ProfileEditForm({
                       bannerImagePositionY: 50,
                       bannerImageZoom: 1,
                     }));
-                    setUploadedBannerImageUrl(null);
                     setBannerUploadError(null);
                     setBannerUploadSuccess(null);
                     setBannerUploadFile(null);
@@ -677,36 +668,22 @@ export function ProfileEditForm({
                     Banner Image URL
                   </label>
                   <Input
-                    value={
-                      isBannerCloudinaryManaged
-                        ? ""
-                        : (formValues.bannerImageUrl ?? "")
-                    }
+                    value={formValues.bannerImageUrl ?? ""}
                     onChange={(event) => {
                       setBannerUploadError(null);
                       setBannerUploadSuccess(null);
-                      setUploadedBannerImageUrl(null);
                       setFormValues((prev) => ({
                         ...prev,
                         bannerImageUrl: event.target.value,
                       }));
                     }}
-                    placeholder={
-                      isBannerCloudinaryManaged
-                        ? "Uploaded banner URL is hidden"
-                        : "https://example.com/profile-banner.jpg"
-                    }
+                    placeholder="https://example.com/profile-banner.jpg"
                     className={
                       bannerImageError
                         ? "border-red-300 focus-visible:ring-red-500"
                         : ""
                     }
                   />
-                  {isBannerCloudinaryManaged && (
-                    <p className="mt-1 text-xs theme-text-muted">
-                      An uploaded banner is set. The direct link is hidden.
-                    </p>
-                  )}
                   {bannerImageError && (
                     <p className="mt-1 text-xs text-red-500">
                       {bannerImageError}
@@ -715,7 +692,7 @@ export function ProfileEditForm({
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                  Upload a banner image using a secure upload request.
+                  Upload banner to Cloudinary using a signed request.
                   <div className="mt-2">
                     <Input
                       type="file"
@@ -757,7 +734,9 @@ export function ProfileEditForm({
                       onClick={() => void handleBannerCloudinaryUpload()}
                       disabled={!bannerUploadFile || isBannerUploading}
                     >
-                      {isBannerUploading ? "Uploading..." : "Upload Image"}
+                      {isBannerUploading
+                        ? "Uploading..."
+                        : "Upload banner to Cloudinary"}
                     </Button>
                     {bannerUploadFile && (
                       <span className="break-all text-xs theme-text-muted">
@@ -770,8 +749,8 @@ export function ProfileEditForm({
 
               {bannerImageUrl && (
                 <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs theme-text-muted">
-                    Current banner image is set.
+                  <p className="break-all text-xs theme-text-muted">
+                    Current banner URL: {bannerImageUrl}
                   </p>
                   <Button
                     type="button"
@@ -785,7 +764,6 @@ export function ProfileEditForm({
                         bannerImagePositionY: 50,
                         bannerImageZoom: 1,
                       }));
-                      setUploadedBannerImageUrl(null);
                       setBannerUploadError(null);
                       setBannerUploadSuccess(null);
                     }}
@@ -826,10 +804,7 @@ export function ProfileEditForm({
             onSubmit({
               ...formValues,
               profileImageUrl: avatarEnabled
-                ? formValues.profileImageUrl?.trim() ||
-                  uploadedAvatarImageUrl ||
-                  "" ||
-                  undefined
+                ? (formValues.profileImageUrl?.trim() ?? "") || undefined
                 : undefined,
               profileImagePositionX: avatarEnabled
                 ? (formValues.profileImagePositionX ?? 50)
@@ -841,10 +816,7 @@ export function ProfileEditForm({
                 ? clampZoom(formValues.profileImageZoom ?? 1)
                 : undefined,
               bannerImageUrl: bannerEnabled
-                ? formValues.bannerImageUrl?.trim() ||
-                  uploadedBannerImageUrl ||
-                  "" ||
-                  undefined
+                ? (formValues.bannerImageUrl?.trim() ?? "") || undefined
                 : undefined,
               bannerImagePositionX: bannerEnabled
                 ? (formValues.bannerImagePositionX ?? 50)

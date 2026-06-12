@@ -55,9 +55,6 @@ export type CloudinaryUploadSignature = {
 
 export type CloudinaryUploadScope = 'event' | 'profile';
 export type CloudinaryProfileAssetType = 'avatar' | 'banner';
-export type CloudinaryUploadResponse = {
-    secureUrl: string;
-};
 
 type ValidationEnvelope = {
     code?: string;
@@ -118,24 +115,6 @@ export const Uploads = {
             scope,
             ...(scope === 'profile' && profileAssetType ? { profileAssetType } : {}),
         }),
-    uploadImage: async (file: File, scope: CloudinaryUploadScope, profileAssetType?: CloudinaryProfileAssetType) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('scope', scope);
-
-        if (scope === 'profile' && profileAssetType) {
-            formData.append('profileAssetType', profileAssetType);
-        }
-
-        const response = await agent.post<{ secureUrl?: string; secure_url?: string }>(
-            '/uploads/cloudinary/upload',
-            formData
-        );
-
-        return {
-            secureUrl: response.data.secureUrl ?? response.data.secure_url ?? '',
-        } satisfies CloudinaryUploadResponse;
-    },
 };
 
 export const Diagnostics = {

@@ -96,18 +96,41 @@ export function AdminEventForm({
 
     try {
       setIsUploading(true);
-      const response = await Uploads.uploadImage(uploadFile, "event");
+      const signed = await Uploads.getCloudinarySignature("event");
 
-      if (!response.secureUrl) {
-        throw new Error("Image upload failed.");
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("api_key", signed.apiKey);
+      formData.append("timestamp", String(signed.timestamp));
+      formData.append("signature", signed.signature);
+      formData.append("folder", signed.folder);
+      formData.append("public_id", signed.publicId);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const payload = (await response.json()) as {
+        secure_url?: string;
+        error?: { message?: string };
+      };
+
+      if (!response.ok || !payload.secure_url) {
+        throw new Error(payload.error?.message || "Image upload failed.");
       }
 
-      setValue("imageUrl", response.secureUrl, { shouldDirty: true });
-      setImageSource("upload");
+      setValue("imageUrl", payload.secure_url, { shouldDirty: true });
+      setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Image uploaded successfully.");
-    } catch {
-      setUploadError("Image upload failed. Please try again.");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Image upload failed.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -388,7 +411,7 @@ export function AdminEventForm({
                   </div>
                 ) : (
                   <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-                    Upload an image using a secure upload request.
+                    Upload directly to Cloudinary using a signed request.
                     <div className="mt-2">
                       <Input
                         type="file"
@@ -430,7 +453,7 @@ export function AdminEventForm({
                         onClick={() => void handleCloudinaryUpload()}
                         disabled={!uploadFile || isUploading}
                       >
-                        {isUploading ? "Uploading..." : "Upload Image"}
+                        {isUploading ? "Uploading..." : "Upload to Cloudinary"}
                       </Button>
                       {uploadFile && (
                         <span className="text-xs text-stone-500">
