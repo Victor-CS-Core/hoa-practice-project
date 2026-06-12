@@ -14,12 +14,12 @@ export function BackNavigationButton({
   preferHistory = true,
 }: BackNavigationButtonProps) {
   const navigate = useNavigate();
+  const historyIndex = window.history.state?.idx;
+  const canGoBack = typeof historyIndex === "number" && historyIndex > 0;
+  const willUseHistory = preferHistory && canGoBack;
 
   const handleClick = () => {
-    const historyIndex = window.history.state?.idx;
-    const canGoBack = typeof historyIndex === "number" && historyIndex > 0;
-
-    if (preferHistory && canGoBack) {
+    if (willUseHistory) {
       navigate(-1);
       return;
     }
@@ -30,7 +30,7 @@ export function BackNavigationButton({
   return (
     <Button variant="outline" className="gap-2" onClick={handleClick}>
       <ArrowLeft className="h-4 w-4" />
-      {label}
+      {willUseHistory ? "Back" : label}
     </Button>
   );
 }
