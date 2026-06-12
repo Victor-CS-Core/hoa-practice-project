@@ -20,20 +20,20 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore HoaCommunityEvents.slnx
+        run: dotnet restore HoaCommunityEvents/HoaCommunityEvents.slnx
 
       - name: Build
-        run: dotnet build HoaCommunityEvents.slnx --configuration Release --no-restore
+        run: dotnet build HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test HoaCommunityEvents.slnx --configuration Release --no-build
+        run: dotnet test HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-build
 
   frontend:
     name: Frontend Lint and Build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: HoaCommunityEvents/frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
 
       - name: Install
         run: npm ci
