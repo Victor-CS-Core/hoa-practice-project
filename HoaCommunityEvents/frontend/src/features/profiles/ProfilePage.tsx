@@ -5,6 +5,7 @@ import { useStore } from "../../app/stores/store";
 import { LoadingState } from "../../components/ui/loading-state";
 import { useProfile, useUpdateProfile } from "../../hooks/useProfile";
 import type { UpdateProfileValues } from "../../types/profile";
+import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 import { ProfileEditForm } from "./components/ProfileEditForm";
 import { ProfileOverview } from "./components/ProfileOverview";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
@@ -59,6 +60,10 @@ export const ProfilePage = observer(function ProfilePage() {
 
   return (
     <section className="space-y-6">
+      <div>
+        <BackNavigationButton to="/events" label="Back to events" />
+      </div>
+
       <div className="rounded-2xl border theme-border-surface theme-bg-surface p-6 shadow-sm animate-fade-up">
         <h1 className="font-heading text-3xl font-bold theme-text-primary">
           {isOwnProfile ? "My Profile" : `${data.displayName}'s Profile`}

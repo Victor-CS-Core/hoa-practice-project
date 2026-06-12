@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Shield, UserCheck, UserX } from "lucide-react";
 import { useStore } from "../../app/stores/store";
 import { useTheme } from "../../app/theme/theme-context";
+import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 import { LoadingState } from "../../components/ui/loading-state";
 import {
   useAdminUsers,
@@ -94,6 +95,10 @@ export function AdminUserManagementPage() {
 
   return (
     <section className="space-y-6">
+      <div>
+        <BackNavigationButton to="/events" label="Back to events" />
+      </div>
+
       <div
         className={`rounded-2xl border p-6 shadow-sm ${
           isDark
@@ -280,9 +285,9 @@ export function AdminUserManagementPage() {
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            className={`inline-flex min-h-8 items-center rounded-full px-3 py-1 text-xs font-semibold sm:w-auto ${
                               isAdminRole
                                 ? "bg-amber-100 text-amber-800"
                                 : "bg-stone-100 text-stone-700"
@@ -300,7 +305,7 @@ export function AdminUserManagementPage() {
                               type="button"
                               onClick={() => handlePromote(user.email)}
                               disabled={isBusy}
-                              className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                              className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
                             >
                               {promoteUserMutation.isPending
                                 ? "Updating..."
@@ -315,7 +320,7 @@ export function AdminUserManagementPage() {
                                 handleDeleteUser(user.email, user.displayName)
                               }
                               disabled={isBusy}
-                              className="inline-flex min-h-11 items-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                              className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 sm:w-auto"
                             >
                               <UserX className="h-4 w-4" />
                               {deleteUserMutation.isPending
@@ -323,7 +328,7 @@ export function AdminUserManagementPage() {
                                 : "Delete User"}
                             </button>
                           ) : (
-                            <span className="text-xs font-medium text-stone-500">
+                            <span className="inline-flex min-h-8 items-center rounded-md bg-stone-100 px-3 py-1 text-xs font-medium text-stone-500 sm:bg-transparent sm:px-0 sm:py-0">
                               Delete locked
                             </span>
                           )}

@@ -13,6 +13,7 @@ import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
 import type { CreateEventFormValues, EventFilter } from "../../types/event";
 import { useState } from "react";
+import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 
 export function EventListPage() {
   const { authStore } = useStore();
@@ -102,6 +103,10 @@ export function EventListPage() {
 
   return (
     <section className="space-y-6">
+      <div>
+        <BackNavigationButton to="/" label="Back to home" />
+      </div>
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
@@ -199,10 +204,6 @@ export function EventListPage() {
           }
         />
       )}
-
-      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-4 text-sm text-(--text-muted)">
-        <strong className="text-(--text-primary)">Current role:</strong> {role}
-      </div>
     </section>
   );
 }

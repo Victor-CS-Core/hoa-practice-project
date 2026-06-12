@@ -1,5 +1,11 @@
 import { useEffect } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import {
   CalendarDays,
@@ -54,10 +60,19 @@ export const AppLayout = observer(function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { themePreference, resolvedTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     void authStore.getCurrentUser();
   }, [authStore]);
+
+  useEffect(() => {
+    if (location.hash) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.hash]);
 
   const baseLinks: NavItem[] = [
     { to: "/", label: "Home", end: true, icon: Home },

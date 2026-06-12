@@ -33,7 +33,9 @@ export function EventsFilterBar({
                   page: 1,
                 })
               }
-              className={`inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm transition-colors ${
+              className={`inline-flex min-h-11 items-center justify-center rounded-full text-sm transition-colors ${
+                category === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
+              } ${
                 currentCategory === category
                   ? "bg-emerald-600 font-medium text-white shadow-sm"
                   : "theme-bg-surface-muted theme-text-muted hover:brightness-95"
@@ -63,7 +65,9 @@ export function EventsFilterBar({
                   page: 1,
                 })
               }
-              className={`inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm transition-colors ${
+              className={`inline-flex min-h-11 items-center justify-center rounded-full text-sm transition-colors ${
+                status === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
+              } ${
                 currentStatus === status
                   ? "bg-emerald-600 font-medium text-white shadow-sm"
                   : "theme-bg-surface-muted theme-text-muted hover:brightness-95"

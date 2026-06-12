@@ -1,7 +1,8 @@
-import { ArrowLeft, Calendar, Clock3, MapPin, User, Users } from "lucide-react";
+import { Calendar, Clock3, MapPin, User, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 import { FramedImage } from "../../components/media/FramedImage";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -185,11 +186,7 @@ export function EventDetailsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/events">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to events
-          </Button>
-        </Link>
+        <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
       <Card className="overflow-hidden border-stone-200 bg-white shadow-sm animate-fade-up">

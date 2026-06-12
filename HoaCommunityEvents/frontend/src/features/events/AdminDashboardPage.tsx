@@ -22,6 +22,7 @@ import { AdminConfirmModal } from "./components/AdminConfirmModal";
 import { AdminEventForm } from "./components/AdminEventForm";
 import { AdminEventList } from "./components/AdminEventList";
 import { LoadingState } from "../../components/ui/loading-state";
+import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 
 type FormState = { mode: "create" } | { mode: "edit"; event: HoaEvent } | null;
 
@@ -214,6 +215,10 @@ export function AdminDashboardPage() {
 
   return (
     <section className="space-y-6">
+      <div>
+        <BackNavigationButton to="/events" label="Back to events" />
+      </div>
+
       <div className="space-y-4">
         <div>
           <h1 className="font-heading text-3xl font-bold text-stone-900">
