@@ -141,6 +141,44 @@ Optional one-time production bootstrap (if you need to create first admin/roles)
 2. Restart app and confirm admin exists.
 3. Immediately set `Seed__EnableBootstrap=false` and remove `AdminSeed__*` settings.
 
+## Azure Deployment (Validated Runbook)
+
+This is the exact deployment pattern validated in production for this repository.
+
+### API (Azure App Service)
+
+1. Run GitHub workflow `Deploy API to Azure App Service`.
+2. Confirm the API app settings include:
+   - `ASPNETCORE_ENVIRONMENT=Production`
+   - `ConnectionStrings__DefaultConnection`
+   - `TokenKey`
+   - `Cloudinary__*`
+   - `Seed__EnableBootstrap=false`
+   - `Seed__EnableDemoData=false`
+3. Set CORS allowlist for frontend origin with either format:
+   - Indexed: `Cors__AllowedOrigins__0=https://blue-moss-0d503960f.7.azurestaticapps.net`
+   - Flat: `Cors__AllowedOrigins=https://blue-moss-0d503960f.7.azurestaticapps.net`
+
+Notes:
+
+- API now supports both indexed and flat CORS origin configuration styles.
+- If login/register returns CORS preflight errors, verify the frontend origin exists in API app settings and restart the API app.
+
+### Frontend (Azure Static Web Apps)
+
+1. Static Web App source settings:
+   - App location: `HoaCommunityEvents/frontend`
+   - Output location: `dist`
+   - API location: empty
+2. Configure frontend environment variable in Static Web App:
+   - `VITE_API_URL=https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net/api`
+3. Trigger a deployment run (push to `main` or manual rerun in Actions).
+
+Important:
+
+- SPA fallback is required for routes like `/login` and `/events/:id`.
+- `frontend/public/staticwebapp.config.json` is included and required in production.
+
 ## Production Readiness Checklist
 
 - `ASPNETCORE_ENVIRONMENT` is `Production`.
@@ -165,6 +203,7 @@ Workflows added:
 
 - `.github/workflows/ci.yml`: backend build + frontend lint/build on push/PR.
 - `.github/workflows/deploy-api-azure.yml`: manual production deploy.
+- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml`: frontend build/deploy to Azure Static Web Apps.
 
 Create GitHub Environments:
 
@@ -190,3 +229,26 @@ Migration behavior in deploy workflow:
 
 - If `AZURE_SQL_CONNECTION_STRING_PRODUCTION` is set, workflow runs `dotnet ef database update` before deploy.
 - If it is omitted, deploy still runs and migration step is skipped.
+
+CI notes:
+
+- Backend test run sets a CI-only `TokenKey` env var so integration tests can boot the API host in GitHub Actions.
+- Frontend workflow uses current checkout action runtime and Node 24 compatibility settings.
+
+## Troubleshooting Reference
+
+- Symptom: `TokenKey is not configured` in CI tests.
+  - Fix: ensure `TokenKey` is provided in the backend test step environment.
+
+- Symptom: frontend `POST /account/login` returns `405` on Static Web App host.
+  - Cause: API base URL missing in frontend runtime/build.
+  - Fix: set `VITE_API_URL` in Static Web App environment variables and redeploy.
+
+- Symptom: frontend route `/login` returns `404` on refresh/deep link.
+  - Fix: deploy with `frontend/public/staticwebapp.config.json` navigation fallback.
+
+- Symptom: browser CORS error `No Access-Control-Allow-Origin`.
+  - Fix: add frontend origin to API `Cors:AllowedOrigins` settings and restart API.
+
+- Symptom: browser console shows `lockdown-install.js` SES messages.
+  - Cause: browser extension content script, not application runtime.

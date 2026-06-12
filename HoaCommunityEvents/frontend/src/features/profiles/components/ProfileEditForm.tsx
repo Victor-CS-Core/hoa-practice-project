@@ -197,7 +197,7 @@ export function ProfileEditForm({
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
+    <div className="w-full max-w-full overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
       <div
         className="relative overflow-hidden border-b theme-border-surface px-6 pb-7 pt-6 sm:px-8"
         style={{
@@ -218,7 +218,7 @@ export function ProfileEditForm({
         </div>
       </div>
 
-      <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-2">
+      <div className="grid gap-6 p-4 sm:p-8 lg:grid-cols-2">
         {apiError && apiError.code !== "validation_failed" && (
           <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 lg:col-span-2">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -228,7 +228,7 @@ export function ProfileEditForm({
           </div>
         )}
 
-        <div className="animate-fade-up animate-delay-100 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5 lg:col-span-2">
+        <div className="animate-fade-up animate-delay-100 min-w-0 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5 lg:col-span-2">
           <div>
             <h3 className="font-heading text-lg font-semibold theme-text-primary">
               Account Identity
@@ -287,8 +287,8 @@ export function ProfileEditForm({
           </div>
         </div>
 
-        <div className="animate-fade-up animate-delay-200 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
-          <div className="flex items-center justify-between gap-2">
+        <div className="animate-fade-up animate-delay-200 min-w-0 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h3 className="font-heading text-lg font-semibold theme-text-primary">
                 Avatar Image
@@ -300,7 +300,7 @@ export function ProfileEditForm({
             <Button
               type="button"
               variant={avatarEnabled ? "default" : "outline"}
-              className="min-w-26"
+              className="min-w-26 shrink-0"
               onClick={() => {
                 setAvatarEnabled((prev) => {
                   const next = !prev;
@@ -463,7 +463,7 @@ export function ProfileEditForm({
                       {isUploading ? "Uploading..." : "Upload to Cloudinary"}
                     </Button>
                     {uploadFile && (
-                      <span className="text-xs theme-text-muted">
+                      <span className="break-all text-xs theme-text-muted">
                         Selected: {uploadFile.name}
                       </span>
                     )}
@@ -472,8 +472,8 @@ export function ProfileEditForm({
               )}
 
               {imageUrl && (
-                <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
-                  <p className="truncate text-xs theme-text-muted">
+                <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="break-all text-xs theme-text-muted">
                     Current avatar URL: {imageUrl}
                   </p>
                   <Button
@@ -538,8 +538,8 @@ export function ProfileEditForm({
           )}
         </div>
 
-        <div className="animate-fade-up animate-delay-[240ms] space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
-          <div className="flex items-center justify-between gap-2">
+        <div className="animate-fade-up animate-delay-[240ms] min-w-0 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <h3 className="font-heading text-lg font-semibold theme-text-primary">
                 Profile Banner
@@ -551,7 +551,7 @@ export function ProfileEditForm({
             <Button
               type="button"
               variant={bannerEnabled ? "default" : "outline"}
-              className="min-w-26"
+              className="min-w-26 shrink-0"
               onClick={() => {
                 setBannerEnabled((prev) => {
                   const next = !prev;
@@ -739,7 +739,7 @@ export function ProfileEditForm({
                         : "Upload banner to Cloudinary"}
                     </Button>
                     {bannerUploadFile && (
-                      <span className="text-xs theme-text-muted">
+                      <span className="break-all text-xs theme-text-muted">
                         Selected: {bannerUploadFile.name}
                       </span>
                     )}
@@ -748,8 +748,8 @@ export function ProfileEditForm({
               )}
 
               {bannerImageUrl && (
-                <div className="flex items-center justify-between gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2">
-                  <p className="truncate text-xs theme-text-muted">
+                <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="break-all text-xs theme-text-muted">
                     Current banner URL: {bannerImageUrl}
                   </p>
                   <Button
@@ -788,17 +788,17 @@ export function ProfileEditForm({
         </div>
       </div>
 
-      <div className="animate-fade-up animate-delay-300 flex items-center justify-end gap-3 border-t theme-border-surface theme-bg-surface-muted px-8 py-4">
+      <div className="animate-fade-up animate-delay-300 flex flex-wrap items-center justify-end gap-3 border-t theme-border-surface theme-bg-surface-muted px-4 py-4 sm:px-8">
         <Button
           variant="ghost"
           onClick={onCancel}
-          className="theme-text-muted theme-hover-text-primary"
+          className="w-full theme-text-muted theme-hover-text-primary sm:w-auto"
           disabled={isSubmitting}
         >
           Cancel
         </Button>
         <Button
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
           disabled={isSubmitting}
           onClick={() =>
             onSubmit({
