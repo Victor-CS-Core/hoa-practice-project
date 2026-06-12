@@ -19,8 +19,8 @@ export function BackNavigationButton({
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [isFloating, setIsFloating] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return false;
     }
     return window.matchMedia("(min-width: 640px)").matches;
   });
@@ -29,7 +29,7 @@ export function BackNavigationButton({
   const willUseHistory = preferHistory && canGoBack;
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || !window.matchMedia) {
       return;
     }
 
@@ -82,16 +82,16 @@ export function BackNavigationButton({
   const buttonContent = (
     <>
       <ArrowLeft className="h-5 w-5 sm:h-4 sm:w-4" />
-      <span className="hidden sm:inline">{willUseHistory ? "Back" : label}</span>
+      <span className="hidden sm:inline">
+        {willUseHistory ? "Back" : label}
+      </span>
     </>
   );
 
   const showFloating = !isDesktop || isFloating;
 
   const floatingButton = (
-    <div
-      className="fixed bottom-4 right-4 z-60 sm:bottom-auto sm:right-auto sm:left-3 sm:top-24 lg:top-26"
-    >
+    <div className="fixed bottom-4 right-4 z-60 sm:bottom-auto sm:right-auto sm:left-3 sm:top-24 lg:top-26">
       <div className="inline-flex rounded-full border border-stone-300/45 bg-stone-100/55 p-1 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-stone-100/45 sm:rounded-xl dark:border-stone-600/45 dark:bg-stone-800/50 dark:supports-backdrop-filter:bg-stone-800/40">
         <Button
           variant="outline"
@@ -109,10 +109,7 @@ export function BackNavigationButton({
   return (
     <>
       {isDesktop && (
-        <div
-          ref={anchorRef}
-          className="relative z-30"
-        >
+        <div ref={anchorRef} className="relative z-30">
           <div className="inline-flex rounded-xl border border-stone-300/45 bg-stone-100/55 p-1 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-stone-100/45 dark:border-stone-600/45 dark:bg-stone-800/50 dark:supports-backdrop-filter:bg-stone-800/40">
             <Button
               variant="outline"
