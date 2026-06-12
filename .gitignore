@@ -58,6 +58,7 @@ coverage/
 *.coverage
 *.coveragexml
 TestResults/
+HoaCommunityEvents/artifacts/
 
 # Node / frontend
 **/node_modules/
