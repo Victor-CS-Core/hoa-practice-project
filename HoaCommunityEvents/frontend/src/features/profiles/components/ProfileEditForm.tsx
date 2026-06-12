@@ -143,7 +143,7 @@ export function ProfileEditForm({
       setUploadFile(null);
       setUploadSuccess("Avatar uploaded successfully.");
       setPreviewPulse(true);
-    } catch (error) {
+    } catch {
       setUploadError("Image upload failed. Please try again.");
     } finally {
       setIsUploading(false);
@@ -181,7 +181,7 @@ export function ProfileEditForm({
       setBannerImageSource("upload");
       setBannerUploadFile(null);
       setBannerUploadSuccess("Banner uploaded successfully.");
-    } catch (error) {
+    } catch {
       setBannerUploadError("Image upload failed. Please try again.");
     } finally {
       setIsBannerUploading(false);

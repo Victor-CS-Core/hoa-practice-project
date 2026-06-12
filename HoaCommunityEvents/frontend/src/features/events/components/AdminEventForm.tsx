@@ -106,7 +106,7 @@ export function AdminEventForm({
       setImageSource("upload");
       setUploadFile(null);
       setUploadSuccess("Image uploaded successfully.");
-    } catch (error) {
+    } catch {
       setUploadError("Image upload failed. Please try again.");
     } finally {
       setIsUploading(false);
