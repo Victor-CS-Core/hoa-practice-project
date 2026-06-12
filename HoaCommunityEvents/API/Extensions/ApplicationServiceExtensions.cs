@@ -18,13 +18,7 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var configuredCorsOrigins = configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>()
-            ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
-            .Select(origin => origin.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray() ?? [];
+        var configuredCorsOrigins = GetConfiguredCorsOrigins(configuration);
 
         services.AddControllers();
         services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
@@ -165,5 +159,34 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAttendanceService, AttendanceService>();
 
         return services;
+    }
+
+    private static string[] GetConfiguredCorsOrigins(IConfiguration configuration)
+    {
+        var sectionOrigins = configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?.Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin.Trim())
+            .ToArray() ?? [];
+
+        if (sectionOrigins.Length > 0)
+        {
+            return sectionOrigins
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        var flatOriginsValue = configuration["Cors:AllowedOrigins"];
+        if (string.IsNullOrWhiteSpace(flatOriginsValue))
+        {
+            return [];
+        }
+
+        return flatOriginsValue
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 }
