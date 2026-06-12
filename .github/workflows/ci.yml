@@ -29,6 +29,8 @@ jobs:
         run: dotnet build HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-restore
 
       - name: Test
+        env:
+          TokenKey: ThisIsASecureCiTestTokenKeyAtLeast64CharsLong_1234567890abcdef
         run: dotnet test HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-build
 
   frontend:
