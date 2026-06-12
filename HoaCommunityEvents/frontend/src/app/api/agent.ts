@@ -4,7 +4,8 @@ import type { Attendee } from '../../types/attendee';
 import type { Profile, UpdateProfileValues } from '../../types/profile';
 import type { AdminUser, DeleteUserValues, LoginFormValues, PromoteUserToAdminValues, RegisterFormValues, User } from '../../types/user';
 
-const baseURL = import.meta.env.VITE_API_URL;
+const fallbackApiUrl = 'https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net/api';
+const baseURL = (import.meta.env.VITE_API_URL as string | undefined) || fallbackApiUrl;
 
 export const agent = axios.create({
     baseURL,

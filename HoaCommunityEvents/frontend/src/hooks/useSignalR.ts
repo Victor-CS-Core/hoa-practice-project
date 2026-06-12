@@ -3,8 +3,9 @@ import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signal
 import { useQueryClient } from '@tanstack/react-query';
 
 function getHubUrl() {
-  const apiUrl = import.meta.env.VITE_API_URL as string;
-  if (!apiUrl) return 'http://localhost:5000/hubs/events';
+  const apiUrl =
+    (import.meta.env.VITE_API_URL as string | undefined) ??
+    'https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net/api';
   const base = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
   return `${base}/hubs/events`;
 }
