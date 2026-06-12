@@ -26,7 +26,7 @@ npm install
 
 ```bash
 # .env.local
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://localhost:7011/api
 ```
 
 3. Start development server:
