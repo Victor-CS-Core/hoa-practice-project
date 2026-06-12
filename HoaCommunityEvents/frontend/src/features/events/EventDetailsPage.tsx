@@ -184,7 +184,7 @@ export function EventDetailsPage() {
   })}`;
 
   return (
-    <section className="space-y-6">
+    <section className="min-w-0 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
@@ -219,12 +219,12 @@ export function EventDetailsPage() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="font-heading text-3xl font-bold leading-tight text-stone-900 md:text-4xl">
+            <h1 className="wrap-break-word font-heading text-3xl font-bold leading-tight text-stone-900 md:text-4xl">
               {data.title}
             </h1>
-            <p className="flex items-center gap-2 text-stone-600">
+            <p className="flex min-w-0 items-center gap-2 text-stone-600">
               <User className="h-4 w-4 text-stone-400" /> Hosted by{" "}
-              {data.hostDisplayName}
+              <span className="wrap-break-word">{data.hostDisplayName}</span>
             </p>
           </div>
 
@@ -250,9 +250,11 @@ export function EventDetailsPage() {
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
                 Location
               </p>
-              <p className="flex items-start gap-2 text-sm font-medium text-stone-800">
+              <p className="flex min-w-0 items-start gap-2 text-sm font-medium text-stone-800">
                 <MapPin className="mt-0.5 h-4 w-4 text-stone-500" />{" "}
-                {data.locationWithinCommunity}
+                <span className="wrap-break-word">
+                  {data.locationWithinCommunity}
+                </span>
               </p>
             </div>
             <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
@@ -276,7 +278,7 @@ export function EventDetailsPage() {
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {authStore.isAdmin && editOpen && (
             <div className="animate-fade-up animate-delay-100">
               <AdminEventForm
@@ -312,7 +314,7 @@ export function EventDetailsPage() {
               </h2>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-line leading-relaxed text-stone-600">
+              <p className="whitespace-pre-line wrap-break-word leading-relaxed text-stone-600">
                 {data.description}
               </p>
             </CardContent>
@@ -351,7 +353,7 @@ export function EventDetailsPage() {
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <AttendanceActionCard
             event={data}
             canJoin={canJoin}
@@ -363,7 +365,7 @@ export function EventDetailsPage() {
           />
 
           {authStore.isAdmin && (
-            <Card className="sticky top-96 border-stone-200 bg-white shadow-sm">
+            <Card className="border-stone-200 bg-white shadow-sm xl:sticky xl:top-24">
               <CardHeader>
                 <h3 className="font-heading text-lg font-semibold text-stone-900">
                   Admin tools
