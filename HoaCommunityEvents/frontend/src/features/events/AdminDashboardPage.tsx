@@ -214,32 +214,34 @@ export function AdminDashboardPage() {
   const editingEvent = formState?.mode === "edit" ? formState.event : null;
 
   return (
-    <section className="space-y-6">
+    <section className="min-w-0 space-y-6">
       <div>
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
       <div className="space-y-4">
-        <div>
-          <h1 className="font-heading text-3xl font-bold text-stone-900">
-            Admin Management Dashboard
-          </h1>
-          <p className="mt-2 text-stone-600">
-            Manage events, attendees, and publish updates for residents.
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-heading text-2xl font-bold leading-tight text-stone-900 sm:text-3xl">
+              Admin Management Dashboard
+            </h1>
+            <p className="mt-2 text-stone-600">
+              Manage events, attendees, and publish updates for residents.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null);
+              setFormState((prev) =>
+                prev?.mode === "create" ? null : { mode: "create" },
+              );
+            }}
+            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 sm:w-auto"
+          >
+            {isCreateOpen ? "Hide Create Event Form" : "Create New Event"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setFormError(null);
-            setFormState((prev) =>
-              prev?.mode === "create" ? null : { mode: "create" },
-            );
-          }}
-          className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-        >
-          {isCreateOpen ? "Hide Create Event Form" : "Create New Event"}
-        </button>
 
         {isCreateOpen && (
           <AdminEventForm
@@ -257,50 +259,57 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <label
-            htmlFor="admin-status-filter"
-            className="text-sm text-stone-600"
-          >
-            Status
-          </label>
-          <select
-            id="admin-status-filter"
-            value={status}
-            onChange={(event) =>
-              updateFilter({ status: event.target.value || undefined, page: 1 })
-            }
-            className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:w-auto"
-          >
-            <option value="">All statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Published">Published</option>
-            <option value="Ended">Ended</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+          <div className="space-y-1">
+            <label
+              htmlFor="admin-status-filter"
+              className="text-sm text-stone-600"
+            >
+              Status
+            </label>
+            <select
+              id="admin-status-filter"
+              value={status}
+              onChange={(event) =>
+                updateFilter({
+                  status: event.target.value || undefined,
+                  page: 1,
+                })
+              }
+              className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+            >
+              <option value="">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Published">Published</option>
+              <option value="Ended">Ended</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
 
-          <label
-            htmlFor="admin-category-filter"
-            className="text-sm text-stone-600"
-          >
-            Category
-          </label>
-          <select
-            id="admin-category-filter"
-            value={category}
-            onChange={(event) =>
-              updateFilter({
-                category: event.target.value || undefined,
-                page: 1,
-              })
-            }
-            className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 sm:w-auto"
-          >
-            <option value="">All categories</option>
-            <option value="Board Meeting">Board Meeting</option>
-            <option value="Community Cleanup">Community Cleanup</option>
-            <option value="Pool Event">Pool Event</option>
-          </select>
+          <div className="space-y-1">
+            <label
+              htmlFor="admin-category-filter"
+              className="text-sm text-stone-600"
+            >
+              Category
+            </label>
+            <select
+              id="admin-category-filter"
+              value={category}
+              onChange={(event) =>
+                updateFilter({
+                  category: event.target.value || undefined,
+                  page: 1,
+                })
+              }
+              className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
+            >
+              <option value="">All categories</option>
+              <option value="Board Meeting">Board Meeting</option>
+              <option value="Community Cleanup">Community Cleanup</option>
+              <option value="Pool Event">Pool Event</option>
+            </select>
+          </div>
 
           {hasActiveFilters && (
             <button
@@ -312,7 +321,7 @@ export function AdminDashboardPage() {
                   page: 1,
                 })
               }
-              className="min-h-11 rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              className="min-h-11 w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:w-auto"
             >
               Clear Filters
             </button>
@@ -336,18 +345,18 @@ export function AdminDashboardPage() {
       </div>
 
       {inFlightMessage && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 sm:text-base">
           {inFlightMessage}
         </div>
       )}
 
       {flashMessage && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-800">
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
           <span>{flashMessage}</span>
           <button
             type="button"
             onClick={() => setFlashMessage(null)}
-            className="text-sm font-medium underline hover:no-underline"
+            className="w-full text-left text-sm font-medium underline hover:no-underline sm:w-auto"
           >
             Dismiss
           </button>
@@ -355,12 +364,12 @@ export function AdminDashboardPage() {
       )}
 
       {actionError && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+        <div className="flex flex-col items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 sm:flex-row sm:items-center sm:justify-between">
           <span>{actionError}</span>
           <button
             type="button"
             onClick={() => setActionError(null)}
-            className="text-sm font-medium underline hover:no-underline"
+            className="w-full text-left text-sm font-medium underline hover:no-underline sm:w-auto"
           >
             Dismiss
           </button>

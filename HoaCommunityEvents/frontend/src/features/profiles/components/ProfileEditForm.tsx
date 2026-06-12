@@ -420,7 +420,14 @@ export function ProfileEditForm({
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
                   Upload directly to Cloudinary using a signed request.
                   <div className="mt-2">
+                    <label
+                      htmlFor="profile-avatar-upload"
+                      className="mb-1 block text-xs font-medium theme-text-primary"
+                    >
+                      Select avatar image
+                    </label>
                     <Input
+                      id="profile-avatar-upload"
                       type="file"
                       accept="image/*"
                       onChange={(event) => {
@@ -525,12 +532,20 @@ export function ProfileEditForm({
               )}
 
               {uploadSuccess && (
-                <p className="text-xs font-medium text-emerald-700">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-xs font-medium text-emerald-700"
+                >
                   {uploadSuccess}
                 </p>
               )}
               {uploadError && (
-                <p className="text-xs font-medium text-red-600">
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-xs font-medium text-red-600"
+                >
                   {uploadError}
                 </p>
               )}
@@ -694,7 +709,14 @@ export function ProfileEditForm({
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
                   Upload banner to Cloudinary using a signed request.
                   <div className="mt-2">
+                    <label
+                      htmlFor="profile-banner-upload"
+                      className="mb-1 block text-xs font-medium theme-text-primary"
+                    >
+                      Select banner image
+                    </label>
                     <Input
+                      id="profile-banner-upload"
                       type="file"
                       accept="image/*"
                       onChange={(event) => {
@@ -774,12 +796,20 @@ export function ProfileEditForm({
               )}
 
               {bannerUploadSuccess && (
-                <p className="text-xs font-medium text-emerald-700">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-xs font-medium text-emerald-700"
+                >
                   {bannerUploadSuccess}
                 </p>
               )}
               {bannerUploadError && (
-                <p className="text-xs font-medium text-red-600">
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-xs font-medium text-red-600"
+                >
                   {bannerUploadError}
                 </p>
               )}

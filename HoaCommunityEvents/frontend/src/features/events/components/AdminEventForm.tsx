@@ -137,7 +137,7 @@ export function AdminEventForm({
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="w-full max-w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
       <div className="border-b border-stone-200 bg-stone-50 px-6 py-4">
         <h2 className="font-heading text-xl font-bold text-stone-900">
           {mode === "create" ? "Create New Event" : "Edit Event"}
@@ -168,7 +168,7 @@ export function AdminEventForm({
           };
           onSubmit(next);
         })}
-        className="space-y-6 p-6"
+        className="space-y-6 p-4 sm:p-6"
       >
         {apiError && apiError.code !== "validation_failed" && (
           <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -413,7 +413,14 @@ export function AdminEventForm({
                   <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
                     Upload directly to Cloudinary using a signed request.
                     <div className="mt-2">
+                      <label
+                        htmlFor="event-banner-upload"
+                        className="mb-1 block text-xs font-medium text-stone-700"
+                      >
+                        Select event banner image
+                      </label>
                       <Input
+                        id="event-banner-upload"
                         type="file"
                         accept="image/*"
                         onChange={(event) => {
@@ -456,18 +463,26 @@ export function AdminEventForm({
                         {isUploading ? "Uploading..." : "Upload to Cloudinary"}
                       </Button>
                       {uploadFile && (
-                        <span className="text-xs text-stone-500">
+                        <span className="break-all text-xs text-stone-500">
                           Selected: {uploadFile.name}
                         </span>
                       )}
                     </div>
                     {uploadSuccess && (
-                      <p className="mt-2 text-xs font-medium text-emerald-700">
+                      <p
+                        role="status"
+                        aria-live="polite"
+                        className="mt-2 text-xs font-medium text-emerald-700"
+                      >
                         {uploadSuccess}
                       </p>
                     )}
                     {uploadError && (
-                      <p className="mt-2 text-xs font-medium text-red-600">
+                      <p
+                        role="alert"
+                        aria-live="assertive"
+                        className="mt-2 text-xs font-medium text-red-600"
+                      >
                         {uploadError}
                       </p>
                     )}
@@ -476,7 +491,7 @@ export function AdminEventForm({
 
                 {bannerEnabled && imageUrlValue && (
                   <div className="rounded-md border border-stone-200 bg-white p-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="mb-2 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                       <p className="text-xs font-medium text-stone-600">
                         Banner preview
                       </p>
@@ -548,17 +563,17 @@ export function AdminEventForm({
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4 -mx-6 -mb-6">
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 bg-stone-50 px-4 py-4 sm:px-6">
           <Button
             variant="ghost"
             onClick={onCancel}
-            className="text-stone-600 hover:text-stone-900"
+            className="w-full text-stone-600 hover:text-stone-900 sm:w-auto"
             type="button"
           >
             Cancel
           </Button>
           <Button
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
             disabled={isSubmitting}
             type="submit"
           >

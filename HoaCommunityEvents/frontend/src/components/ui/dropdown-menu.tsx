@@ -1,7 +1,10 @@
 import {
+  cloneElement,
   createContext,
   type Dispatch,
   type HTMLAttributes,
+  isValidElement,
+  type ReactElement,
   type ReactNode,
   type SetStateAction,
   useEffect,
@@ -83,22 +86,36 @@ export function DropdownMenuTrigger({
   const { open, setOpen } = useDropdownContext();
 
   if (asChild) {
+    if (!isValidElement(children)) {
+      return null;
+    }
+
+    const child = children as ReactElement<{
+      onClick?: (event: React.MouseEvent) => void;
+      onKeyDown?: (event: React.KeyboardEvent) => void;
+      "aria-haspopup"?: "menu";
+      "aria-expanded"?: boolean;
+    }>;
+
     return (
-      <span
-        role="button"
-        tabIndex={0}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
+      <>
+        {cloneElement(child, {
+          "aria-haspopup": "menu",
+          "aria-expanded": open,
+          onClick: (event) => {
+            child.props.onClick?.(event);
             setOpen((prev) => !prev);
-          }
-        }}
-      >
-        {children}
-      </span>
+          },
+          onKeyDown: (event) => {
+            child.props.onKeyDown?.(event);
+            if (event.defaultPrevented) return;
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setOpen((prev) => !prev);
+            }
+          },
+        })}
+      </>
     );
   }
 
