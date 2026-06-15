@@ -47,10 +47,6 @@ export function AdminUserManagementPage() {
     (user) => user.role !== "hoa_admin",
   ).length;
 
-  const pageGradient = isDark
-    ? "bg-[radial-gradient(circle_at_14%_10%,#1a3a58_0%,transparent_40%),radial-gradient(circle_at_90%_80%,#174434_0%,transparent_42%),linear-gradient(145deg,#0c121c_0%,#0b1a2a_52%,#101722_100%)]"
-    : "bg-[radial-gradient(circle_at_12%_14%,#ffe8c5_0%,transparent_43%),radial-gradient(circle_at_88%_82%,#d7f0db_0%,transparent_40%),linear-gradient(160deg,#f7f2e7_0%,#f4ede0_48%,#edf4ea_100%)]";
-
   const panelTone = isDark
     ? "border-[#2a3f58] bg-[#101b2b]/88 text-[#e8f3ff]"
     : "border-[#d9b58f] bg-[#fffaf0] text-[#3d2c1d]";
@@ -109,7 +105,7 @@ export function AdminUserManagementPage() {
   };
 
   return (
-    <section className={`space-y-6 rounded-3xl p-4 sm:p-6 ${pageGradient}`}>
+    <section className="space-y-6 rounded-3xl p-4 sm:p-6">
       <div>
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
