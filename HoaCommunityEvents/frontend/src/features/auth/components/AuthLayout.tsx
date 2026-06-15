@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTheme } from "../../../app/theme/theme-context";
+import { BRAND } from "../../../app/branding";
 
 export function AuthLayout({
   children,
@@ -49,7 +50,7 @@ export function AuthLayout({
                   : "border-[#efd3a5]/45 bg-[#f8e8cb]/10 text-[#f8dfb3]"
               }`}
             >
-              Neighborhood Noticeboard
+              {BRAND.communityLabel}
             </p>
             <h1
               className={`font-auth-display auth-motion-item auth-motion-delay-1 mt-5 max-w-lg text-3xl leading-tight font-semibold sm:text-4xl lg:text-5xl ${
@@ -169,12 +170,12 @@ export function AuthLayout({
                     : "border-[#bd7b39] bg-[#c77f34] text-[#fff5df]"
                 }`}
               >
-                HOA
+                {BRAND.acronym}
               </div>
               <p
                 className={`font-auth-ui text-xs tracking-[0.2em] uppercase ${isDark ? "text-[#8fcfb6]" : "text-[#885425]"}`}
               >
-                Resident Portal Access
+                Commons Portal Access
               </p>
               <h2
                 className={`font-auth-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl ${isDark ? "text-[#effff8]" : "text-[#2e1f15]"}`}

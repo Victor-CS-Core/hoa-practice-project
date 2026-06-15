@@ -1,6 +1,7 @@
 import { CalendarDays, LogIn, UserPlus, ArrowRight, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { User } from "../../../types/user";
+import { BRAND } from "../../../app/branding";
 
 interface HeroBannerProps {
   user: User | null;
@@ -41,7 +42,7 @@ export function HeroBanner({ user, isAdmin }: HeroBannerProps) {
               <CalendarDays className="h-6 w-6 text-white" />
             </div>
             <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-100 backdrop-blur-sm">
-              HOA Community
+              {BRAND.communityLabel}
             </span>
           </div>
 
@@ -53,7 +54,7 @@ export function HeroBanner({ user, isAdmin }: HeroBannerProps) {
 
           <p className="mt-3 max-w-xl text-base leading-relaxed text-emerald-100 sm:text-lg">
             {isGuest
-              ? "Discover community events, connect with neighbors, and stay involved in your HOA."
+              ? "Discover local events, connect with neighbors, and stay involved in Cedar Grove."
               : isAdmin
                 ? "Manage events, track attendance, and keep your community engaged."
                 : "Stay up to date with upcoming events and manage your RSVPs."}

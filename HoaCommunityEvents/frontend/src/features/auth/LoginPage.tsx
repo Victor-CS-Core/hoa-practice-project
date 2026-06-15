@@ -10,6 +10,7 @@ import { Input } from "../../components/ui/input";
 import { useTheme } from "../../app/theme/theme-context";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthBanner } from "./components/AuthBanner";
+import { BRAND } from "../../app/branding";
 import {
   getFieldError,
   toApiError,
@@ -78,7 +79,7 @@ export const LoginPage = observer(function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back, neighbor"
-      subtitle="Sign in to check upcoming HOA meetings, event updates, and resident notices."
+      subtitle="Sign in to check upcoming Cedar Grove events, neighborhood updates, and resident notices."
     >
       {sessionExpired && (
         <AuthBanner
@@ -165,7 +166,7 @@ export const LoginPage = observer(function LoginPage() {
               : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
           }`}
         >
-          Your HOA account keeps event updates tied to your resident profile.
+          Your {BRAND.communityLabel} account keeps event updates tied to your resident profile.
         </p>
 
         <Button

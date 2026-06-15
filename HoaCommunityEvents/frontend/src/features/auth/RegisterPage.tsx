@@ -10,6 +10,7 @@ import { Input } from "../../components/ui/input";
 import { useTheme } from "../../app/theme/theme-context";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthBanner } from "./components/AuthBanner";
+import { BRAND } from "../../app/branding";
 import {
   getFieldError,
   toApiError,
@@ -205,7 +206,7 @@ export const RegisterPage = observer(function RegisterPage() {
               : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
           }`}
         >
-          Your profile is used only for HOA communication, participation
+          Your profile is used only for {BRAND.communityLabel} communication, participation
           tracking, and secure resident access.
         </p>
 

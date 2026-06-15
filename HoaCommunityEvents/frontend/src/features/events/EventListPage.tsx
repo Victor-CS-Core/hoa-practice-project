@@ -15,6 +15,7 @@ import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
 import type { CreateEventFormValues, EventFilter } from "../../types/event";
 import { useState } from "react";
 import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
+import { BRAND } from "../../app/branding";
 
 export function EventListPage() {
   const { authStore } = useStore();
@@ -126,7 +127,7 @@ export function EventListPage() {
             Community Calendar
           </p>
           <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
-            Community Events
+            {BRAND.appName}
           </h1>
           <p className="mt-2 text-(--text-muted)">
             Find upcoming events and manage your attendance.

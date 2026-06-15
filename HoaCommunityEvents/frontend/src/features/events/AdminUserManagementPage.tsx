@@ -11,6 +11,7 @@ import {
   usePromoteUserToAdmin,
 } from "../../hooks/useAdminUsers";
 import { toApiError } from "../auth/authApiError";
+import { BRAND } from "../../app/branding";
 
 export function AdminUserManagementPage() {
   const { authStore } = useStore();
@@ -67,7 +68,7 @@ export function AdminUserManagementPage() {
           Admin Access Required
         </h2>
         <p className="mt-2 text-amber-800">
-          This page is available only to HOA administrators.
+          This page is available only to community administrators.
         </p>
         <p className="mt-4">
           <Link to="/events" className="text-amber-900 underline">
@@ -121,7 +122,7 @@ export function AdminUserManagementPage() {
             <p
               className={`font-auth-ui text-xs tracking-[0.22em] uppercase ${isDark ? "text-[#8dd8ba]" : "text-[#9b5d1f]"}`}
             >
-              HOA Operations Desk
+              {BRAND.adminToolsLabel}
             </p>
             <h1
               className={`mt-2 font-auth-display text-3xl font-semibold sm:text-4xl ${isDark ? "text-[#f3fbff]" : "text-[#352214]"}`}

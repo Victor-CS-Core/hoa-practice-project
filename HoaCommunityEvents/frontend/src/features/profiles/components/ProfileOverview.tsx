@@ -3,6 +3,7 @@ import { FramedImage } from "../../../components/media/FramedImage";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import type { Profile } from "../../../types/profile";
+import { BRAND } from "../../../app/branding";
 
 interface ProfileOverviewProps {
   profile: Profile;
@@ -15,7 +16,7 @@ export function ProfileOverview({
   isOwner,
   onEditClick,
 }: ProfileOverviewProps) {
-  const roleLabel = profile.role === "hoa_admin" ? "HOA Admin" : "Resident";
+  const roleLabel = profile.role === "hoa_admin" ? BRAND.adminLabel : "Resident";
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">

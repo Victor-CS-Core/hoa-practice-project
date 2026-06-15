@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Tooltip } from "../../components/ui/tooltip";
+import { BRAND } from "../branding";
 
 function roleToLabel(role?: string) {
   if (role === "hoa_admin") return "Admin";
@@ -159,14 +160,14 @@ export const AppLayout = observer(function AppLayout() {
                 className="group flex items-center gap-2 transition-transform duration-200 hover:scale-[1.02]"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-sm font-heading font-bold text-white">
-                  HOA
+                  {BRAND.acronym}
                 </div>
                 <span
                   className={`hidden font-heading text-lg font-semibold sm:block ${
                     isDark ? "text-emerald-200" : "text-emerald-900"
                   }`}
                 >
-                  Community Events
+                  {BRAND.appName}
                 </span>
               </Link>
 
@@ -196,7 +197,7 @@ export const AppLayout = observer(function AppLayout() {
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${navTone}`}
                       >
                         <Shield className="h-4 w-4" />
-                        Admin
+                        {BRAND.adminLabel}
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
                     </DropdownMenuTrigger>
@@ -204,7 +205,7 @@ export const AppLayout = observer(function AppLayout() {
                       align="start"
                       className="w-52 animate-fade-in"
                     >
-                      <DropdownMenuLabel>Admin Tools</DropdownMenuLabel>
+                      <DropdownMenuLabel>{BRAND.adminToolsLabel}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => void navigate("/admin/events")}
