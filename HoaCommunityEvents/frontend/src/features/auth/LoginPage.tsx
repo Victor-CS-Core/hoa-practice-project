@@ -166,7 +166,8 @@ export const LoginPage = observer(function LoginPage() {
               : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
           }`}
         >
-          Your {BRAND.communityLabel} account keeps event updates tied to your resident profile.
+          Your {BRAND.communityLabel} account keeps event updates tied to your
+          resident profile.
         </p>
 
         <Button

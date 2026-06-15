@@ -71,3 +71,11 @@ HoaCommunityEvents/artifacts/
 
 # DesignOS handoff inputs (reference only)
 product-plan/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

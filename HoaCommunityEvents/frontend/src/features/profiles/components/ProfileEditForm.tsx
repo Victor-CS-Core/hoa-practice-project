@@ -20,6 +20,8 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const clampZoom = (value: number) => Math.max(1, Math.min(3, value));
+const isHostedImageUrl = (value?: string | null) =>
+  (value ?? "").trim().toLowerCase().includes("cloudinary.com");
 
 export function ProfileEditForm({
   initialValues,
@@ -68,6 +70,8 @@ export function ProfileEditForm({
 
   const imageUrl = formValues.profileImageUrl?.trim() ?? "";
   const bannerImageUrl = formValues.bannerImageUrl?.trim() ?? "";
+  const hideAvatarUrlValue = isHostedImageUrl(imageUrl);
+  const hideBannerUrlValue = isHostedImageUrl(bannerImageUrl);
   const canShowPreview = avatarEnabled && imageUrl.length > 0;
   const canShowBannerPreview = bannerEnabled && bannerImageUrl.length > 0;
 
@@ -144,7 +148,6 @@ export function ProfileEditForm({
         ...prev,
         profileImageUrl: secureUrl,
       }));
-      setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Avatar uploaded successfully.");
       setPreviewPulse(true);
@@ -184,7 +187,6 @@ export function ProfileEditForm({
         ...prev,
         bannerImageUrl: secureUrl,
       }));
-      setBannerImageSource("url");
       setBannerUploadFile(null);
       setBannerUploadSuccess("Banner uploaded successfully.");
     } catch (error) {
@@ -294,7 +296,7 @@ export function ProfileEditForm({
                 Avatar Image
               </h3>
               <p className="mt-1 text-xs theme-text-muted">
-                Upload to Cloudinary or use a direct image URL.
+                Upload an image or use a direct image URL.
               </p>
             </div>
             <Button
@@ -394,7 +396,11 @@ export function ProfileEditForm({
                     Avatar Image URL
                   </label>
                   <Input
-                    value={formValues.profileImageUrl ?? ""}
+                    value={
+                      hideAvatarUrlValue
+                        ? ""
+                        : (formValues.profileImageUrl ?? "")
+                    }
                     onChange={(event) => {
                       setUploadError(null);
                       setUploadSuccess(null);
@@ -403,13 +409,22 @@ export function ProfileEditForm({
                         profileImageUrl: event.target.value,
                       }));
                     }}
-                    placeholder="https://example.com/avatar.jpg"
+                    placeholder={
+                      hideAvatarUrlValue
+                        ? "Uploaded image is set. Enter a URL to replace it."
+                        : "https://example.com/avatar.jpg"
+                    }
                     className={
                       profileImageError
                         ? "border-red-300 focus-visible:ring-red-500"
                         : ""
                     }
                   />
+                  {hideAvatarUrlValue && (
+                    <p className="mt-1 text-xs theme-text-muted">
+                      The current uploaded image link is hidden.
+                    </p>
+                  )}
                   {profileImageError && (
                     <p className="mt-1 text-xs text-red-500">
                       {profileImageError}
@@ -418,7 +433,7 @@ export function ProfileEditForm({
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                  Upload directly to Cloudinary using a signed request.
+                  Upload using a secure signed request.
                   <div className="mt-2">
                     <label
                       htmlFor="profile-avatar-upload"
@@ -467,7 +482,7 @@ export function ProfileEditForm({
                       onClick={() => void handleCloudinaryUpload()}
                       disabled={!uploadFile || isUploading}
                     >
-                      {isUploading ? "Uploading..." : "Upload to Cloudinary"}
+                      {isUploading ? "Uploading..." : "Upload Image"}
                     </Button>
                     {uploadFile && (
                       <span className="break-all text-xs theme-text-muted">
@@ -480,8 +495,8 @@ export function ProfileEditForm({
 
               {imageUrl && (
                 <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="break-all text-xs theme-text-muted">
-                    Current avatar URL: {imageUrl}
+                  <p className="text-xs theme-text-muted">
+                    Avatar image is set.
                   </p>
                   <Button
                     type="button"
@@ -560,7 +575,7 @@ export function ProfileEditForm({
                 Profile Banner
               </h3>
               <p className="mt-1 text-xs theme-text-muted">
-                Stored in your Cloudinary profile folder under banners.
+                Upload a banner image or use a direct image URL.
               </p>
             </div>
             <Button
@@ -683,7 +698,11 @@ export function ProfileEditForm({
                     Banner Image URL
                   </label>
                   <Input
-                    value={formValues.bannerImageUrl ?? ""}
+                    value={
+                      hideBannerUrlValue
+                        ? ""
+                        : (formValues.bannerImageUrl ?? "")
+                    }
                     onChange={(event) => {
                       setBannerUploadError(null);
                       setBannerUploadSuccess(null);
@@ -692,13 +711,22 @@ export function ProfileEditForm({
                         bannerImageUrl: event.target.value,
                       }));
                     }}
-                    placeholder="https://example.com/profile-banner.jpg"
+                    placeholder={
+                      hideBannerUrlValue
+                        ? "Uploaded image is set. Enter a URL to replace it."
+                        : "https://example.com/profile-banner.jpg"
+                    }
                     className={
                       bannerImageError
                         ? "border-red-300 focus-visible:ring-red-500"
                         : ""
                     }
                   />
+                  {hideBannerUrlValue && (
+                    <p className="mt-1 text-xs theme-text-muted">
+                      The current uploaded image link is hidden.
+                    </p>
+                  )}
                   {bannerImageError && (
                     <p className="mt-1 text-xs text-red-500">
                       {bannerImageError}
@@ -707,7 +735,7 @@ export function ProfileEditForm({
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
-                  Upload banner to Cloudinary using a signed request.
+                  Upload a banner image using a secure signed request.
                   <div className="mt-2">
                     <label
                       htmlFor="profile-banner-upload"
@@ -756,9 +784,7 @@ export function ProfileEditForm({
                       onClick={() => void handleBannerCloudinaryUpload()}
                       disabled={!bannerUploadFile || isBannerUploading}
                     >
-                      {isBannerUploading
-                        ? "Uploading..."
-                        : "Upload banner to Cloudinary"}
+                      {isBannerUploading ? "Uploading..." : "Upload Banner"}
                     </Button>
                     {bannerUploadFile && (
                       <span className="break-all text-xs theme-text-muted">
@@ -771,8 +797,8 @@ export function ProfileEditForm({
 
               {bannerImageUrl && (
                 <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="break-all text-xs theme-text-muted">
-                    Current banner URL: {bannerImageUrl}
+                  <p className="text-xs theme-text-muted">
+                    Banner image is set.
                   </p>
                   <Button
                     type="button"

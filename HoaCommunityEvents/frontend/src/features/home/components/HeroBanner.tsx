@@ -1,4 +1,10 @@
-import { CalendarDays, LogIn, UserPlus, ArrowRight, LayoutDashboard } from "lucide-react";
+import {
+  CalendarDays,
+  LogIn,
+  UserPlus,
+  ArrowRight,
+  LayoutDashboard,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import type { User } from "../../../types/user";
 import { BRAND } from "../../../app/branding";

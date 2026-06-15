@@ -206,8 +206,8 @@ export const RegisterPage = observer(function RegisterPage() {
               : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
           }`}
         >
-          Your profile is used only for {BRAND.communityLabel} communication, participation
-          tracking, and secure resident access.
+          Your profile is used only for {BRAND.communityLabel} communication,
+          participation tracking, and secure resident access.
         </p>
 
         <Button

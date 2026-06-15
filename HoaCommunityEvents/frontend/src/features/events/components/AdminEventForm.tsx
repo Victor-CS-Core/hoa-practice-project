@@ -124,7 +124,6 @@ export function AdminEventForm({
       }
 
       setValue("imageUrl", payload.secure_url, { shouldDirty: true });
-      setImageSource("url");
       setUploadFile(null);
       setUploadSuccess("Image uploaded successfully.");
     } catch (error) {
@@ -411,7 +410,7 @@ export function AdminEventForm({
                   </div>
                 ) : (
                   <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-                    Upload directly to Cloudinary using a signed request.
+                    Upload an image using a secure signed request.
                     <div className="mt-2">
                       <label
                         htmlFor="event-banner-upload"
@@ -460,7 +459,7 @@ export function AdminEventForm({
                         onClick={() => void handleCloudinaryUpload()}
                         disabled={!uploadFile || isUploading}
                       >
-                        {isUploading ? "Uploading..." : "Upload to Cloudinary"}
+                        {isUploading ? "Uploading..." : "Upload Image"}
                       </Button>
                       {uploadFile && (
                         <span className="break-all text-xs text-stone-500">
