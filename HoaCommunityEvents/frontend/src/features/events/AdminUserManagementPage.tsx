@@ -113,13 +113,19 @@ export function AdminUserManagementPage() {
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
-      <div className={`auth-motion-board rounded-[1.75rem] border p-6 shadow-[0_30px_50px_-38px_rgba(0,0,0,0.55)] ${panelTone}`}>
+      <div
+        className={`auth-motion-board rounded-[1.75rem] border p-6 shadow-[0_30px_50px_-38px_rgba(0,0,0,0.55)] ${panelTone}`}
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className={`font-auth-ui text-xs tracking-[0.22em] uppercase ${isDark ? "text-[#8dd8ba]" : "text-[#9b5d1f]"}`}>
+            <p
+              className={`font-auth-ui text-xs tracking-[0.22em] uppercase ${isDark ? "text-[#8dd8ba]" : "text-[#9b5d1f]"}`}
+            >
               HOA Operations Desk
             </p>
-            <h1 className={`mt-2 font-auth-display text-3xl font-semibold sm:text-4xl ${isDark ? "text-[#f3fbff]" : "text-[#352214]"}`}>
+            <h1
+              className={`mt-2 font-auth-display text-3xl font-semibold sm:text-4xl ${isDark ? "text-[#f3fbff]" : "text-[#352214]"}`}
+            >
               User Management
             </h1>
             <p className={`mt-2 max-w-2xl leading-relaxed ${textMutedTone}`}>
@@ -132,10 +138,14 @@ export function AdminUserManagementPage() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <div className={`rounded-xl border p-4 ${cardTone}`}>
-            <p className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${textMutedTone}`}>
+            <p
+              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${textMutedTone}`}
+            >
               Total Users
             </p>
-            <p className={`mt-2 font-heading text-2xl font-bold ${isDark ? "text-[#f3fbff]" : "text-[#3c2a1a]"}`}>
+            <p
+              className={`mt-2 font-heading text-2xl font-bold ${isDark ? "text-[#f3fbff]" : "text-[#3c2a1a]"}`}
+            >
               {totalUsers}
             </p>
           </div>
@@ -187,7 +197,9 @@ export function AdminUserManagementPage() {
       </div>
 
       {flashMessage && (
-        <div className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#2e7b61] bg-[#102921] text-[#b8f5dc]" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#2e7b61] bg-[#102921] text-[#b8f5dc]" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}
+        >
           <span>{flashMessage}</span>
           <button
             type="button"
@@ -200,7 +212,9 @@ export function AdminUserManagementPage() {
       )}
 
       {actionError && (
-        <div className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+        >
           <span>{actionError}</span>
           <button
             type="button"
@@ -212,11 +226,17 @@ export function AdminUserManagementPage() {
         </div>
       )}
 
-      <div className={`auth-motion-card rounded-2xl border shadow-[0_22px_45px_-34px_rgba(0,0,0,0.65)] ${cardTone}`}>
-        <div className={`border-b px-5 py-4 ${isDark ? "border-[#27384f]" : "border-[#e2c7a8]"}`}>
+      <div
+        className={`auth-motion-card rounded-2xl border shadow-[0_22px_45px_-34px_rgba(0,0,0,0.65)] ${cardTone}`}
+      >
+        <div
+          className={`border-b px-5 py-4 ${isDark ? "border-[#27384f]" : "border-[#e2c7a8]"}`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className={`font-auth-display text-2xl font-semibold ${isDark ? "text-[#f2f8ff]" : "text-[#362214]"}`}>
+              <h2
+                className={`font-auth-display text-2xl font-semibold ${isDark ? "text-[#f2f8ff]" : "text-[#362214]"}`}
+              >
                 Accounts Directory
               </h2>
               <p className={`mt-1 text-sm ${textMutedTone}`}>
@@ -226,7 +246,9 @@ export function AdminUserManagementPage() {
             </div>
 
             <label className="relative block w-full sm:w-90">
-              <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark ? "text-[#7f95ad]" : "text-[#9c826b]"}`} />
+              <Search
+                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark ? "text-[#7f95ad]" : "text-[#9c826b]"}`}
+              />
               <input
                 type="search"
                 value={userSearch}
@@ -254,7 +276,9 @@ export function AdminUserManagementPage() {
           )}
 
           {usersQuery.isError && (
-            <p className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}>
+            <p
+              className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+            >
               Failed to load users.
             </p>
           )}
@@ -262,7 +286,9 @@ export function AdminUserManagementPage() {
           {!usersQuery.isLoading &&
             !usersQuery.isError &&
             filteredUsers.length === 0 && (
-              <p className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#2f4159] bg-[#101b2b] text-[#9cb2c9]" : "border-stone-200 bg-stone-50 text-stone-600"}`}>
+              <p
+                className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#2f4159] bg-[#101b2b] text-[#9cb2c9]" : "border-stone-200 bg-stone-50 text-stone-600"}`}
+              >
                 No users match your current search.
               </p>
             )}
@@ -284,7 +310,9 @@ export function AdminUserManagementPage() {
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <p className={`truncate font-semibold ${isDark ? "text-[#f3f9ff]" : "text-[#352214]"}`}>
+                          <p
+                            className={`truncate font-semibold ${isDark ? "text-[#f3f9ff]" : "text-[#352214]"}`}
+                          >
                             {user.displayName}
                           </p>
                           <p className={`truncate text-sm ${textMutedTone}`}>
@@ -350,7 +378,9 @@ export function AdminUserManagementPage() {
                                 : "Delete User"}
                             </button>
                           ) : (
-                            <span className={`inline-flex min-h-8 items-center rounded-md px-3 py-1 text-xs font-medium sm:bg-transparent sm:px-0 sm:py-0 ${isDark ? "bg-[#202f45] text-[#9cb2c9]" : "bg-stone-100 text-stone-500"}`}>
+                            <span
+                              className={`inline-flex min-h-8 items-center rounded-md px-3 py-1 text-xs font-medium sm:bg-transparent sm:px-0 sm:py-0 ${isDark ? "bg-[#202f45] text-[#9cb2c9]" : "bg-stone-100 text-stone-500"}`}
+                            >
                               Delete locked
                             </span>
                           )}

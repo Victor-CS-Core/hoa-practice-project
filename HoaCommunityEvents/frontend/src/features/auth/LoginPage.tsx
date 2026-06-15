@@ -189,7 +189,9 @@ export const LoginPage = observer(function LoginPage() {
       </form>
 
       <div className="auth-motion-item auth-motion-delay-5 mt-8 text-center">
-        <p className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}>
+        <p
+          className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}
+        >
           Don&apos;t have an account?{" "}
           <Link
             to="/register"

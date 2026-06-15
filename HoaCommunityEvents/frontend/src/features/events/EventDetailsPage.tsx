@@ -56,8 +56,12 @@ export function EventDetailsPage() {
 
   if (isError || !data) {
     return (
-      <div className={`rounded-xl border p-8 text-center ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-stone-200 bg-white"}`}>
-        <h2 className={`font-heading text-2xl font-bold ${isDark ? "text-[#f2f8ff]" : "text-stone-900"}`}>
+      <div
+        className={`rounded-xl border p-8 text-center ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-stone-200 bg-white"}`}
+      >
+        <h2
+          className={`font-heading text-2xl font-bold ${isDark ? "text-[#f2f8ff]" : "text-stone-900"}`}
+        >
           Event not found
         </h2>
         <p className={`mt-2 ${isDark ? "text-[#9db2c8]" : "text-stone-600"}`}>

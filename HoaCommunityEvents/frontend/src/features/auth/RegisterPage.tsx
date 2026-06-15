@@ -98,7 +98,10 @@ export const RegisterPage = observer(function RegisterPage() {
             {...register("displayName", { required: true })}
           />
           {displayNameError && (
-            <p id="register-displayName-error" className="text-sm text-[#b73f28]">
+            <p
+              id="register-displayName-error"
+              className="text-sm text-[#b73f28]"
+            >
               {displayNameError}
             </p>
           )}
@@ -202,8 +205,8 @@ export const RegisterPage = observer(function RegisterPage() {
               : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
           }`}
         >
-          Your profile is used only for HOA communication, participation tracking,
-          and secure resident access.
+          Your profile is used only for HOA communication, participation
+          tracking, and secure resident access.
         </p>
 
         <Button
@@ -227,7 +230,9 @@ export const RegisterPage = observer(function RegisterPage() {
       </form>
 
       <div className="auth-motion-item auth-motion-delay-5 mt-8 text-center">
-        <p className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}>
+        <p
+          className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}
+        >
           Already have an account?{" "}
           <Link
             to="/login"

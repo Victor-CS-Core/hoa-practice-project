@@ -82,8 +82,16 @@ export function AuthLayout({
                 >
                   Monthly
                 </p>
-                <p className={`mt-1 font-heading text-2xl ${isDark ? "text-[#effff8]" : "text-[#fff6e4]"}`}>12+</p>
-                <p className={`text-xs ${isDark ? "text-[#cdecdc]" : "text-[#f4e4c6]"}`}>Events coordinated</p>
+                <p
+                  className={`mt-1 font-heading text-2xl ${isDark ? "text-[#effff8]" : "text-[#fff6e4]"}`}
+                >
+                  12+
+                </p>
+                <p
+                  className={`text-xs ${isDark ? "text-[#cdecdc]" : "text-[#f4e4c6]"}`}
+                >
+                  Events coordinated
+                </p>
               </div>
               <div
                 className={`rounded-xl border p-3 transition-transform duration-300 hover:-translate-y-0.5 ${
@@ -99,8 +107,16 @@ export function AuthLayout({
                 >
                   Resident reach
                 </p>
-                <p className={`mt-1 font-heading text-2xl ${isDark ? "text-[#effff8]" : "text-[#fff6e4]"}`}>98%</p>
-                <p className={`text-xs ${isDark ? "text-[#cdecdc]" : "text-[#f4e4c6]"}`}>Notified on time</p>
+                <p
+                  className={`mt-1 font-heading text-2xl ${isDark ? "text-[#effff8]" : "text-[#fff6e4]"}`}
+                >
+                  98%
+                </p>
+                <p
+                  className={`text-xs ${isDark ? "text-[#cdecdc]" : "text-[#f4e4c6]"}`}
+                >
+                  Notified on time
+                </p>
               </div>
             </div>
 
@@ -111,13 +127,19 @@ export function AuthLayout({
                   : "border-[#d28f49]/45 bg-[#f8e9cc] text-[#5b3418]"
               }`}
             >
-              <p className="font-auth-ui text-xs tracking-[0.16em] uppercase">This week on your street</p>
+              <p className="font-auth-ui text-xs tracking-[0.16em] uppercase">
+                This week on your street
+              </p>
               <div className="mt-3 space-y-2 text-sm">
-                <p className={`flex items-center justify-between border-b pb-2 ${isDark ? "border-[#2f8a70]/55" : "border-[#d7b087]/60"}`}>
+                <p
+                  className={`flex items-center justify-between border-b pb-2 ${isDark ? "border-[#2f8a70]/55" : "border-[#d7b087]/60"}`}
+                >
                   <span>Garden Club Walkthrough</span>
                   <span className="font-semibold">Tue 6:30 PM</span>
                 </p>
-                <p className={`flex items-center justify-between border-b pb-2 ${isDark ? "border-[#2f8a70]/55" : "border-[#d7b087]/60"}`}>
+                <p
+                  className={`flex items-center justify-between border-b pb-2 ${isDark ? "border-[#2f8a70]/55" : "border-[#d7b087]/60"}`}
+                >
                   <span>Pool Committee Check-in</span>
                   <span className="font-semibold">Thu 7:00 PM</span>
                 </p>
@@ -149,19 +171,29 @@ export function AuthLayout({
               >
                 HOA
               </div>
-              <p className={`font-auth-ui text-xs tracking-[0.2em] uppercase ${isDark ? "text-[#8fcfb6]" : "text-[#885425]"}`}>
+              <p
+                className={`font-auth-ui text-xs tracking-[0.2em] uppercase ${isDark ? "text-[#8fcfb6]" : "text-[#885425]"}`}
+              >
                 Resident Portal Access
               </p>
-              <h2 className={`font-auth-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl ${isDark ? "text-[#effff8]" : "text-[#2e1f15]"}`}>
+              <h2
+                className={`font-auth-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl ${isDark ? "text-[#effff8]" : "text-[#2e1f15]"}`}
+              >
                 {title}
               </h2>
               {subtitle && (
-                <p className={`mt-2 max-w-lg text-sm leading-relaxed sm:text-base ${isDark ? "text-[#b3c6d9]" : "text-[#745743]"}`}>
+                <p
+                  className={`mt-2 max-w-lg text-sm leading-relaxed sm:text-base ${isDark ? "text-[#b3c6d9]" : "text-[#745743]"}`}
+                >
                   {subtitle}
                 </p>
               )}
             </div>
-            <div className={`mt-7 border-t pt-6 ${isDark ? "border-[#2a3646]" : "border-[#ead4bb]"}`}>{children}</div>
+            <div
+              className={`mt-7 border-t pt-6 ${isDark ? "border-[#2a3646]" : "border-[#ead4bb]"}`}
+            >
+              {children}
+            </div>
           </div>
         </div>
       </div>

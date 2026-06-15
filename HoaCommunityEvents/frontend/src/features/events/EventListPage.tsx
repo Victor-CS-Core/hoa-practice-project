@@ -116,9 +116,13 @@ export function EventListPage() {
         <BackNavigationButton to="/" label="Back to home" />
       </div>
 
-      <div className={`flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 ${isDark ? "border-[#28405b] bg-[#101a2a]" : "border-[#e2c8a9] bg-[#fffaf1]"}`}>
+      <div
+        className={`flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 ${isDark ? "border-[#28405b] bg-[#101a2a]" : "border-[#e2c8a9] bg-[#fffaf1]"}`}
+      >
         <div>
-          <p className={`font-auth-ui text-xs font-semibold tracking-[0.2em] uppercase ${isDark ? "text-[#93d9bc]" : "text-[#9b5d1f]"}`}>
+          <p
+            className={`font-auth-ui text-xs font-semibold tracking-[0.2em] uppercase ${isDark ? "text-[#93d9bc]" : "text-[#9b5d1f]"}`}
+          >
             Community Calendar
           </p>
           <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
@@ -172,13 +176,17 @@ export function EventListPage() {
       {isLoading && <LoadingState label="Loading events..." />}
 
       {isError && (
-        <div className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div
+          className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+        >
           Failed to load events. Please refresh and try again.
         </div>
       )}
 
       {actionError && (
-        <div className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}>
+        <div
+          className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+        >
           {actionError}
         </div>
       )}
