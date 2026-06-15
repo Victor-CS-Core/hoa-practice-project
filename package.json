@@ -1,21 +1,13 @@
 {
-  "name": "projects",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Victor-CS-Core/hoa-practice-project.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "name": "hoa-community-events-e2e",
+  "private": true,
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Victor-CS-Core/hoa-practice-project/issues"
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
-  "homepage": "https://github.com/Victor-CS-Core/hoa-practice-project#readme",
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "@types/node": "^25.9.3"
