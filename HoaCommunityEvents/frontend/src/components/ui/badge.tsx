@@ -16,10 +16,10 @@ export function Badge({
     <div
       className={cn(
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        variant === "default" && "bg-emerald-600 text-white",
-        variant === "secondary" && "bg-stone-200 text-stone-800",
+        variant === "default" && "bg-(--ui-accent) text-(--ui-accent-ink)",
+        variant === "secondary" && "bg-(--ui-highlight-soft) text-(--text-primary)",
         variant === "outline" &&
-          "border border-stone-300 bg-white text-stone-700",
+          "border border-(--surface-border) bg-(--surface) text-(--text-muted)",
         className,
       )}
       {...props}

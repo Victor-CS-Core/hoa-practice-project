@@ -52,7 +52,7 @@ export function AuthLayout({
               Neighborhood Noticeboard
             </p>
             <h1
-              className={`font-auth-display auth-motion-item auth-motion-delay-1 mt-5 max-w-lg text-3xl leading-tight font-normal sm:text-4xl lg:text-5xl ${
+              className={`font-auth-display auth-motion-item auth-motion-delay-1 mt-5 max-w-lg text-3xl leading-tight font-semibold sm:text-4xl lg:text-5xl ${
                 isDark ? "text-[#e9fff4]" : "text-[#fff6e4]"
               }`}
             >
@@ -152,7 +152,7 @@ export function AuthLayout({
               <p className={`font-auth-ui text-xs tracking-[0.2em] uppercase ${isDark ? "text-[#8fcfb6]" : "text-[#885425]"}`}>
                 Resident Portal Access
               </p>
-              <h2 className={`font-auth-display mt-2 text-3xl font-normal tracking-tight sm:text-4xl ${isDark ? "text-[#effff8]" : "text-[#2e1f15]"}`}>
+              <h2 className={`font-auth-display mt-2 text-3xl font-semibold tracking-tight sm:text-4xl ${isDark ? "text-[#effff8]" : "text-[#2e1f15]"}`}>
                 {title}
               </h2>
               {subtitle && (
