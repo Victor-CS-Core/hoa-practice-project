@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HoaCommunityEvents.Infrastructure.Services;
 
-public class EventService(AppDbContext dbContext) : IEventService
+public class EventService(
+    AppDbContext dbContext,
+    ICloudinaryAssetService cloudinaryAssetService) : IEventService
 {
     public async Task<PagedResultDto<EventDto>> GetEventsAsync(EventFilterDto filter, string? currentUserId, bool isAdmin)
     {
@@ -178,6 +180,8 @@ public class EventService(AppDbContext dbContext) : IEventService
             return null;
         }
 
+        var previousImageUrl = evt.ImageUrl;
+
         evt.Title = dto.Title;
         evt.Description = dto.Description;
         evt.Category = dto.Category;
@@ -192,6 +196,10 @@ public class EventService(AppDbContext dbContext) : IEventService
         evt.UpdatedAt = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync();
+        if (ShouldDeletePreviousAsset(previousImageUrl, dto.ImageUrl))
+        {
+            await cloudinaryAssetService.DeleteIfOwnedAsync(previousImageUrl);
+        }
 
         return await GetEventAsync(id, hostUserId, true);
     }
@@ -277,8 +285,26 @@ public class EventService(AppDbContext dbContext) : IEventService
             return false;
         }
 
+        var previousImageUrl = evt.ImageUrl;
+
         dbContext.Events.Remove(evt);
         await dbContext.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(previousImageUrl))
+        {
+            await cloudinaryAssetService.DeleteIfOwnedAsync(previousImageUrl);
+        }
+
         return true;
+    }
+
+    private static bool ShouldDeletePreviousAsset(string? oldUrl, string? newUrl)
+    {
+        if (string.IsNullOrWhiteSpace(oldUrl))
+        {
+            return false;
+        }
+
+        return !string.Equals(oldUrl.Trim(), newUrl?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 }

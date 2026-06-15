@@ -7,7 +7,9 @@ using System.Security.Claims;
 
 namespace HoaCommunityEvents.Application.Services;
 
-public class ProfileService(UserManager<AppUser> userManager) : IProfileService
+public class ProfileService(
+    UserManager<AppUser> userManager,
+    ICloudinaryAssetService cloudinaryAssetService) : IProfileService
 {
     public async Task<ProfileDto?> GetProfileAsync(string username)
     {
@@ -37,6 +39,9 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
             return (false, 403, "You can only edit your own profile.", null);
         }
 
+        var previousAvatarUrl = currentUser.ProfileImageUrl;
+        var previousBannerUrl = currentUser.BannerImageUrl;
+
         currentUser.DisplayName = dto.DisplayName;
         currentUser.Bio = dto.Bio;
         currentUser.ProfileImageUrl = dto.ProfileImageUrl;
@@ -55,8 +60,28 @@ public class ProfileService(UserManager<AppUser> userManager) : IProfileService
             return (false, 400, error, null);
         }
 
+        if (ShouldDeletePreviousAsset(previousAvatarUrl, dto.ProfileImageUrl))
+        {
+            await cloudinaryAssetService.DeleteIfOwnedAsync(previousAvatarUrl);
+        }
+
+        if (ShouldDeletePreviousAsset(previousBannerUrl, dto.BannerImageUrl))
+        {
+            await cloudinaryAssetService.DeleteIfOwnedAsync(previousBannerUrl);
+        }
+
         var roles = await userManager.GetRolesAsync(currentUser);
         return (true, 200, null, CreateProfileDto(currentUser, roles));
+    }
+
+    private static bool ShouldDeletePreviousAsset(string? oldUrl, string? newUrl)
+    {
+        if (string.IsNullOrWhiteSpace(oldUrl))
+        {
+            return false;
+        }
+
+        return !string.Equals(oldUrl.Trim(), newUrl?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     private static ProfileDto CreateProfileDto(AppUser user, IList<string> roles)

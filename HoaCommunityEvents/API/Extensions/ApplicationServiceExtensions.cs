@@ -157,6 +157,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
+        services.AddScoped<ICloudinaryAssetService, CloudinaryAssetService>();
 
         return services;
     }
