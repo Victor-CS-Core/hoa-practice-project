@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Tooltip } from "../../components/ui/tooltip";
+import { BRAND } from "../branding";
 
 function roleToLabel(role?: string) {
   if (role === "hoa_admin") return "Admin";
@@ -120,16 +121,16 @@ export const AppLayout = observer(function AppLayout() {
   };
 
   const headerTone = isDark
-    ? "border-stone-700 bg-stone-950/80 text-stone-100"
-    : "border-stone-200 bg-white/80 text-stone-900";
+    ? "border-stone-700 bg-stone-950/82 text-stone-100"
+    : "border-[#dfc5a3] bg-[#fffaf2]/90 text-stone-900";
 
   const navTone = isDark
-    ? "text-stone-300 hover:bg-stone-800/90 hover:text-emerald-300"
-    : "text-stone-600 hover:bg-stone-100 hover:text-emerald-700";
+    ? "text-stone-300 hover:bg-stone-800/90 hover:text-[#9ce8c7]"
+    : "text-[#6a513b] hover:bg-[#f3e8d7] hover:text-[#2f7a5b]";
 
   const activeTone = isDark
-    ? "bg-emerald-900/40 text-emerald-200"
-    : "bg-emerald-100 text-emerald-800";
+    ? "bg-[#204739] text-[#c9f8e2]"
+    : "bg-[#dff1e8] text-[#285f48]";
 
   const initials = getInitials(user?.displayName, user?.username);
 
@@ -159,14 +160,14 @@ export const AppLayout = observer(function AppLayout() {
                 className="group flex items-center gap-2 transition-transform duration-200 hover:scale-[1.02]"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-sm font-heading font-bold text-white">
-                  HOA
+                  {BRAND.acronym}
                 </div>
                 <span
                   className={`hidden font-heading text-lg font-semibold sm:block ${
                     isDark ? "text-emerald-200" : "text-emerald-900"
                   }`}
                 >
-                  Community Events
+                  {BRAND.appName}
                 </span>
               </Link>
 
@@ -196,7 +197,7 @@ export const AppLayout = observer(function AppLayout() {
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all duration-200 ${navTone}`}
                       >
                         <Shield className="h-4 w-4" />
-                        Admin
+                        {BRAND.adminLabel}
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
                     </DropdownMenuTrigger>
@@ -204,7 +205,7 @@ export const AppLayout = observer(function AppLayout() {
                       align="start"
                       className="w-52 animate-fade-in"
                     >
-                      <DropdownMenuLabel>Admin Tools</DropdownMenuLabel>
+                      <DropdownMenuLabel>{BRAND.adminToolsLabel}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => void navigate("/admin/events")}

@@ -7,8 +7,10 @@ import { useStore } from "../../app/stores/store";
 import type { RegisterFormValues } from "../../types/user";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { useTheme } from "../../app/theme/theme-context";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthBanner } from "./components/AuthBanner";
+import { BRAND } from "../../app/branding";
 import {
   getFieldError,
   toApiError,
@@ -17,6 +19,8 @@ import {
 
 export const RegisterPage = observer(function RegisterPage() {
   const { authStore } = useStore();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<ApiErrorEnvelope | null>(null);
 
@@ -57,7 +61,7 @@ export const RegisterPage = observer(function RegisterPage() {
   return (
     <AuthLayout
       title="Create account"
-      subtitle="Join your HOA community platform to view and manage events."
+      subtitle="Set up your resident profile to RSVP, follow board updates, and stay in neighborhood sync."
     >
       {showValidationBanner && (
         <AuthBanner type="error" message="Please fix the highlighted fields." />
@@ -70,10 +74,10 @@ export const RegisterPage = observer(function RegisterPage() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-2">
+        <div className="auth-motion-item auth-motion-delay-1 space-y-2">
           <label
             htmlFor="displayName"
-            className={`text-sm ${displayNameError ? "text-red-600" : "text-stone-700"}`}
+            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${displayNameError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
           >
             Display Name
           </label>
@@ -87,22 +91,27 @@ export const RegisterPage = observer(function RegisterPage() {
             }
             className={
               displayNameError
-                ? "border-red-300 focus-visible:ring-red-500"
-                : ""
+                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
+                : isDark
+                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf] focus-visible:ring-[#2d8d67]"
+                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
             }
             {...register("displayName", { required: true })}
           />
           {displayNameError && (
-            <p id="register-displayName-error" className="text-sm text-red-600">
+            <p
+              id="register-displayName-error"
+              className="text-sm text-[#b73f28]"
+            >
               {displayNameError}
             </p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="auth-motion-item auth-motion-delay-2 space-y-2">
           <label
             htmlFor="username"
-            className={`text-sm ${usernameError ? "text-red-600" : "text-stone-700"}`}
+            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${usernameError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
           >
             Username
           </label>
@@ -115,21 +124,25 @@ export const RegisterPage = observer(function RegisterPage() {
               usernameError ? "register-username-error" : undefined
             }
             className={
-              usernameError ? "border-red-300 focus-visible:ring-red-500" : ""
+              usernameError
+                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
+                : isDark
+                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf] focus-visible:ring-[#2d8d67]"
+                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
             }
             {...register("username", { required: true })}
           />
           {usernameError && (
-            <p id="register-username-error" className="text-sm text-red-600">
+            <p id="register-username-error" className="text-sm text-[#b73f28]">
               {usernameError}
             </p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="auth-motion-item auth-motion-delay-3 space-y-2">
           <label
             htmlFor="email"
-            className={`text-sm ${emailError ? "text-red-600" : "text-stone-700"}`}
+            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${emailError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
           >
             Email address
           </label>
@@ -140,21 +153,25 @@ export const RegisterPage = observer(function RegisterPage() {
             aria-invalid={!!emailError}
             aria-describedby={emailError ? "register-email-error" : undefined}
             className={
-              emailError ? "border-red-300 focus-visible:ring-red-500" : ""
+              emailError
+                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
+                : isDark
+                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf] focus-visible:ring-[#2d8d67]"
+                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
             }
             {...register("email", { required: true })}
           />
           {emailError && (
-            <p id="register-email-error" className="text-sm text-red-600">
+            <p id="register-email-error" className="text-sm text-[#b73f28]">
               {emailError}
             </p>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="auth-motion-item auth-motion-delay-4 space-y-2">
           <label
             htmlFor="password"
-            className={`text-sm ${passwordError ? "text-red-600" : "text-stone-700"}`}
+            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${passwordError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
           >
             Password
           </label>
@@ -167,30 +184,45 @@ export const RegisterPage = observer(function RegisterPage() {
               passwordError ? "register-password-error" : undefined
             }
             className={
-              passwordError ? "border-red-300 focus-visible:ring-red-500" : ""
+              passwordError
+                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
+                : isDark
+                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] focus-visible:ring-[#2d8d67]"
+                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
             }
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p id="register-password-error" className="text-sm text-red-600">
+            <p id="register-password-error" className="text-sm text-[#b73f28]">
               {passwordError}
             </p>
           )}
         </div>
 
-        <p className="text-xs text-stone-500">
-          Your data is securely stored for community management only.
+        <p
+          className={`auth-motion-item auth-motion-delay-4 rounded-lg border px-3 py-2 text-xs leading-relaxed ${
+            isDark
+              ? "border-[#2d4057] bg-[#132033] text-[#a9bfd8]"
+              : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
+          }`}
+        >
+          Your profile is used only for {BRAND.communityLabel} communication, participation
+          tracking, and secure resident access.
         </p>
 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-auto w-full py-2.5 text-white disabled:cursor-not-allowed"
+          className={`auth-motion-item auth-motion-delay-5 h-auto w-full border py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
+            isDark
+              ? "border-[#2e8f67] bg-[#1f815c] text-[#eafff6] hover:bg-[#1a6f4f]"
+              : "border-[#2e5f3b] bg-[#356b43] text-[#fff8ea] hover:bg-[#2e5f3b]"
+          }`}
         >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Creating account...
+              Creating resident profile...
             </>
           ) : (
             "Create account"
@@ -198,12 +230,14 @@ export const RegisterPage = observer(function RegisterPage() {
         </Button>
       </form>
 
-      <div className="mt-8 text-center">
-        <p className="text-sm text-stone-600">
+      <div className="auth-motion-item auth-motion-delay-5 mt-8 text-center">
+        <p
+          className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}
+        >
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-medium text-emerald-600 hover:text-emerald-700"
+            className={`font-semibold ${isDark ? "text-[#70d6ad] hover:text-[#8cebc6]" : "text-[#af5f19] hover:text-[#8e4d14]"}`}
           >
             Log in
           </Link>

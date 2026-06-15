@@ -11,6 +11,7 @@ import {
   usePromoteUserToAdmin,
 } from "../../hooks/useAdminUsers";
 import { toApiError } from "../auth/authApiError";
+import { BRAND } from "../../app/branding";
 
 export function AdminUserManagementPage() {
   const { authStore } = useStore();
@@ -24,7 +25,7 @@ export function AdminUserManagementPage() {
   const promoteUserMutation = usePromoteUserToAdmin();
   const deleteUserMutation = useDeleteUser();
   const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const rowHoverTone = isDark ? "hover:bg-stone-800/45" : "hover:bg-stone-100";
+  const rowHoverTone = isDark ? "hover:bg-[#1a2637]" : "hover:bg-[#f4eee3]";
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
@@ -46,6 +47,20 @@ export function AdminUserManagementPage() {
     (user) => user.role !== "hoa_admin",
   ).length;
 
+  const pageGradient = isDark
+    ? "bg-[radial-gradient(circle_at_14%_10%,#1a3a58_0%,transparent_40%),radial-gradient(circle_at_90%_80%,#174434_0%,transparent_42%),linear-gradient(145deg,#0c121c_0%,#0b1a2a_52%,#101722_100%)]"
+    : "bg-[radial-gradient(circle_at_12%_14%,#ffe8c5_0%,transparent_43%),radial-gradient(circle_at_88%_82%,#d7f0db_0%,transparent_40%),linear-gradient(160deg,#f7f2e7_0%,#f4ede0_48%,#edf4ea_100%)]";
+
+  const panelTone = isDark
+    ? "border-[#2a3f58] bg-[#101b2b]/88 text-[#e8f3ff]"
+    : "border-[#d9b58f] bg-[#fffaf0] text-[#3d2c1d]";
+
+  const cardTone = isDark
+    ? "border-[#27384f] bg-[#0f1a2a]"
+    : "border-[#e2c7a8] bg-[#fffdf8]";
+
+  const textMutedTone = isDark ? "text-[#9fb4c9]" : "text-[#7a5e46]";
+
   if (!authStore.isAdmin) {
     return (
       <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
@@ -53,7 +68,7 @@ export function AdminUserManagementPage() {
           Admin Access Required
         </h2>
         <p className="mt-2 text-amber-800">
-          This page is available only to HOA administrators.
+          This page is available only to community administrators.
         </p>
         <p className="mt-4">
           <Link to="/events" className="text-amber-900 underline">
@@ -94,62 +109,64 @@ export function AdminUserManagementPage() {
   };
 
   return (
-    <section className="space-y-6">
+    <section className={`space-y-6 rounded-3xl p-4 sm:p-6 ${pageGradient}`}>
       <div>
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
       <div
-        className={`rounded-2xl border p-6 shadow-sm ${
-          isDark
-            ? "border-emerald-700/40 bg-linear-to-r from-stone-900 via-stone-900 to-emerald-950/25"
-            : "border-emerald-200/70 bg-linear-to-r from-emerald-50 via-white to-emerald-50/30"
-        }`}
+        className={`auth-motion-board rounded-[1.75rem] border p-6 shadow-[0_30px_50px_-38px_rgba(0,0,0,0.55)] ${panelTone}`}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
+            <p
+              className={`font-auth-ui text-xs tracking-[0.22em] uppercase ${isDark ? "text-[#8dd8ba]" : "text-[#9b5d1f]"}`}
+            >
+              {BRAND.adminToolsLabel}
+            </p>
+            <h1
+              className={`mt-2 font-auth-display text-3xl font-semibold sm:text-4xl ${isDark ? "text-[#f3fbff]" : "text-[#352214]"}`}
+            >
               User Management
             </h1>
-            <p className="mt-2 max-w-2xl text-(--text-muted)">
+            <p className={`mt-2 max-w-2xl leading-relaxed ${textMutedTone}`}>
               Manage role assignments and account controls with a clear view of
-              admin coverage across your community.
+              admin coverage across your community. Keep board access tightly
+              governed while residents stay informed.
             </p>
           </div>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div
-            className={`rounded-xl border p-4 ${
-              isDark
-                ? "border-stone-700 bg-stone-900/70"
-                : "border-stone-200 bg-white"
-            }`}
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-(--text-muted)">
+          <div className={`rounded-xl border p-4 ${cardTone}`}>
+            <p
+              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${textMutedTone}`}
+            >
               Total Users
             </p>
-            <p className="mt-2 font-heading text-2xl font-bold text-(--text-primary)">
+            <p
+              className={`mt-2 font-heading text-2xl font-bold ${isDark ? "text-[#f3fbff]" : "text-[#3c2a1a]"}`}
+            >
               {totalUsers}
             </p>
           </div>
           <div
             className={`rounded-xl border p-4 ${
               isDark
-                ? "border-amber-700/40 bg-amber-950/30"
-                : "border-amber-200 bg-amber-50/70"
+                ? "border-[#6e5d2b] bg-[#2f2715]"
+                : "border-[#e0b364] bg-[#fff3d8]"
             }`}
           >
             <p
-              className={`text-xs font-semibold uppercase tracking-wide ${
-                isDark ? "text-amber-300" : "text-amber-700"
+              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${
+                isDark ? "text-[#efdb9c]" : "text-[#9a6814]"
               }`}
             >
               Admins
             </p>
             <p
               className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
-                isDark ? "text-amber-200" : "text-amber-900"
+                isDark ? "text-[#fff1c0]" : "text-[#6f470c]"
               }`}
             >
               <Shield className="h-5 w-5" /> {adminUsers}
@@ -158,20 +175,20 @@ export function AdminUserManagementPage() {
           <div
             className={`rounded-xl border p-4 ${
               isDark
-                ? "border-emerald-700/40 bg-emerald-950/30"
-                : "border-emerald-200 bg-emerald-50/70"
+                ? "border-[#2e7760] bg-[#122c24]"
+                : "border-[#8ec7a8] bg-[#e9f7ed]"
             }`}
           >
             <p
-              className={`text-xs font-semibold uppercase tracking-wide ${
-                isDark ? "text-emerald-300" : "text-emerald-700"
+              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${
+                isDark ? "text-[#99e4c7]" : "text-[#1f6a4f]"
               }`}
             >
               Residents
             </p>
             <p
               className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
-                isDark ? "text-emerald-200" : "text-emerald-900"
+                isDark ? "text-[#d1f9e9]" : "text-[#16513d]"
               }`}
             >
               <UserCheck className="h-5 w-5" /> {residentUsers}
@@ -181,7 +198,9 @@ export function AdminUserManagementPage() {
       </div>
 
       {flashMessage && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-800">
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#2e7b61] bg-[#102921] text-[#b8f5dc]" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}
+        >
           <span>{flashMessage}</span>
           <button
             type="button"
@@ -194,7 +213,9 @@ export function AdminUserManagementPage() {
       )}
 
       {actionError && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+        >
           <span>{actionError}</span>
           <button
             type="button"
@@ -206,27 +227,39 @@ export function AdminUserManagementPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm">
-        <div className="border-b border-stone-200 px-5 py-4">
+      <div
+        className={`auth-motion-card rounded-2xl border shadow-[0_22px_45px_-34px_rgba(0,0,0,0.65)] ${cardTone}`}
+      >
+        <div
+          className={`border-b px-5 py-4 ${isDark ? "border-[#27384f]" : "border-[#e2c7a8]"}`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-heading text-xl font-semibold text-stone-900">
+              <h2
+                className={`font-auth-display text-2xl font-semibold ${isDark ? "text-[#f2f8ff]" : "text-[#362214]"}`}
+              >
                 Accounts Directory
               </h2>
-              <p className="mt-1 text-sm text-stone-500">
+              <p className={`mt-1 text-sm ${textMutedTone}`}>
                 Search by display name, username, or email and take role
                 actions.
               </p>
             </div>
 
             <label className="relative block w-full sm:w-90">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+              <Search
+                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark ? "text-[#7f95ad]" : "text-[#9c826b]"}`}
+              />
               <input
                 type="search"
                 value={userSearch}
                 onChange={(event) => setUserSearch(event.target.value)}
                 placeholder="Search users..."
-                className="min-h-11 w-full rounded-md border border-stone-300 bg-white pl-10 pr-3 py-2 text-sm text-stone-900"
+                className={`min-h-11 w-full rounded-md border pl-10 pr-3 py-2 text-sm ${
+                  isDark
+                    ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf]"
+                    : "border-[#d7b087] bg-[#fffcf5] text-[#3f2b1a] placeholder:text-[#8a6d55]"
+                }`}
               />
             </label>
           </div>
@@ -234,7 +267,7 @@ export function AdminUserManagementPage() {
 
         <div className="px-5 pb-5 pt-4">
           {!usersQuery.isLoading && !usersQuery.isError && (
-            <p className="mb-3 text-xs font-medium text-stone-500">
+            <p className={`mb-3 text-xs font-medium ${textMutedTone}`}>
               Showing {filteredUsers.length} of {totalUsers} users
             </p>
           )}
@@ -244,7 +277,9 @@ export function AdminUserManagementPage() {
           )}
 
           {usersQuery.isError && (
-            <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p
+              className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
+            >
               Failed to load users.
             </p>
           )}
@@ -252,7 +287,9 @@ export function AdminUserManagementPage() {
           {!usersQuery.isLoading &&
             !usersQuery.isError &&
             filteredUsers.length === 0 && (
-              <p className="rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+              <p
+                className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#2f4159] bg-[#101b2b] text-[#9cb2c9]" : "border-stone-200 bg-stone-50 text-stone-600"}`}
+              >
                 No users match your current search.
               </p>
             )}
@@ -270,17 +307,19 @@ export function AdminUserManagementPage() {
                   return (
                     <div
                       key={user.email}
-                      className={`rounded-xl border border-stone-200 p-4 transition-colors ${rowHoverTone}`}
+                      className={`rounded-xl border p-4 transition-colors ${rowHoverTone} ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-[#ead4bb] bg-[#fffdfa]"}`}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-stone-900">
+                          <p
+                            className={`truncate font-semibold ${isDark ? "text-[#f3f9ff]" : "text-[#352214]"}`}
+                          >
                             {user.displayName}
                           </p>
-                          <p className="truncate text-sm text-stone-500">
+                          <p className={`truncate text-sm ${textMutedTone}`}>
                             @{user.username}
                           </p>
-                          <p className="truncate text-sm text-stone-500">
+                          <p className={`truncate text-sm ${textMutedTone}`}>
                             {user.email}
                           </p>
                         </div>
@@ -289,8 +328,12 @@ export function AdminUserManagementPage() {
                           <span
                             className={`inline-flex min-h-8 items-center rounded-full px-3 py-1 text-xs font-semibold sm:w-auto ${
                               isAdminRole
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-stone-100 text-stone-700"
+                                ? isDark
+                                  ? "bg-[#3d3215] text-[#ffe8ab]"
+                                  : "bg-amber-100 text-amber-800"
+                                : isDark
+                                  ? "bg-[#202f45] text-[#c0d2e6]"
+                                  : "bg-stone-100 text-stone-700"
                             }`}
                           >
                             {user.isMasterAdmin
@@ -305,7 +348,11 @@ export function AdminUserManagementPage() {
                               type="button"
                               onClick={() => handlePromote(user.email)}
                               disabled={isBusy}
-                              className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
+                              className={`inline-flex min-h-11 w-full items-center justify-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60 sm:w-auto ${
+                                isDark
+                                  ? "bg-[#1f815c] text-[#eafff6] hover:bg-[#1a6f4f]"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                              }`}
                             >
                               {promoteUserMutation.isPending
                                 ? "Updating..."
@@ -320,7 +367,11 @@ export function AdminUserManagementPage() {
                                 handleDeleteUser(user.email, user.displayName)
                               }
                               disabled={isBusy}
-                              className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 sm:w-auto"
+                              className={`inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60 sm:w-auto ${
+                                isDark
+                                  ? "bg-[#8b3a37] text-[#ffe5e3] hover:bg-[#7a2f2d]"
+                                  : "bg-red-600 text-white hover:bg-red-700"
+                              }`}
                             >
                               <UserX className="h-4 w-4" />
                               {deleteUserMutation.isPending
@@ -328,7 +379,9 @@ export function AdminUserManagementPage() {
                                 : "Delete User"}
                             </button>
                           ) : (
-                            <span className="inline-flex min-h-8 items-center rounded-md bg-stone-100 px-3 py-1 text-xs font-medium text-stone-500 sm:bg-transparent sm:px-0 sm:py-0">
+                            <span
+                              className={`inline-flex min-h-8 items-center rounded-md px-3 py-1 text-xs font-medium sm:bg-transparent sm:px-0 sm:py-0 ${isDark ? "bg-[#202f45] text-[#9cb2c9]" : "bg-stone-100 text-stone-500"}`}
+                            >
                               Delete locked
                             </span>
                           )}

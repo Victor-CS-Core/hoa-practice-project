@@ -1,6 +1,7 @@
 import { Heart, CalendarDays, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../../../app/theme/theme-context";
+import { BRAND } from "../../../app/branding";
 
 export function CommunityInfo() {
   const { resolvedTheme } = useTheme();
@@ -29,7 +30,7 @@ export function CommunityInfo() {
             Building Stronger Connections
           </h2>
           <p className="mt-3 leading-relaxed text-stone-600">
-            HOA Community Events brings neighbors together through shared
+            {BRAND.appName} brings neighbors together through shared
             experiences. From pool parties to board meetings, every event is an
             opportunity to strengthen our community bonds.
           </p>
@@ -57,7 +58,7 @@ export function CommunityInfo() {
             >
               <CalendarDays className={`h-5 w-5 ${iconTone}`} />
               <span className={`text-sm font-medium ${badgeTextTone}`}>
-                Community Events
+                {BRAND.appName}
               </span>
             </div>
             <div

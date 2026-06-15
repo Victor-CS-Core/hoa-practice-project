@@ -21,6 +21,7 @@ import {
   useLeaveEvent,
 } from "../../hooks/useAttendance";
 import { useStore } from "../../app/stores/store";
+import { useTheme } from "../../app/theme/theme-context";
 import { useSignalR } from "../../hooks/useSignalR";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
@@ -32,6 +33,8 @@ export function EventDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { authStore } = useStore();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const { data, isLoading, isError } = useEvent(id);
   const cancelMutation = useCancelEvent();
   const publishMutation = usePublishEvent();
@@ -53,16 +56,20 @@ export function EventDetailsPage() {
 
   if (isError || !data) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-8 text-center">
-        <h2 className="font-heading text-2xl font-bold text-stone-900">
+      <div
+        className={`rounded-xl border p-8 text-center ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-stone-200 bg-white"}`}
+      >
+        <h2
+          className={`font-heading text-2xl font-bold ${isDark ? "text-[#f2f8ff]" : "text-stone-900"}`}
+        >
           Event not found
         </h2>
-        <p className="mt-2 text-stone-600">
+        <p className={`mt-2 ${isDark ? "text-[#9db2c8]" : "text-stone-600"}`}>
           The event may have been removed or is unavailable.
         </p>
         <Link
           to="/events"
-          className="mt-4 inline-block text-emerald-700 underline hover:text-emerald-800"
+          className={`mt-4 inline-block underline ${isDark ? "text-[#7be3b8] hover:text-[#95f0ca]" : "text-emerald-700 hover:text-emerald-800"}`}
         >
           Back to events
         </Link>
@@ -184,7 +191,13 @@ export function EventDetailsPage() {
   })}`;
 
   return (
-    <section className="min-w-0 space-y-6">
+    <section
+      className={`min-w-0 space-y-6 rounded-3xl p-4 sm:p-5 ${
+        isDark
+          ? "bg-[linear-gradient(155deg,rgba(16,28,42,0.72),rgba(14,24,36,0.72))]"
+          : "bg-[linear-gradient(155deg,rgba(255,249,238,0.88),rgba(243,251,246,0.88))]"
+      }`}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BackNavigationButton to="/events" label="Back to events" />
       </div>

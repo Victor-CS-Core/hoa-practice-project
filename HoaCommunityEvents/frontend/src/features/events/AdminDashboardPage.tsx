@@ -78,7 +78,7 @@ export function AdminDashboardPage() {
           Admin Access Required
         </h2>
         <p className="mt-2 text-amber-800">
-          This dashboard is available only to HOA administrators.
+          This dashboard is available only to community administrators.
         </p>
         <p className="mt-4">
           <Link to="/events" className="text-amber-900 underline">

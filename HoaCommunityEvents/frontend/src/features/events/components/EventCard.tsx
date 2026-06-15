@@ -11,6 +11,7 @@ import {
 } from "../../../components/ui/card";
 import { useTheme } from "../../../app/theme/theme-context";
 import type { HoaEvent } from "../../../types/event";
+import { BRAND } from "../../../app/branding";
 
 type UserRole = "guest" | "resident" | "hoa_admin";
 
@@ -180,7 +181,7 @@ export function EventCard({
 
       {role === "hoa_admin" && (
         <div className="border-t border-amber-200 bg-amber-100 py-1 text-center text-xs font-medium text-amber-800">
-          Managed by HOA
+          Managed by {BRAND.communityLabel}
         </div>
       )}
     </Card>
