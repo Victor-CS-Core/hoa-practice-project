@@ -24,7 +24,7 @@ export function AuthLayout({
     >
       <div className="mx-auto grid min-h-[calc(100svh-9rem)] max-w-6xl grid-cols-1 gap-5 p-4 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:p-10">
         <div
-          className={`auth-motion-board relative overflow-hidden rounded-[2rem] border p-6 shadow-[0_25px_60px_-30px_rgba(18,35,27,0.7)] sm:p-8 lg:p-10 ${
+          className={`auth-motion-board relative overflow-hidden rounded-4xl border p-6 shadow-[0_25px_60px_-30px_rgba(18,35,27,0.7)] sm:p-8 lg:p-10 ${
             isDark
               ? "border-[#3f7d69]/45 bg-[#0f3b37] text-[#e7f6ef]"
               : "border-[#c77f34]/35 bg-[#214836] text-[#f8f0de]"
