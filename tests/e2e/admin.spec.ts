@@ -53,7 +53,7 @@ test.describe('Admin Workflows', () => {
     await expect(page.getByText(/event deleted successfully/i)).toBeVisible();
   });
 
-  test('admin user management supports search and promote', async ({ page }) => {
+  test('admin user management supports search, promote, and delete', async ({ page }) => {
     await installMockApi(page, { initialToken: 'token-admin' });
 
     await page.goto('/admin/users');
@@ -64,5 +64,13 @@ test.describe('Admin Workflows', () => {
 
     await page.getByRole('button', { name: /promote to admin/i }).click();
     await expect(page.getByText(/updated role/i)).toBeVisible();
+
+    page.once('dialog', async (dialog) => {
+      await dialog.accept();
+    });
+
+    await page.getByRole('button', { name: /delete user/i }).click();
+    await expect(page.getByText(/deleted user/i)).toBeVisible();
+    await expect(page.getByText(/no users match your current search\./i)).toBeVisible();
   });
 });
