@@ -1,0 +1,837 @@
+{
+  "API.Tests/AccountIntegrationTests.cs": {
+    "mtime": 1781291764.3565562,
+    "ast_hash": "3707a65a91783c5bf0362934aa34a7ee",
+    "semantic_hash": ""
+  },
+  "API.Tests/ApiTestFactory.cs": {
+    "mtime": 1781291764.3475575,
+    "ast_hash": "1ff1d26aa3c77ab2367776ceda3e498d",
+    "semantic_hash": ""
+  },
+  "API.Tests/EventsIntegrationTests.cs": {
+    "mtime": 1781291764.352562,
+    "ast_hash": "22a6e0a790751032d35c44968e5d5fb0",
+    "semantic_hash": ""
+  },
+  "API.Tests/HealthEndpointTests.cs": {
+    "mtime": 1781291764.3485572,
+    "ast_hash": "9c5dfe93b37e05dfb7af048084a5dd3f",
+    "semantic_hash": ""
+  },
+  "API.Tests/HoaCommunityEvents.API.Tests.csproj": {
+    "mtime": 1781291764.3415656,
+    "ast_hash": "c91c4d16249a776750218cefb48ac009",
+    "semantic_hash": ""
+  },
+  "API/Controllers/AccountController.cs": {
+    "mtime": 1781113078.6518817,
+    "ast_hash": "b87d1348809391e59631c540cc84e6f3",
+    "semantic_hash": ""
+  },
+  "API/Controllers/AttendanceController.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "d0862a5c8deaea82544176b3cf28730c",
+    "semantic_hash": ""
+  },
+  "API/Controllers/BaseApiController.cs": {
+    "mtime": 1781038823.1723294,
+    "ast_hash": "3b9e3b29b74a4f69473e8fde9458be67",
+    "semantic_hash": ""
+  },
+  "API/Controllers/EventsController.cs": {
+    "mtime": 1781127593.0778887,
+    "ast_hash": "c98edd7a715ecc060722d54ab3db9285",
+    "semantic_hash": ""
+  },
+  "API/Controllers/ProfilesController.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "a2ca17dccd4ee4e67f1fbc637802ae10",
+    "semantic_hash": ""
+  },
+  "API/Controllers/UploadsController.cs": {
+    "mtime": 1781297037.4131014,
+    "ast_hash": "5c07aa2e1bd80959a3896e0bf5977e3f",
+    "semantic_hash": ""
+  },
+  "API/Extensions/ApplicationServiceExtensions.cs": {
+    "mtime": 1781546253.2365365,
+    "ast_hash": "daafb881b9ccc4f26778ff37ffd030c2",
+    "semantic_hash": ""
+  },
+  "API/Extensions/AuthorizationPolicies.cs": {
+    "mtime": 1781038823.1441891,
+    "ast_hash": "11f81c8897271e892e57aa1de4bf339e",
+    "semantic_hash": ""
+  },
+  "API/Extensions/IdentityServiceExtensions.cs": {
+    "mtime": 1781038823.1441891,
+    "ast_hash": "f16acb878c4c765536087d4cb56b63a4",
+    "semantic_hash": ""
+  },
+  "API/Extensions/StartupValidationExtensions.cs": {
+    "mtime": 1781204943.894943,
+    "ast_hash": "98bc474bd09e6c2ab9db04e4360b88a8",
+    "semantic_hash": ""
+  },
+  "API/HoaCommunityEvents.API.csproj": {
+    "mtime": 1781034268.5421133,
+    "ast_hash": "b48a139c1290b364bf7e1de5bffae4dd",
+    "semantic_hash": ""
+  },
+  "API/Middleware/ExceptionMiddleware.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "104114842d5f0ca1ed70bb8d6806c80b",
+    "semantic_hash": ""
+  },
+  "API/Models/ApiErrorResponse.cs": {
+    "mtime": 1781038823.14519,
+    "ast_hash": "dcfcd7bc9fb9c4eaf61b1fe7af9b7d22",
+    "semantic_hash": ""
+  },
+  "API/Models/CloudinarySettings.cs": {
+    "mtime": 1781187383.8130963,
+    "ast_hash": "25e5f281ab770a52342d80497fc51760",
+    "semantic_hash": ""
+  },
+  "API/Program.cs": {
+    "mtime": 1781269164.0056217,
+    "ast_hash": "08370899634c8b68a5b25708cf00cbc6",
+    "semantic_hash": ""
+  },
+  "API/Properties/launchSettings.json": {
+    "mtime": 1780953660.0233643,
+    "ast_hash": "31eaff36fbb8aca659aaf4a48909e086",
+    "semantic_hash": ""
+  },
+  "API/appsettings.Production.json": {
+    "mtime": 1781288576.8235216,
+    "ast_hash": "89ec13d6c8d53625cd794d23164aeb0d",
+    "semantic_hash": ""
+  },
+  "API/appsettings.json": {
+    "mtime": 1781269160.3707702,
+    "ast_hash": "c57648e366c2e72d755d3717ce3fea16",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/IAccountService.cs": {
+    "mtime": 1781113078.6508718,
+    "ast_hash": "96b1071fde8044abe6cd113f4cc69c07",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/IAttendanceService.cs": {
+    "mtime": 1781032033.2410717,
+    "ast_hash": "68db97abc7403c406a0088c6c9fced31",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/ICloudinaryAssetService.cs": {
+    "mtime": 1781546253.2365365,
+    "ast_hash": "2bcd81f52d7bb2f73edc9bc42130689e",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/IEventService.cs": {
+    "mtime": 1781127593.0713704,
+    "ast_hash": "b0201d772d594bd5818477926f33fe52",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/IProfileService.cs": {
+    "mtime": 1781033679.0516436,
+    "ast_hash": "3fabc0d17fb9df7ee72d4efe9ff4b809",
+    "semantic_hash": ""
+  },
+  "Application/Common/Interfaces/ITokenService.cs": {
+    "mtime": 1781025487.0694342,
+    "ast_hash": "b1c6ced65bf5e3cac0cf4fd8ec283b7d",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/AdminUserDto.cs": {
+    "mtime": 1781113078.6548848,
+    "ast_hash": "c0408047181791ff8e0fc190fd43b029",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/AttendeeDto.cs": {
+    "mtime": 1781032033.2430701,
+    "ast_hash": "3614f8e91f02b3ba3ea1736f1d930bf2",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/CreateEventDto.cs": {
+    "mtime": 1781198842.0971086,
+    "ast_hash": "78b028ef10edc10bd3a8c8b1946d54da",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/DeleteUserDto.cs": {
+    "mtime": 1781113078.6548848,
+    "ast_hash": "4b2572cea4882dbfbdee8c72b9a5141d",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/EditEventDto.cs": {
+    "mtime": 1781198842.0971086,
+    "ast_hash": "4e552e58ca1c2273740722069d7237aa",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/EventDto.cs": {
+    "mtime": 1781198842.1031091,
+    "ast_hash": "45161b74828088d90ff59bbfd84a46d1",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/EventFilterDto.cs": {
+    "mtime": 1781127593.068367,
+    "ast_hash": "087f3e4df9e80ce3fb1f416e82dfdf34",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/LoginDto.cs": {
+    "mtime": 1781025487.0614033,
+    "ast_hash": "b084e36057dfebd5ad35b0d5af18325d",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/PagedResultDto.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "0f53cafe2ed0c0cff85325559146233a",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/ProfileDto.cs": {
+    "mtime": 1781198842.0635915,
+    "ast_hash": "df07c37a088154cef3fd10f73b1b8b3e",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/PromoteUserToAdminDto.cs": {
+    "mtime": 1781110992.3097422,
+    "ast_hash": "d1e48318699ca77d02acb5c254d10d15",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/RegisterDto.cs": {
+    "mtime": 1781025487.0614033,
+    "ast_hash": "8d427eb6b58079138336cfe1324b7551",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/UpdateProfileDto.cs": {
+    "mtime": 1781198842.0665872,
+    "ast_hash": "67f5882284f0197b5c8f29cab35bac4e",
+    "semantic_hash": ""
+  },
+  "Application/DTOs/UserDto.cs": {
+    "mtime": 1781025487.0694342,
+    "ast_hash": "6edb4cfe9e58514d7ed9cffe7338d16a",
+    "semantic_hash": ""
+  },
+  "Application/HoaCommunityEvents.Application.csproj": {
+    "mtime": 1781025487.0474036,
+    "ast_hash": "8ca75480421f013a06b48b31a70574b1",
+    "semantic_hash": ""
+  },
+  "Application/Services/AccountService.cs": {
+    "mtime": 1781113078.653881,
+    "ast_hash": "c47d5dbe04a069b64e2a2e1ff37b4b60",
+    "semantic_hash": ""
+  },
+  "Application/Services/ProfileService.cs": {
+    "mtime": 1781546253.2425363,
+    "ast_hash": "61a059ac978125d582b346f32d0d2cf7",
+    "semantic_hash": ""
+  },
+  "Application/Validators/CreateEventDtoValidator.cs": {
+    "mtime": 1781198842.1091065,
+    "ast_hash": "4cd2b06a55222f8870c84ad948cb5e69",
+    "semantic_hash": ""
+  },
+  "Application/Validators/EditEventDtoValidator.cs": {
+    "mtime": 1781198842.1201088,
+    "ast_hash": "587027987df7ba42c8de2299ef2114ee",
+    "semantic_hash": ""
+  },
+  "Application/Validators/EventFilterDtoValidator.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "8790ff4bdeb12501bc825806ae53f09f",
+    "semantic_hash": ""
+  },
+  "Application/Validators/LoginDtoValidator.cs": {
+    "mtime": 1781038823.1491916,
+    "ast_hash": "5f4f2d714af8160f0fb3efb96cdf95db",
+    "semantic_hash": ""
+  },
+  "Application/Validators/RegisterDtoValidator.cs": {
+    "mtime": 1781038823.1662815,
+    "ast_hash": "0494f6fc5aa73de0cbafc57969001a96",
+    "semantic_hash": ""
+  },
+  "Application/Validators/UpdateProfileDtoValidator.cs": {
+    "mtime": 1781198842.0780966,
+    "ast_hash": "d2a037bb74a9af43038f65412ba16a15",
+    "semantic_hash": ""
+  },
+  "Domain/Common/AppRoles.cs": {
+    "mtime": 1781025487.0614033,
+    "ast_hash": "0710284d7d74bd71a5c9e8efd5bc1a67",
+    "semantic_hash": ""
+  },
+  "Domain/Common/BaseEntity.cs": {
+    "mtime": 1781018524.7054348,
+    "ast_hash": "4a488324020855758c4554b678dfd56f",
+    "semantic_hash": ""
+  },
+  "Domain/Entities/AppUser.cs": {
+    "mtime": 1781198842.0555518,
+    "ast_hash": "299e6d198b1a03c5a845394d6ddb1f2c",
+    "semantic_hash": ""
+  },
+  "Domain/Entities/Event.cs": {
+    "mtime": 1781198842.0515513,
+    "ast_hash": "e8f2125ae38fde32a6706a4373a1b0f9",
+    "semantic_hash": ""
+  },
+  "Domain/Entities/EventAttendance.cs": {
+    "mtime": 1781018524.7054348,
+    "ast_hash": "7be8abdfdb5ce86cfc21248290cea7fd",
+    "semantic_hash": ""
+  },
+  "Domain/HoaCommunityEvents.Domain.csproj": {
+    "mtime": 1781018524.7004209,
+    "ast_hash": "7f7283f05a564e94bde2788214bedb32",
+    "semantic_hash": ""
+  },
+  "HoaCommunityEvents.slnx": {
+    "mtime": 1781269160.3707702,
+    "ast_hash": "47f81938efce1f3dda59818db943062a",
+    "semantic_hash": ""
+  },
+  "Infrastructure/HoaCommunityEvents.Infrastructure.csproj": {
+    "mtime": 1781546253.2345357,
+    "ast_hash": "6b9b9cb8ce1e3c1fe2edb413b50dff8b",
+    "semantic_hash": ""
+  },
+  "Infrastructure/Hubs/EventHub.cs": {
+    "mtime": 1781032033.247074,
+    "ast_hash": "c291cae01a92a2c2f0c28d9f7e5a0fdc",
+    "semantic_hash": ""
+  },
+  "Infrastructure/Services/AttendanceService.cs": {
+    "mtime": 1781127593.074886,
+    "ast_hash": "b8a1ba757a2968b9b232c099bce0f8e7",
+    "semantic_hash": ""
+  },
+  "Infrastructure/Services/CloudinaryAssetService.cs": {
+    "mtime": 1781546253.2365365,
+    "ast_hash": "9eba49c686f29c1c5eea4ab80f79f211",
+    "semantic_hash": ""
+  },
+  "Infrastructure/Services/EventService.cs": {
+    "mtime": 1781546253.2405431,
+    "ast_hash": "1b0eee6dc423c1abf7ce99bcdd0cb6fb",
+    "semantic_hash": ""
+  },
+  "Infrastructure/Services/Identity/TokenService.cs": {
+    "mtime": 1781025487.0694342,
+    "ast_hash": "1b9886edeecffa374b9ebd3ef252855f",
+    "semantic_hash": ""
+  },
+  "Persistence/Data/AppDbContext.cs": {
+    "mtime": 1781198842.061553,
+    "ast_hash": "f810008bbe782ba45ab50e193cffdbaa",
+    "semantic_hash": ""
+  },
+  "Persistence/Data/SeedData.cs": {
+    "mtime": 1781204051.6497457,
+    "ast_hash": "360b51657d0de9f31821c819edb0915c",
+    "semantic_hash": ""
+  },
+  "Persistence/HoaCommunityEvents.Persistence.csproj": {
+    "mtime": 1780953708.025624,
+    "ast_hash": "d38978800f55706983f976a30f06aec1",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260609145832_InitialCreate.Designer.cs": {
+    "mtime": 1781017112.2186408,
+    "ast_hash": "902cc1b5e686714b9a81af0e5bac77f1",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260609145832_InitialCreate.cs": {
+    "mtime": 1781017112.217642,
+    "ast_hash": "a171190236a9adaeaa7657816ee5de78",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260609152111_AddCoreEntities.Designer.cs": {
+    "mtime": 1781018471.7037554,
+    "ast_hash": "f912297accc7d584942a505515ae13de",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260609152111_AddCoreEntities.cs": {
+    "mtime": 1781018471.701755,
+    "ast_hash": "9efc243f947150ae77ef101c0de7c17a",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611155852_AddProfileBannerImage.Designer.cs": {
+    "mtime": 1781193532.1744509,
+    "ast_hash": "14cbecd68248a6a22cad06cc91402989",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611155852_AddProfileBannerImage.cs": {
+    "mtime": 1781196242.2699282,
+    "ast_hash": "eb169892afb19c569854575db2b64370",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611165130_AddImageRecenterFocus.Designer.cs": {
+    "mtime": 1781197058.2822955,
+    "ast_hash": "ee1e26aeb13c7700b4746cdeb5fade4c",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611165130_AddImageRecenterFocus.cs": {
+    "mtime": 1781197058.2812963,
+    "ast_hash": "8a1f3486c1e6c8254946a32b2ef5813b",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611170153_AddImageZoomAndAvatarFocus.Designer.cs": {
+    "mtime": 1781197313.4759374,
+    "ast_hash": "e0e90a2fca905e9bcf74e7c29f08139b",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/20260611170153_AddImageZoomAndAvatarFocus.cs": {
+    "mtime": 1781197313.4759374,
+    "ast_hash": "4cc2b1b5b6c5ca583b0c7ea36d4d2379",
+    "semantic_hash": ""
+  },
+  "Persistence/Migrations/AppDbContextModelSnapshot.cs": {
+    "mtime": 1781197313.4769404,
+    "ast_hash": "f591868598dd79070ebe035a2f636e72",
+    "semantic_hash": ""
+  },
+  "frontend/eslint.config.js": {
+    "mtime": 1780951433.390433,
+    "ast_hash": "0355276bc79439afe3c53e3a2470ca1e",
+    "semantic_hash": ""
+  },
+  "frontend/package.json": {
+    "mtime": 1781197930.4259236,
+    "ast_hash": "22f0e708b2655a05825f8897cf5dca33",
+    "semantic_hash": ""
+  },
+  "frontend/public/staticwebapp.config.json": {
+    "mtime": 1781288576.8325148,
+    "ast_hash": "9a7b2a9acd9b47e23ddd50e95ab3d4b9",
+    "semantic_hash": ""
+  },
+  "frontend/src/App.tsx": {
+    "mtime": 1780951433.7411354,
+    "ast_hash": "c5e44a49ac2a44373fba5d1a7fe35be4",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/api/agent.ts": {
+    "mtime": 1781297037.4150958,
+    "ast_hash": "55b246376cbb5ec70ea4d4870b236901",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/branding.ts": {
+    "mtime": 1781539227.7784076,
+    "ast_hash": "670b9dbf8b7961414d054bdd639e59a9",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/layout/AppLayout.tsx": {
+    "mtime": 1781558200.0369081,
+    "ast_hash": "1d55bd2674222ceaed257483e6f61b9f",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/router/ProtectedRoute.tsx": {
+    "mtime": 1781204052.450058,
+    "ast_hash": "e22c7b18b6a72671affbb029af21366e",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/router/RouteTransition.tsx": {
+    "mtime": 1781558199.045459,
+    "ast_hash": "b741cd23c528649ddc57ff682a0a28b1",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/router/routes.test.tsx": {
+    "mtime": 1781114406.488754,
+    "ast_hash": "d5e367e3ae662fc06dd1343c688004bb",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/router/routes.tsx": {
+    "mtime": 1781204052.066561,
+    "ast_hash": "df3234589e9ecbd02611ff2173e1af5e",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/stores/authStore.test.ts": {
+    "mtime": 1781113647.2331853,
+    "ast_hash": "0cc445b6f5ae086136fc22531686c525",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/stores/authStore.ts": {
+    "mtime": 1781113464.060115,
+    "ast_hash": "3786a17624c4bf41bce8b086efdec796",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/stores/store.ts": {
+    "mtime": 1781026594.9316385,
+    "ast_hash": "5aa914a3bef45d31e87168df8d427738",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/theme/ThemeProvider.tsx": {
+    "mtime": 1781119529.7295825,
+    "ast_hash": "8195242c1b03e079cb439a05982ecbbd",
+    "semantic_hash": ""
+  },
+  "frontend/src/app/theme/theme-context.ts": {
+    "mtime": 1781119529.0594246,
+    "ast_hash": "5ec04d0a533a8e465f4be1cf50aca01a",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/media/FramedImage.tsx": {
+    "mtime": 1781204052.4450543,
+    "ast_hash": "62ad012d25904fee1b6c6135e19bcebc",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/media/ImageCropEditor.tsx": {
+    "mtime": 1781200911.8777294,
+    "ast_hash": "08c501e2365d31d96bebc0df0f389846",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/navigation/BackNavigationButton.tsx": {
+    "mtime": 1781540888.7661064,
+    "ast_hash": "063b6171fd9917c26523da6ac5c2a874",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/badge.tsx": {
+    "mtime": 1781539227.780404,
+    "ast_hash": "dbab88ca3395a92ab875a8506889efda",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/button.tsx": {
+    "mtime": 1781540888.7332063,
+    "ast_hash": "345c4c19c7bedc6833e029fb36920c60",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/card.tsx": {
+    "mtime": 1781540888.7452064,
+    "ast_hash": "8282add868dce324b5ef470ba7205ced",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1781301316.570849,
+    "ast_hash": "3c6b2bda379146353e8586e9ed72613f",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/input.tsx": {
+    "mtime": 1781540888.7362068,
+    "ast_hash": "c8f0680a1f8b2c745e0fc7b1f2a54ef4",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/loading-state.tsx": {
+    "mtime": 1781204052.4450543,
+    "ast_hash": "281825132c2c5deb9cdfde183e3aa4e8",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui/tooltip.tsx": {
+    "mtime": 1781129449.8177497,
+    "ast_hash": "5ef0c84679948917a729bb2703c1b122",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/LoginPage.tsx": {
+    "mtime": 1781539327.6139293,
+    "ast_hash": "e80c75cfafee4075e1ccd83eed729dec",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/RegisterPage.tsx": {
+    "mtime": 1781539327.5130877,
+    "ast_hash": "95b40548c67415883abb568108316cf7",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/authApiError.ts": {
+    "mtime": 1781100269.8349302,
+    "ast_hash": "40817c90c8294f0c2d97296e16e38058",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/components/AuthBanner.tsx": {
+    "mtime": 1781539227.786412,
+    "ast_hash": "1240a3899842f89e0e673a165e46a74a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/components/AuthLayout.tsx": {
+    "mtime": 1781540888.8467612,
+    "ast_hash": "1fc5f9d7cf83204b85148c0686c92976",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/errors/ErrorPage.tsx": {
+    "mtime": 1781035059.0730495,
+    "ast_hash": "ba3dc4672d19deaa13009672f4284dfb",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/errors/NotFoundPage.tsx": {
+    "mtime": 1781035059.0327947,
+    "ast_hash": "37c155493a9b508e9f9ddfb8eaa9abdb",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/AdminAttendeesPage.tsx": {
+    "mtime": 1781121525.935764,
+    "ast_hash": "58eb03568f2de1c1bbe9e2293a1f6821",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/AdminDashboardPage.test.tsx": {
+    "mtime": 1781198843.207033,
+    "ast_hash": "3caa6db61a28b913c109c4ae40f819b5",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/AdminDashboardPage.tsx": {
+    "mtime": 1781539227.7884052,
+    "ast_hash": "e0792232a33ae87ccc97970d2eb32672",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/AdminUserManagementPage.tsx": {
+    "mtime": 1781558351.7463934,
+    "ast_hash": "67b5b581a9cd2ed31e2d000fa3c7a4be",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/EventDetailsPage.tsx": {
+    "mtime": 1781539227.7914195,
+    "ast_hash": "b13a37e5857d8df383a8fb630bd40fd4",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/EventFormPage.tsx": {
+    "mtime": 1781029983.9091465,
+    "ast_hash": "8201a206bef1276dce15fefcbeeb13a0",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/EventListPage.test.tsx": {
+    "mtime": 1781198843.1505027,
+    "ast_hash": "419c022b885907a4f35a10bb5175892b",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/EventListPage.tsx": {
+    "mtime": 1781539327.5819314,
+    "ast_hash": "3a596ecbd7ef5c70a518b8b567349e22",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminAttendeeList.tsx": {
+    "mtime": 1781184071.9436178,
+    "ast_hash": "5202feea7fbff5cba38d12d44f72cd6b",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminConfirmModal.test.tsx": {
+    "mtime": 1781109500.165274,
+    "ast_hash": "bb6708b89a15e9d7e5b04c79b09ccab2",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminConfirmModal.tsx": {
+    "mtime": 1781109500.073298,
+    "ast_hash": "0528badc789cd82f96eae95021fd05c0",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminEventForm.tsx": {
+    "mtime": 1781620460.9924011,
+    "ast_hash": "76a12b62843243dd6f771d090062ea30",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminEventList.test.tsx": {
+    "mtime": 1781198843.3231678,
+    "ast_hash": "0883c2b9f11b80901bb3b81b3ba88f55",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AdminEventList.tsx": {
+    "mtime": 1781301374.3719406,
+    "ast_hash": "22c0d5c500b9fabcaa881cfeca1aeccf",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/AttendanceActionCard.tsx": {
+    "mtime": 1781100270.7525828,
+    "ast_hash": "ab5e8d1f09d108133a720c039f617eaa",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/EventCard.tsx": {
+    "mtime": 1781539227.7944052,
+    "ast_hash": "9d066939c1bab17620d55bf956d5d955",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/EventInfoPanel.tsx": {
+    "mtime": 1781100270.7345655,
+    "ast_hash": "82799cebce333e128e03b5ccb8c88a27",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/EventsFilterBar.tsx": {
+    "mtime": 1781294382.6813974,
+    "ast_hash": "7080bc716b3f6cea55ff57865b045ff6",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/EventsPagination.test.tsx": {
+    "mtime": 1781109500.1162298,
+    "ast_hash": "2671d8d458007a0e8f856ffb344a5888",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/events/components/EventsPagination.tsx": {
+    "mtime": 1781104950.4228375,
+    "ast_hash": "cbfc8bc49676ff9957607aeaf2f8728d",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/HomePage.tsx": {
+    "mtime": 1781539227.7954202,
+    "ast_hash": "06904b8fd1e12e554ebf8ab5bf605490",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/AdminQuickActions.tsx": {
+    "mtime": 1781202271.5404146,
+    "ast_hash": "ea9ca8dabddfb0343185395f6d4fe500",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/CommunityInfo.tsx": {
+    "mtime": 1781539327.681734,
+    "ast_hash": "1865833b1e7c1927d981aa2749339abf",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/HeroBanner.tsx": {
+    "mtime": 1781539327.643929,
+    "ast_hash": "c0bc232d494ccfceb827aa3e09e09f5a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/MyEventsWidget.tsx": {
+    "mtime": 1781202271.562508,
+    "ast_hash": "440247418481081a6ff3533e080d41c4",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/QuickStats.tsx": {
+    "mtime": 1781202271.1076856,
+    "ast_hash": "4ed4b5f24e2772f6791ae83276e350e1",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/home/components/UpcomingEventsPreview.tsx": {
+    "mtime": 1781202271.5066452,
+    "ast_hash": "cadaa5e7e565121907dc8e16d1330a26",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/profiles/ProfilePage.tsx": {
+    "mtime": 1781294382.3276367,
+    "ast_hash": "e817a6a47666995881b9c849c215c112",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/profiles/components/ProfileEditForm.tsx": {
+    "mtime": 1781540576.033915,
+    "ast_hash": "23819cdac013e07706719d2882a0a6ec",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/profiles/components/ProfileOverview.tsx": {
+    "mtime": 1781539227.7994046,
+    "ast_hash": "2609e2e79c147ba351eb0a74df0bc64e",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useAdminUsers.ts": {
+    "mtime": 1781113078.647364,
+    "ast_hash": "1bc0481310404575121f0a3d67d74dc4",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useAttendance.ts": {
+    "mtime": 1781032033.1889608,
+    "ast_hash": "45ccae9334f262aa6e0ddb13a7ed9d3d",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useEvents.ts": {
+    "mtime": 1781127592.9777381,
+    "ast_hash": "11194a9ef382a9d343db180a458eef8f",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useProfile.ts": {
+    "mtime": 1781033678.945444,
+    "ast_hash": "fbc290022c7dabd75cc925509d312bf5",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useSignalR.ts": {
+    "mtime": 1781288576.8225143,
+    "ast_hash": "3def351f0d8f0045758995556723beb7",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/cn.ts": {
+    "mtime": 1781100269.8223622,
+    "ast_hash": "d5c3aa9db33aa2c93c04dc9d8d6a6c31",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/getApiErrorMessage.ts": {
+    "mtime": 1781038822.963855,
+    "ast_hash": "01e25907eb02ae4b735d0aa6558a870c",
+    "semantic_hash": ""
+  },
+  "frontend/src/main.tsx": {
+    "mtime": 1781119529.5072389,
+    "ast_hash": "53ab51017ee08bd34f10ac56a3935f8a",
+    "semantic_hash": ""
+  },
+  "frontend/src/test/setup.ts": {
+    "mtime": 1781109499.4806528,
+    "ast_hash": "0664872bf371fdbb97c099504fee05e5",
+    "semantic_hash": ""
+  },
+  "frontend/src/types/attendee.ts": {
+    "mtime": 1781032033.1889608,
+    "ast_hash": "d0515d4d82cd8f5b8d1aaf806c90bf01",
+    "semantic_hash": ""
+  },
+  "frontend/src/types/event.ts": {
+    "mtime": 1781198841.72093,
+    "ast_hash": "83b9cf498e4361ad844ea2a30b694b63",
+    "semantic_hash": ""
+  },
+  "frontend/src/types/profile.ts": {
+    "mtime": 1781198841.9210346,
+    "ast_hash": "b27363965e02921a1c7e3787c2c08e19",
+    "semantic_hash": ""
+  },
+  "frontend/src/types/user.ts": {
+    "mtime": 1781113078.647364,
+    "ast_hash": "34272aa4025ab163ae7573358fe75568",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.app.json": {
+    "mtime": 1781100270.3244843,
+    "ast_hash": "c14c51ec4b0f6af1cafa8d473c758f5d",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1780951433.4802685,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.node.json": {
+    "mtime": 1780951433.4922657,
+    "ast_hash": "70bdd0a673bcfc0e828080b306e7c680",
+    "semantic_hash": ""
+  },
+  "frontend/vite.config.ts": {
+    "mtime": 1781198842.001557,
+    "ast_hash": "5dddc8c6ac8ba10bee489738cef80bef",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1781289952.2466273,
+    "ast_hash": "b9dd3a4f8607dacf4a03b481fc13a33f",
+    "semantic_hash": ""
+  },
+  "frontend/README.md": {
+    "mtime": 1781289952.2622013,
+    "ast_hash": "38fc94f3dcd1e9bf57f717104ea7099b",
+    "semantic_hash": ""
+  },
+  "frontend/index.html": {
+    "mtime": 1780953715.5977886,
+    "ast_hash": "33bd262affcefea92f1509cda449a19c",
+    "semantic_hash": ""
+  },
+  "frontend/public/favicon.svg": {
+    "mtime": 1780951433.5892363,
+    "ast_hash": "7e840862161341271697daa99a40d76b",
+    "semantic_hash": ""
+  },
+  "frontend/public/icons.svg": {
+    "mtime": 1780951433.623175,
+    "ast_hash": "3b4fcfcf393eca4d264dca4a4663bc37",
+    "semantic_hash": ""
+  },
+  "frontend/src/assets/hero.png": {
+    "mtime": 1780951433.544382,
+    "ast_hash": "aead493361b27e7510691c5d7072dfc1",
+    "semantic_hash": ""
+  },
+  "frontend/src/assets/react.svg": {
+    "mtime": 1780951433.6607451,
+    "ast_hash": "f0402b67b6ce880f65666bb49e841696",
+    "semantic_hash": ""
+  },
+  "frontend/src/assets/vite.svg": {
+    "mtime": 1780951433.6915503,
+    "ast_hash": "9960a24288958394ac50e57ff638b036",
+    "semantic_hash": ""
+  }
+}
