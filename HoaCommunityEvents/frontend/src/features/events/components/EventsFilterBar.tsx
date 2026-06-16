@@ -1,12 +1,16 @@
 import type { EventFilter } from "../../../types/event";
+import {
+  EVENT_CATEGORY_FILTER_OPTIONS,
+  EVENT_STATUS_FILTER_OPTIONS,
+} from "../eventFilterOptions";
 
 interface EventsFilterBarProps {
   filter: EventFilter;
   onFilterChange: (newFilter: EventFilter) => void;
 }
 
-const CATEGORIES = ["All", "Board Meeting", "Community Cleanup", "Pool Event"];
-const STATUSES = ["All", "Published", "Ended", "Cancelled"];
+const CATEGORIES = ["All", ...EVENT_CATEGORY_FILTER_OPTIONS];
+const STATUSES = ["All", ...EVENT_STATUS_FILTER_OPTIONS];
 
 export function EventsFilterBar({
   filter,

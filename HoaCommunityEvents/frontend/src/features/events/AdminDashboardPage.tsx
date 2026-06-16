@@ -23,6 +23,10 @@ import { AdminEventForm } from "./components/AdminEventForm";
 import { AdminEventList } from "./components/AdminEventList";
 import { LoadingState } from "../../components/ui/loading-state";
 import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
+import {
+  ADMIN_EVENT_STATUS_FILTER_OPTIONS,
+  EVENT_CATEGORY_FILTER_OPTIONS,
+} from "./eventFilterOptions";
 
 type FormState = { mode: "create" } | { mode: "edit"; event: HoaEvent } | null;
 
@@ -279,10 +283,11 @@ export function AdminDashboardPage() {
               className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
             >
               <option value="">All statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Published">Published</option>
-              <option value="Ended">Ended</option>
-              <option value="Cancelled">Cancelled</option>
+              {ADMIN_EVENT_STATUS_FILTER_OPTIONS.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusOption}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -305,9 +310,11 @@ export function AdminDashboardPage() {
               className="min-h-11 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900"
             >
               <option value="">All categories</option>
-              <option value="Board Meeting">Board Meeting</option>
-              <option value="Community Cleanup">Community Cleanup</option>
-              <option value="Pool Event">Pool Event</option>
+              {EVENT_CATEGORY_FILTER_OPTIONS.map((categoryOption) => (
+                <option key={categoryOption} value={categoryOption}>
+                  {categoryOption}
+                </option>
+              ))}
             </select>
           </div>
 
