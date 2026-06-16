@@ -21,6 +21,8 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const clampZoom = (value: number) => Math.max(1, Math.min(3, value));
+const isHostedImageUrl = (value?: string | null) =>
+  (value ?? "").trim().toLowerCase().includes("cloudinary.com");
 
 function toLocalDateInput(value?: string | null) {
   if (!value) return "";
@@ -69,6 +71,7 @@ export function AdminEventForm({
   const imagePositionX = useWatch({ control, name: "imagePositionX" }) ?? 50;
   const imagePositionY = useWatch({ control, name: "imagePositionY" }) ?? 50;
   const imageZoom = useWatch({ control, name: "imageZoom" }) ?? 1;
+  const hideImageUrlValue = isHostedImageUrl(imageUrlValue);
   const canShowPreview = bannerEnabled && imageUrlValue.length > 0;
 
   useEffect(() => {
@@ -389,19 +392,30 @@ export function AdminEventForm({
                       Image URL
                     </label>
                     <Input
-                      {...register("imageUrl", {
-                        onChange: () => {
-                          setUploadError(null);
-                          setUploadSuccess(null);
-                        },
-                      })}
-                      placeholder="https://example.com/banner.jpg"
+                      value={hideImageUrlValue ? "" : imageUrlValue}
+                      onChange={(event) => {
+                        setUploadError(null);
+                        setUploadSuccess(null);
+                        setValue("imageUrl", event.target.value, {
+                          shouldDirty: true,
+                        });
+                      }}
+                      placeholder={
+                        hideImageUrlValue
+                          ? "Uploaded image is set. Enter a URL to replace it."
+                          : "https://example.com/banner.jpg"
+                      }
                       className={
                         getFieldError(apiError?.details, "ImageUrl")
                           ? "border-red-300 focus-visible:ring-red-500"
                           : ""
                       }
                     />
+                    {hideImageUrlValue && (
+                      <p className="mt-1 text-xs text-stone-500">
+                        The current uploaded image link is hidden.
+                      </p>
+                    )}
                     {getFieldError(apiError?.details, "ImageUrl") && (
                       <p className="mt-1 text-xs text-red-500">
                         {getFieldError(apiError?.details, "ImageUrl")}

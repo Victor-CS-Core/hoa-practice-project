@@ -206,7 +206,7 @@ export const AppLayout = observer(function AppLayout() {
                       className="w-52 animate-fade-in"
                     >
                       <DropdownMenuLabel>{BRAND.adminToolsLabel}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
+           <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => void navigate("/admin/events")}
                         className="gap-2"
