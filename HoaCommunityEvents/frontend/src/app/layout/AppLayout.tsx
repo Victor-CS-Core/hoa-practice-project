@@ -103,6 +103,11 @@ export const AppLayout = observer(function AppLayout() {
           label: "User Management",
           icon: Users,
         },
+        {
+          to: "/admin/design-system",
+          label: "Design System",
+          icon: Shield,
+        },
       ]
     : [];
 
@@ -193,8 +198,10 @@ export const AppLayout = observer(function AppLayout() {
                       align="start"
                       className="w-52 animate-fade-in"
                     >
-                      <DropdownMenuLabel>{BRAND.adminToolsLabel}</DropdownMenuLabel>
-           <DropdownMenuSeparator />
+                      <DropdownMenuLabel>
+                        {BRAND.adminToolsLabel}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => void navigate("/admin/events")}
                         className="gap-2"
@@ -206,6 +213,12 @@ export const AppLayout = observer(function AppLayout() {
                         className="gap-2"
                       >
                         <Users className="h-4 w-4" /> User Management
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => void navigate("/admin/design-system")}
+                        className="gap-2"
+                      >
+                        <Shield className="h-4 w-4" /> Design System
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -253,9 +266,7 @@ export const AppLayout = observer(function AppLayout() {
                       <span className="block truncate text-sm font-semibold">
                         {user?.displayName ?? user?.username ?? "User"}
                       </span>
-                      <span
-                        className="block truncate text-xs text-ink-muted"
-                      >
+                      <span className="block truncate text-xs text-ink-muted">
                         {roleToLabel(user?.role)}
                       </span>
                     </span>
@@ -309,9 +320,7 @@ export const AppLayout = observer(function AppLayout() {
           </div>
 
           {mobileOpen && (
-            <div
-              className="border-t border-hairline bg-page px-4 py-4 md:hidden"
-            >
+            <div className="border-t border-hairline bg-page px-4 py-4 md:hidden">
               <nav className="flex flex-col gap-4">
                 <div className="space-y-2">
                   {baseLinks.map((link) => (
@@ -329,12 +338,8 @@ export const AppLayout = observer(function AppLayout() {
                 </div>
 
                 {authStore.isAdmin && (
-                  <div
-                    className="space-y-2 border-t border-hairline pt-3"
-                  >
-                    <p
-                      className="px-3 text-xs font-semibold tracking-wide text-ink-muted"
-                    >
+                  <div className="space-y-2 border-t border-hairline pt-3">
+                    <p className="px-3 text-xs font-semibold tracking-wide text-ink-muted">
                       ADMIN TOOLS
                     </p>
                     {adminLinks.map((link) => (
@@ -351,12 +356,8 @@ export const AppLayout = observer(function AppLayout() {
                   </div>
                 )}
 
-                <div
-                  className="space-y-2 border-t border-hairline pt-3"
-                >
-                  <p
-                    className="px-3 text-xs font-semibold tracking-wide text-ink-muted"
-                  >
+                <div className="space-y-2 border-t border-hairline pt-3">
+                  <p className="px-3 text-xs font-semibold tracking-wide text-ink-muted">
                     ACCOUNT
                   </p>
 

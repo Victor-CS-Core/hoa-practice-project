@@ -109,7 +109,9 @@ export const LoginPage = observer(function LoginPage() {
             disabled={isSubmitting}
             aria-invalid={!!emailError}
             aria-describedby={emailError ? "login-email-error" : undefined}
-            className={emailError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              emailError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("email", { required: true })}
           />
           {emailError && (
@@ -134,19 +136,22 @@ export const LoginPage = observer(function LoginPage() {
             aria-describedby={
               passwordError ? "login-password-error" : undefined
             }
-            className={passwordError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              passwordError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p id="login-password-error" className="text-sm text-danger-display">
+            <p
+              id="login-password-error"
+              className="text-sm text-danger-display"
+            >
               {passwordError}
             </p>
           )}
         </div>
 
-        <p
-          className="auth-motion-item auth-motion-delay-3 rounded-lg border border-hairline bg-surface px-3 py-2 text-xs leading-relaxed text-ink-muted"
-        >
+        <p className="auth-motion-item auth-motion-delay-3 rounded-lg border border-hairline bg-surface px-3 py-2 text-xs leading-relaxed text-ink-muted">
           Your {BRAND.communityLabel} account keeps event updates tied to your
           resident profile.
         </p>

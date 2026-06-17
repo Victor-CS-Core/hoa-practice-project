@@ -86,7 +86,9 @@ export const RegisterPage = observer(function RegisterPage() {
             aria-describedby={
               displayNameError ? "register-displayName-error" : undefined
             }
-            className={displayNameError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              displayNameError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("displayName", { required: true })}
           />
           {displayNameError && (
@@ -114,11 +116,16 @@ export const RegisterPage = observer(function RegisterPage() {
             aria-describedby={
               usernameError ? "register-username-error" : undefined
             }
-            className={usernameError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              usernameError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("username", { required: true })}
           />
           {usernameError && (
-            <p id="register-username-error" className="text-sm text-danger-display">
+            <p
+              id="register-username-error"
+              className="text-sm text-danger-display"
+            >
               {usernameError}
             </p>
           )}
@@ -137,11 +144,16 @@ export const RegisterPage = observer(function RegisterPage() {
             disabled={isSubmitting}
             aria-invalid={!!emailError}
             aria-describedby={emailError ? "register-email-error" : undefined}
-            className={emailError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              emailError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("email", { required: true })}
           />
           {emailError && (
-            <p id="register-email-error" className="text-sm text-danger-display">
+            <p
+              id="register-email-error"
+              className="text-sm text-danger-display"
+            >
               {emailError}
             </p>
           )}
@@ -162,19 +174,22 @@ export const RegisterPage = observer(function RegisterPage() {
             aria-describedby={
               passwordError ? "register-password-error" : undefined
             }
-            className={passwordError ? "border-danger focus-visible:ring-danger" : ""}
+            className={
+              passwordError ? "border-danger focus-visible:ring-danger" : ""
+            }
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p id="register-password-error" className="text-sm text-danger-display">
+            <p
+              id="register-password-error"
+              className="text-sm text-danger-display"
+            >
               {passwordError}
             </p>
           )}
         </div>
 
-        <p
-          className="auth-motion-item auth-motion-delay-4 rounded-lg border border-hairline bg-surface px-3 py-2 text-xs leading-relaxed text-ink-muted"
-        >
+        <p className="auth-motion-item auth-motion-delay-4 rounded-lg border border-hairline bg-surface px-3 py-2 text-xs leading-relaxed text-ink-muted">
           Your profile is used only for {BRAND.communityLabel} communication,
           participation tracking, and secure resident access.
         </p>

@@ -22,6 +22,15 @@ test.describe('Route Guards', () => {
     await expect(page.getByText(/welcome back, casey resident/i)).toBeVisible();
   });
 
+  test('resident is redirected away from admin design system route', async ({ page }) => {
+    await installMockApi(page, { initialToken: 'token-resident' });
+
+    await page.goto('/admin/design-system');
+
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText(/welcome back, casey resident/i)).toBeVisible();
+  });
+
   test('admin can access admin dashboard', async ({ page }) => {
     await installMockApi(page, { initialToken: 'token-admin' });
 
@@ -30,5 +39,14 @@ test.describe('Route Guards', () => {
     await expect(
       page.getByRole('heading', { name: /admin management dashboard/i }),
     ).toBeVisible();
+  });
+
+  test('admin can access admin design system route', async ({ page }) => {
+    await installMockApi(page, { initialToken: 'token-admin' });
+
+    await page.goto('/admin/design-system');
+
+    await expect(page).toHaveURL(/\/admin\/design-system$/);
+    await expect(page.getByRole('heading', { name: /^design system$/i })).toBeVisible();
   });
 });
