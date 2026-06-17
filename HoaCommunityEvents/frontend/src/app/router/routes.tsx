@@ -55,6 +55,11 @@ const adminUserManagementPageRoute = lazy(() =>
     default: module.AdminUserManagementPage,
   })),
 );
+const adminDesignSystemPageRoute = lazy(() =>
+  import("../../admin/design-system/page").then((module) => ({
+    default: module.default,
+  })),
+);
 const notFoundPageRoute = lazy(() =>
   import("../../features/errors/NotFoundPage").then((module) => ({
     default: module.NotFoundPage,
@@ -152,6 +157,14 @@ export const appRoutes: RouteObject[] = [
         element: withPageLoader(
           <ProtectedRoute requireAdmin>
             {createElement(adminUserManagementPageRoute)}
+          </ProtectedRoute>,
+        ),
+      },
+      {
+        path: "admin/design-system",
+        element: withPageLoader(
+          <ProtectedRoute requireAdmin>
+            {createElement(adminDesignSystemPageRoute)}
           </ProtectedRoute>,
         ),
       },

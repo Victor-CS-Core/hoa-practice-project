@@ -1,5 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
+/* bm-design-system:start */
+@import "./styles/design-system.css";
+/* bm-design-system:end */
 
 :root {
   font-family: "DM Sans", sans-serif;
