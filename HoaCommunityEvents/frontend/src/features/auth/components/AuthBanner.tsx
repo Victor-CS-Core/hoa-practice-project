@@ -1,5 +1,4 @@
 import { AlertCircle, Info } from "lucide-react";
-import { useTheme } from "../../../app/theme/theme-context";
 
 export function AuthBanner({
   type,
@@ -8,22 +7,13 @@ export function AuthBanner({
   type: "error" | "warning" | "info";
   message: string;
 }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
   if (!message) return null;
 
-  const styles = isDark
-    ? {
-        error: "border-[#93312a] bg-[#311613] text-[#ffd7d1]",
-        warning: "border-[#89611f] bg-[#2f240f] text-[#ffe7b2]",
-        info: "border-[#2e6f5f] bg-[#122a25] text-[#c8f7e8]",
-      }
-    : {
-        error: "border-[#d4634a] bg-[#fff0ec] text-[#8f311f]",
-        warning: "border-[#d2a142] bg-[#fff6df] text-[#82580f]",
-        info: "border-[#93a48f] bg-[#edf4ea] text-[#32512f]",
-      };
+  const styles = {
+    error: "border-danger bg-danger-faded text-danger-display",
+    warning: "border-signal bg-signal-faded text-signal-display",
+    info: "border-accent bg-accent-faded text-accent-display",
+  };
 
   const Icon = type === "info" ? Info : AlertCircle;
 

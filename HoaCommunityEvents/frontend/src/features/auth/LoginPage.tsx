@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useStore } from "../../app/stores/store";
 import type { LoginFormValues } from "../../types/user";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { useTheme } from "../../app/theme/theme-context";
+import { Button } from "../../components/design-system/ui/button";
+import { Input } from "../../components/design-system/ui/input";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthBanner } from "./components/AuthBanner";
 import { BRAND } from "../../app/branding";
@@ -19,8 +18,6 @@ import {
 
 export const LoginPage = observer(function LoginPage() {
   const { authStore } = useStore();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<ApiErrorEnvelope | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -61,8 +58,8 @@ export const LoginPage = observer(function LoginPage() {
     return (
       <AuthLayout title="Restoring session">
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Loader2 className="mb-4 h-10 w-10 animate-spin text-emerald-600" />
-          <p className="font-medium text-stone-500">
+          <Loader2 className="mb-4 h-10 w-10 animate-spin text-accent" />
+          <p className="font-medium text-ink-muted">
             Restoring your session...
           </p>
         </div>
@@ -101,7 +98,7 @@ export const LoginPage = observer(function LoginPage() {
         <div className="auth-motion-item auth-motion-delay-1 space-y-2">
           <label
             htmlFor="email"
-            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${emailError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
+            className={`font-auth-ui text-sm tracking-[0.02em] ${emailError ? "text-danger-display" : ""}`}
           >
             Email address
           </label>
@@ -112,17 +109,11 @@ export const LoginPage = observer(function LoginPage() {
             disabled={isSubmitting}
             aria-invalid={!!emailError}
             aria-describedby={emailError ? "login-email-error" : undefined}
-            className={
-              emailError
-                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
-                : isDark
-                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf] focus-visible:ring-[#2d8d67]"
-                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
-            }
+            className={emailError ? "border-danger focus-visible:ring-danger" : ""}
             {...register("email", { required: true })}
           />
           {emailError && (
-            <p id="login-email-error" className="text-sm text-[#b73f28]">
+            <p id="login-email-error" className="text-sm text-danger-display">
               {emailError}
             </p>
           )}
@@ -131,7 +122,7 @@ export const LoginPage = observer(function LoginPage() {
         <div className="auth-motion-item auth-motion-delay-2 space-y-2">
           <label
             htmlFor="password"
-            className={`font-auth-ui text-sm font-medium tracking-[0.02em] ${passwordError ? "text-[#b73f28]" : isDark ? "text-[#b8cadf]" : "text-[#5f412e]"}`}
+            className={`font-auth-ui text-sm tracking-[0.02em] ${passwordError ? "text-danger-display" : ""}`}
           >
             Password
           </label>
@@ -143,28 +134,18 @@ export const LoginPage = observer(function LoginPage() {
             aria-describedby={
               passwordError ? "login-password-error" : undefined
             }
-            className={
-              passwordError
-                ? "border-[#cf6345] focus-visible:ring-[#cf6345]"
-                : isDark
-                  ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] focus-visible:ring-[#2d8d67]"
-                  : "border-[#d7b087] bg-[#fffcf5] focus-visible:ring-[#4d7a52]"
-            }
+            className={passwordError ? "border-danger focus-visible:ring-danger" : ""}
             {...register("password", { required: true })}
           />
           {passwordError && (
-            <p id="login-password-error" className="text-sm text-[#b73f28]">
+            <p id="login-password-error" className="text-sm text-danger-display">
               {passwordError}
             </p>
           )}
         </div>
 
         <p
-          className={`auth-motion-item auth-motion-delay-3 rounded-lg border px-3 py-2 text-xs leading-relaxed ${
-            isDark
-              ? "border-[#2d4057] bg-[#132033] text-[#a9bfd8]"
-              : "border-[#e5cfb4] bg-[#f9f2e5] text-[#694a32]"
-          }`}
+          className="auth-motion-item auth-motion-delay-3 rounded-lg border border-hairline bg-surface px-3 py-2 text-xs leading-relaxed text-ink-muted"
         >
           Your {BRAND.communityLabel} account keeps event updates tied to your
           resident profile.
@@ -173,11 +154,7 @@ export const LoginPage = observer(function LoginPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className={`auth-motion-item auth-motion-delay-4 h-auto w-full border py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
-            isDark
-              ? "border-[#2e8f67] bg-[#1f815c] text-[#eafff6] hover:bg-[#1a6f4f]"
-              : "border-[#2e5f3b] bg-[#356b43] text-[#fff8ea] hover:bg-[#2e5f3b]"
-          }`}
+          className="auth-motion-item auth-motion-delay-4 h-auto w-full py-2.5"
         >
           {isSubmitting ? (
             <>
@@ -191,13 +168,11 @@ export const LoginPage = observer(function LoginPage() {
       </form>
 
       <div className="auth-motion-item auth-motion-delay-5 mt-8 text-center">
-        <p
-          className={`text-sm ${isDark ? "text-[#98acc4]" : "text-[#745743]"}`}
-        >
+        <p className="text-sm text-ink-muted">
           Don&apos;t have an account?{" "}
           <Link
             to="/register"
-            className={`font-semibold ${isDark ? "text-[#70d6ad] hover:text-[#8cebc6]" : "text-[#af5f19] hover:text-[#8e4d14]"}`}
+            className="font-semibold text-accent-display hover:text-accent"
           >
             Create account
           </Link>

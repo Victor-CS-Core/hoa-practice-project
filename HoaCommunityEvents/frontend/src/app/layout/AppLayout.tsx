@@ -14,8 +14,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Moon,
   Shield,
+  Moon,
   Sun,
   UserCircle,
   Users,
@@ -120,17 +120,9 @@ export const AppLayout = observer(function AppLayout() {
     void navigate("/login", { replace: true });
   };
 
-  const headerTone = isDark
-    ? "border-stone-700 bg-stone-950/82 text-stone-100"
-    : "border-[#dfc5a3] bg-[#fffaf2]/90 text-stone-900";
-
-  const navTone = isDark
-    ? "text-stone-300 hover:bg-stone-800/90 hover:text-[#9ce8c7]"
-    : "text-[#6a513b] hover:bg-[#f3e8d7] hover:text-[#2f7a5b]";
-
-  const activeTone = isDark
-    ? "bg-[#204739] text-[#c9f8e2]"
-    : "bg-[#dff1e8] text-[#285f48]";
+  const headerTone = "border-hairline bg-page/90 text-ink-body";
+  const navTone = "text-ink-body hover:bg-surface hover:text-ink-display";
+  const activeTone = "bg-accent-faded text-accent-display";
 
   const initials = getInitials(user?.displayName, user?.username);
 
@@ -141,10 +133,10 @@ export const AppLayout = observer(function AppLayout() {
     ].join(" ");
 
   return (
-    <div className="min-h-screen font-body text-(--text-primary)">
+    <div className="min-h-screen bg-page font-body text-ink-body">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-page"
       >
         Skip to main content
       </a>
@@ -159,14 +151,10 @@ export const AppLayout = observer(function AppLayout() {
                 to="/"
                 className="group flex items-center gap-2 transition-transform duration-200 hover:scale-[1.02]"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-sm font-heading font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-heading font-bold text-page">
                   {BRAND.acronym}
                 </div>
-                <span
-                  className={`hidden font-heading text-lg font-semibold sm:block ${
-                    isDark ? "text-emerald-200" : "text-emerald-900"
-                  }`}
-                >
+                <span className="hidden font-heading text-lg font-semibold text-ink-display sm:block">
                   {BRAND.appName}
                 </span>
               </Link>
@@ -233,11 +221,7 @@ export const AppLayout = observer(function AppLayout() {
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${
-                    isDark
-                      ? "border-stone-600 bg-stone-900 text-amber-300 hover:bg-stone-800"
-                      : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
-                  }`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-page text-ink-muted transition-colors duration-200 hover:bg-surface hover:text-ink-display"
                   aria-label="Toggle header theme"
                 >
                   {isDark ? (
@@ -252,13 +236,9 @@ export const AppLayout = observer(function AppLayout() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors duration-200 ${
-                      isDark
-                        ? "border-stone-600 bg-stone-900/70 hover:bg-stone-800"
-                        : "border-stone-200 bg-white hover:bg-stone-50"
-                    }`}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-hairline bg-page px-2.5 py-1.5 transition-colors duration-200 hover:bg-surface"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-xs font-bold text-white">
+                    <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-accent text-xs font-bold text-page">
                       {user?.profileImageUrl ? (
                         <img
                           src={user.profileImageUrl}
@@ -274,9 +254,7 @@ export const AppLayout = observer(function AppLayout() {
                         {user?.displayName ?? user?.username ?? "User"}
                       </span>
                       <span
-                        className={`block truncate text-xs ${
-                          isDark ? "text-stone-400" : "text-stone-500"
-                        }`}
+                        className="block truncate text-xs text-ink-muted"
                       >
                         {roleToLabel(user?.role)}
                       </span>
@@ -289,13 +267,13 @@ export const AppLayout = observer(function AppLayout() {
                   className="w-60 animate-fade-in"
                 >
                   <DropdownMenuLabel>
-                    <div className="font-semibold text-stone-800">
+                    <div className="font-semibold text-ink-display">
                       {user?.displayName ?? user?.username}
                     </div>
-                    <div className="text-xs font-normal text-stone-500">
+                    <div className="text-xs font-normal text-ink-muted">
                       @{user?.username}
                     </div>
-                    <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    <span className="mt-2 inline-flex rounded-full bg-signal-faded px-2 py-0.5 text-[11px] font-semibold text-signal-display">
                       {roleToLabel(user?.role)}
                     </span>
                   </DropdownMenuLabel>
@@ -311,7 +289,7 @@ export const AppLayout = observer(function AppLayout() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="gap-2 text-red-700 hover:bg-red-50"
+                    className="gap-2 text-danger-display hover:bg-danger-faded"
                   >
                     <LogOut className="h-4 w-4" /> Logout
                   </DropdownMenuItem>
@@ -322,11 +300,7 @@ export const AppLayout = observer(function AppLayout() {
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className={`rounded-md p-2 md:hidden ${
-                isDark
-                  ? "text-stone-200 hover:bg-stone-800"
-                  : "text-stone-600 hover:bg-stone-100"
-              }`}
+              className="rounded-md p-2 text-ink-body hover:bg-surface md:hidden"
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
             >
@@ -336,11 +310,7 @@ export const AppLayout = observer(function AppLayout() {
 
           {mobileOpen && (
             <div
-              className={`border-t px-4 py-4 md:hidden ${
-                isDark
-                  ? "border-stone-700 bg-stone-950"
-                  : "border-stone-200 bg-white"
-              }`}
+              className="border-t border-hairline bg-page px-4 py-4 md:hidden"
             >
               <nav className="flex flex-col gap-4">
                 <div className="space-y-2">
@@ -360,14 +330,10 @@ export const AppLayout = observer(function AppLayout() {
 
                 {authStore.isAdmin && (
                   <div
-                    className={`space-y-2 border-t pt-3 ${
-                      isDark ? "border-stone-700" : "border-stone-200"
-                    }`}
+                    className="space-y-2 border-t border-hairline pt-3"
                   >
                     <p
-                      className={`px-3 text-xs font-semibold tracking-wide ${
-                        isDark ? "text-stone-400" : "text-stone-500"
-                      }`}
+                      className="px-3 text-xs font-semibold tracking-wide text-ink-muted"
                     >
                       ADMIN TOOLS
                     </p>
@@ -386,14 +352,10 @@ export const AppLayout = observer(function AppLayout() {
                 )}
 
                 <div
-                  className={`space-y-2 border-t pt-3 ${
-                    isDark ? "border-stone-700" : "border-stone-200"
-                  }`}
+                  className="space-y-2 border-t border-hairline pt-3"
                 >
                   <p
-                    className={`px-3 text-xs font-semibold tracking-wide ${
-                      isDark ? "text-stone-400" : "text-stone-500"
-                    }`}
+                    className="px-3 text-xs font-semibold tracking-wide text-ink-muted"
                   >
                     ACCOUNT
                   </p>
@@ -427,7 +389,7 @@ export const AppLayout = observer(function AppLayout() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-red-700 transition-all duration-200 hover:bg-red-50"
+                    className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-danger-display transition-all duration-200 hover:bg-danger-faded"
                   >
                     <LogOut className="h-4 w-4" /> Logout
                   </button>
