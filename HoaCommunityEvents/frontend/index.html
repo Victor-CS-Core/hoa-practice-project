@@ -14,7 +14,9 @@
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem("bm-ds-theme");
+          var stored =
+            localStorage.getItem("bm-ds-theme") ||
+            localStorage.getItem("hoa-theme-preference");
           var theme =
             stored === "light" || stored === "dark" || stored === "system"
               ? stored
@@ -25,8 +27,10 @@
                 ? "dark"
                 : "light"
               : theme;
-          if (resolved === "dark")
-            document.documentElement.classList.add("dark");
+          var root = document.documentElement;
+          root.classList.toggle("dark", resolved === "dark");
+          root.setAttribute("data-theme", resolved);
+          root.style.colorScheme = resolved;
         } catch (e) {}
       })();
     </script>

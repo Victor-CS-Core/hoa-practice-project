@@ -12,7 +12,8 @@ import {
   type ThemePreference,
 } from "./theme-context";
 
-const STORAGE_KEY = "hoa-theme-preference";
+const LEGACY_STORAGE_KEY = "hoa-theme-preference";
+const DESIGN_SYSTEM_STORAGE_KEY = "bm-ds-theme";
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "light";
@@ -23,7 +24,9 @@ function getSystemTheme(): ResolvedTheme {
 
 function getStoredPreference(): ThemePreference {
   if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const stored =
+    window.localStorage.getItem(DESIGN_SYSTEM_STORAGE_KEY) ??
+    window.localStorage.getItem(LEGACY_STORAGE_KEY);
   if (stored === "light" || stored === "dark" || stored === "system") {
     return stored;
   }
@@ -42,6 +45,8 @@ function resolveTheme(
 }
 
 function applyThemeToDocument(theme: ResolvedTheme) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme === "dark");
   document.documentElement.setAttribute("data-theme", theme);
   document.documentElement.style.colorScheme = theme;
 }
@@ -76,7 +81,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setThemePreference = useCallback((theme: ThemePreference) => {
     setThemePreferenceState(theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    window.localStorage.setItem(DESIGN_SYSTEM_STORAGE_KEY, theme);
+    window.localStorage.setItem(LEGACY_STORAGE_KEY, theme);
   }, []);
 
   const toggleTheme = useCallback(() => {
