@@ -1,6 +1,7 @@
 using HoaCommunityEvents.Domain.Common;
 using HoaCommunityEvents.Domain.Entities;
 using HoaCommunityEvents.Persistence.Data;
+using HoaCommunityEvents.Application.Common.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +13,8 @@ public static class IdentityServiceExtensions
 {
     public static IServiceCollection AddIdentityServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+
         services.AddIdentityCore<AppUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
@@ -27,8 +30,9 @@ public static class IdentityServiceExtensions
 
         var tokenKey = configuration["TokenKey"]
             ?? throw new InvalidOperationException("TokenKey is not configured.");
-        var tokenIssuer = configuration["Jwt:Issuer"] ?? "HoaCommunityEvents.API";
-        var tokenAudience = configuration["Jwt:Audience"] ?? "HoaCommunityEvents.Client";
+        var jwtOptions = configuration
+            .GetSection(JwtOptions.SectionName)
+            .Get<JwtOptions>() ?? new JwtOptions();
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
 
@@ -56,9 +60,9 @@ public static class IdentityServiceExtensions
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
                     ValidateIssuer = true,
-                    ValidIssuer = tokenIssuer,
+                    ValidIssuer = jwtOptions.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = tokenAudience,
+                    ValidAudience = jwtOptions.Audience,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1)
                 };

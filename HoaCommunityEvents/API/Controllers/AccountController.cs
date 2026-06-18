@@ -10,7 +10,7 @@ namespace HoaCommunityEvents.API.Controllers;
 public class AccountController(IAccountService accountService) : BaseApiController
 {
     [AllowAnonymous]
-    [EnableRateLimiting("auth-login-register")]
+    [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register(RegisterDto dto)
     {
@@ -24,14 +24,25 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     }
 
     [AllowAnonymous]
-    [EnableRateLimiting("auth-login-register")]
+    [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto dto)
     {
-        var user = await accountService.LoginAsync(dto);
-        return user is null
-            ? ApiError(StatusCodes.Status401Unauthorized, "invalid_credentials", "Invalid email or password.")
-            : Ok(user);
+        var result = await accountService.LoginAsync(dto);
+        if (result.Succeeded && result.User is not null)
+        {
+            return Ok(result.User);
+        }
+
+        if (result.FailureReason == LoginFailureReason.LockedOut)
+        {
+            return ApiError(
+                StatusCodes.Status423Locked,
+                "account_locked",
+                "Account is temporarily locked due to repeated failed sign-in attempts. Try again later.");
+        }
+
+        return ApiError(StatusCodes.Status401Unauthorized, "invalid_credentials", "Invalid email or password.");
     }
 
     [Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]

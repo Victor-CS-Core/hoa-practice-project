@@ -46,22 +46,27 @@ public class AccountService(
         return (true, [], CreateUserDto(user, roles));
     }
 
-    public async Task<UserDto?> LoginAsync(LoginDto dto)
+    public async Task<LoginResult> LoginAsync(LoginDto dto)
     {
         var user = await userManager.FindByEmailAsync(dto.Email);
         if (user is null)
         {
-            return null;
+            return LoginResult.Failed(LoginFailureReason.InvalidCredentials);
         }
 
         var passwordResult = await signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
-        if (!passwordResult.Succeeded)
+        if (passwordResult.Succeeded)
         {
-            return null;
+            var roles = await userManager.GetRolesAsync(user);
+            return LoginResult.Success(CreateUserDto(user, roles));
         }
 
-        var roles = await userManager.GetRolesAsync(user);
-        return CreateUserDto(user, roles);
+        if (passwordResult.IsLockedOut)
+        {
+            return LoginResult.Failed(LoginFailureReason.LockedOut);
+        }
+
+        return LoginResult.Failed(LoginFailureReason.InvalidCredentials);
     }
 
     public async Task<UserDto?> GetCurrentUserAsync(ClaimsPrincipal principal)

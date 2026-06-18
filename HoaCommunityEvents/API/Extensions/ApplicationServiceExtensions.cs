@@ -100,7 +100,7 @@ public static class ApplicationServiceExtensions
                 });
             });
 
-            options.AddPolicy("upload-signature", context =>
+            options.AddPolicy(RateLimitPolicies.UploadSignature, context =>
             {
                 var partitionKey = context.User.Identity?.Name
                     ?? context.Connection.RemoteIpAddress?.ToString()
@@ -116,7 +116,7 @@ public static class ApplicationServiceExtensions
                 });
             });
 
-            options.AddPolicy("auth-login-register", context =>
+            options.AddPolicy(RateLimitPolicies.AuthLoginRegister, context =>
             {
                 var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 

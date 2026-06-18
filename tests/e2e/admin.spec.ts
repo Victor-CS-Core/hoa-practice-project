@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { installMockApi } from './support/mockApi';
+import { AdminDashboardPage } from './support/adminDashboardPage';
 
 test.describe('Admin Workflows', () => {
   test('admin can create, publish, and delete an event from dashboard', async ({ page }) => {
     await installMockApi(page, { initialToken: 'token-admin' });
+    const dashboard = new AdminDashboardPage(page);
 
     await page.goto('/admin/events');
 
@@ -11,12 +13,7 @@ test.describe('Admin Workflows', () => {
       page.getByRole('heading', { name: /admin management dashboard/i }),
     ).toBeVisible();
 
-    const pendingRow = page.getByRole('row', {
-      name: /board budget review/i,
-    });
-    await pendingRow.getByRole('button', { name: /open menu/i }).click();
-    await page.getByRole('menuitem', { name: /publish event/i }).click();
-    await expect(page.getByText(/event published successfully/i)).toBeVisible();
+    await dashboard.publishEventFromRow(/board budget review/i);
 
     await page.getByRole('button', { name: /create new event/i }).click();
 
@@ -44,13 +41,7 @@ test.describe('Admin Workflows', () => {
       page.getByText('Created event: Playwright HOA Test Event'),
     ).toBeVisible();
 
-    const createdRow = page.getByRole('row', {
-      name: /playwright hoa test event/i,
-    });
-    await createdRow.getByRole('button', { name: /open menu/i }).click();
-    await page.getByRole('menuitem', { name: /delete event/i }).click();
-    await page.getByRole('button', { name: /yes, delete/i }).click();
-    await expect(page.getByText(/event deleted successfully/i)).toBeVisible();
+    await dashboard.deleteEventFromRow(/playwright hoa test event/i);
   });
 
   test('admin user management supports search, promote, and delete', async ({ page }) => {

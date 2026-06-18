@@ -125,9 +125,25 @@ export const AppLayout = observer(function AppLayout() {
     void navigate("/login", { replace: true });
   };
 
-  const headerTone = "border-white/10 bg-black/95 text-slate-100";
-  const navTone = "text-slate-100 hover:bg-white/10 hover:text-white";
+  const headerTone = isDark
+    ? "border-white/10 bg-black/95 text-slate-100"
+    : "border-hairline bg-surface/95 text-ink-display";
+  const navTone = isDark
+    ? "text-slate-100 hover:bg-white/10 hover:text-white"
+    : "text-ink-body hover:bg-surface-muted hover:text-ink-display";
   const activeTone = "bg-accent text-white";
+  const brandTextTone = isDark ? "text-white" : "text-ink-display";
+  const controlTone = isDark
+    ? "border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"
+    : "border-hairline bg-surface text-ink-display hover:bg-surface-muted";
+  const mobilePanelTone = isDark
+    ? "border-white/10 bg-black/95"
+    : "border-hairline bg-surface";
+  const mobileSectionTone = isDark ? "border-white/10" : "border-hairline";
+  const mobileSectionLabelTone = isDark ? "text-slate-300" : "text-ink-muted";
+  const mobileToggleTone = isDark
+    ? "text-slate-100 hover:bg-white/10"
+    : "text-ink-display hover:bg-surface-muted";
 
   const initials = getInitials(user?.displayName, user?.username);
 
@@ -159,7 +175,9 @@ export const AppLayout = observer(function AppLayout() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-heading font-bold text-page">
                   {BRAND.acronym}
                 </div>
-                <span className="hidden font-heading text-lg font-semibold text-white sm:block">
+                <span
+                  className={`hidden font-heading text-lg font-semibold sm:block ${brandTextTone}`}
+                >
                   {BRAND.appName}
                 </span>
               </Link>
@@ -234,7 +252,7 @@ export const AppLayout = observer(function AppLayout() {
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-slate-100 transition-colors duration-200 hover:bg-white/20 hover:text-page"
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors duration-200 ${controlTone}`}
                   aria-label="Toggle header theme"
                 >
                   {isDark ? (
@@ -249,7 +267,7 @@ export const AppLayout = observer(function AppLayout() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1.5 text-slate-100 transition-colors duration-200 hover:bg-white/20"
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-2.5 py-1.5 transition-colors duration-200 ${controlTone}`}
                   >
                     <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-accent text-xs font-bold text-page">
                       {user?.profileImageUrl ? (
@@ -311,7 +329,7 @@ export const AppLayout = observer(function AppLayout() {
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="rounded-md p-2 text-slate-100 hover:bg-white/10 md:hidden"
+              className={`rounded-md p-2 md:hidden ${mobileToggleTone}`}
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
             >
@@ -320,7 +338,7 @@ export const AppLayout = observer(function AppLayout() {
           </div>
 
           {mobileOpen && (
-            <div className="border-t border-white/10 bg-black/95 px-4 py-4 md:hidden">
+            <div className={`border-t px-4 py-4 md:hidden ${mobilePanelTone}`}>
               <nav className="flex flex-col gap-4">
                 <div className="space-y-2">
                   {baseLinks.map((link) => (
@@ -338,8 +356,12 @@ export const AppLayout = observer(function AppLayout() {
                 </div>
 
                 {authStore.isAdmin && (
-                  <div className="space-y-2 border-t border-white/10 pt-3">
-                    <p className="px-3 text-xs font-semibold tracking-wide text-slate-300">
+                  <div
+                    className={`space-y-2 border-t pt-3 ${mobileSectionTone}`}
+                  >
+                    <p
+                      className={`px-3 text-xs font-semibold tracking-wide ${mobileSectionLabelTone}`}
+                    >
                       ADMIN TOOLS
                     </p>
                     {adminLinks.map((link) => (
@@ -356,8 +378,10 @@ export const AppLayout = observer(function AppLayout() {
                   </div>
                 )}
 
-                <div className="space-y-2 border-t border-white/10 pt-3">
-                  <p className="px-3 text-xs font-semibold tracking-wide text-slate-300">
+                <div className={`space-y-2 border-t pt-3 ${mobileSectionTone}`}>
+                  <p
+                    className={`px-3 text-xs font-semibold tracking-wide ${mobileSectionLabelTone}`}
+                  >
                     ACCOUNT
                   </p>
 

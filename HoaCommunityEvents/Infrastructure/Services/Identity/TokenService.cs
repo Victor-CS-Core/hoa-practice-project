@@ -1,7 +1,9 @@
 using HoaCommunityEvents.Application.Common.Interfaces;
+using HoaCommunityEvents.Application.Common.Options;
 using HoaCommunityEvents.Domain.Common;
 using HoaCommunityEvents.Domain.Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,14 +11,12 @@ using System.Text;
 
 namespace HoaCommunityEvents.Infrastructure.Services.Identity;
 
-public class TokenService(IConfiguration configuration) : ITokenService
+public class TokenService(IConfiguration configuration, IOptions<JwtOptions> jwtOptions) : ITokenService
 {
     public string CreateToken(AppUser user, IList<string> roles)
     {
         var tokenKey = configuration["TokenKey"]
             ?? throw new InvalidOperationException("TokenKey is not configured.");
-        var tokenIssuer = configuration["Jwt:Issuer"] ?? "HoaCommunityEvents.API";
-        var tokenAudience = configuration["Jwt:Audience"] ?? "HoaCommunityEvents.Client";
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
@@ -35,8 +35,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddDays(7),
-            Issuer = tokenIssuer,
-            Audience = tokenAudience,
+            Issuer = jwtOptions.Value.Issuer,
+            Audience = jwtOptions.Value.Audience,
             SigningCredentials = creds
         };
 
