@@ -1,5 +1,5 @@
 import { AlertTriangle, Trash2 } from "lucide-react";
-import { Button } from "../../../components/ui/button";
+import { Button } from "../../../components/design-system/ui/button";
 
 interface AdminConfirmModalProps {
   action: "cancel" | "delete";
@@ -17,12 +17,12 @@ export function AdminConfirmModal({
   const isDelete = action === "delete";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-display/50 p-4">
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-hairline bg-page shadow-xl">
         <div className="p-6">
           <div className="mb-4 flex items-center gap-4">
             <div
-              className={`shrink-0 rounded-full p-3 ${isDelete ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"}`}
+              className={`shrink-0 rounded-full p-3 ${isDelete ? "bg-danger-faded text-danger-display" : "bg-signal-faded text-signal-display"}`}
             >
               {isDelete ? (
                 <Trash2 className="h-6 w-6" />
@@ -31,13 +31,13 @@ export function AdminConfirmModal({
               )}
             </div>
             <div>
-              <h3 className="font-heading text-xl font-bold text-stone-900">
+              <h3 className="font-heading text-xl font-bold text-ink-display">
                 {isDelete ? "Delete Event" : "Cancel Event"}
               </h3>
             </div>
           </div>
 
-          <div className="pl-13 text-sm text-stone-600">
+          <div className="pl-13 text-sm text-ink-muted">
             {isDelete ? (
               <p>
                 Are you sure you want to permanently delete this event? This
@@ -52,21 +52,16 @@ export function AdminConfirmModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-hairline bg-surface px-6 py-4">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={onDismiss}
             disabled={isSubmitting}
-            className="border-stone-300"
           >
             Keep Event
           </Button>
           <Button
-            className={
-              isDelete
-                ? "bg-red-600 text-white hover:bg-red-700"
-                : "bg-amber-600 text-white hover:bg-amber-700"
-            }
+            variant={isDelete ? "danger" : "primary"}
             onClick={onConfirm}
             disabled={isSubmitting}
           >

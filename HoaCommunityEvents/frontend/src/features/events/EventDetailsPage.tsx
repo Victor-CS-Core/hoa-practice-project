@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
 import { FramedImage } from "../../components/media/FramedImage";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardHeader } from "../../components/ui/card";
-import { LoadingState } from "../../components/ui/loading-state";
+import { Badge } from "../../components/design-system/ui/badge";
+import { Button } from "../../components/design-system/ui/button";
+import { LoadingState } from "../../components/design-system/ui/loading-state";
 import {
   useCancelEvent,
   useDeleteEvent,
@@ -21,7 +20,6 @@ import {
   useLeaveEvent,
 } from "../../hooks/useAttendance";
 import { useStore } from "../../app/stores/store";
-import { useTheme } from "../../app/theme/theme-context";
 import { useSignalR } from "../../hooks/useSignalR";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
@@ -33,8 +31,6 @@ export function EventDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { authStore } = useStore();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const { data, isLoading, isError } = useEvent(id);
   const cancelMutation = useCancelEvent();
   const publishMutation = usePublishEvent();
@@ -56,20 +52,16 @@ export function EventDetailsPage() {
 
   if (isError || !data) {
     return (
-      <div
-        className={`rounded-xl border p-8 text-center ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-stone-200 bg-white"}`}
-      >
-        <h2
-          className={`font-heading text-2xl font-bold ${isDark ? "text-[#f2f8ff]" : "text-stone-900"}`}
-        >
+      <div className="rounded-xl border border-hairline bg-page p-8 text-center">
+        <h2 className="font-heading text-2xl font-bold text-ink-display">
           Event not found
         </h2>
-        <p className={`mt-2 ${isDark ? "text-[#9db2c8]" : "text-stone-600"}`}>
+        <p className="mt-2 text-ink-muted">
           The event may have been removed or is unavailable.
         </p>
         <Link
           to="/events"
-          className={`mt-4 inline-block underline ${isDark ? "text-[#7be3b8] hover:text-[#95f0ca]" : "text-emerald-700 hover:text-emerald-800"}`}
+          className="mt-4 inline-block underline text-accent-display hover:text-accent"
         >
           Back to events
         </Link>
@@ -168,12 +160,14 @@ export function EventDetailsPage() {
       : data.status;
 
   const statusTone = isCancelled
-    ? "bg-red-100 text-red-700"
+    ? "muted"
     : isEnded
-      ? "bg-slate-200 text-slate-700"
+      ? "muted"
       : data.status === "Pending"
-        ? "bg-amber-100 text-amber-700"
-        : "bg-emerald-100 text-emerald-700";
+        ? "signal"
+        : "accent";
+
+  const statusClass = isCancelled ? "bg-danger-faded text-danger-display" : "";
 
   const dateLabel = start.toLocaleDateString("en-US", {
     weekday: "long",
@@ -191,22 +185,16 @@ export function EventDetailsPage() {
   })}`;
 
   return (
-    <section
-      className={`min-w-0 space-y-6 rounded-3xl p-4 sm:p-5 ${
-        isDark
-          ? "bg-[linear-gradient(155deg,rgba(16,28,42,0.72),rgba(14,24,36,0.72))]"
-          : "bg-[linear-gradient(155deg,rgba(255,249,238,0.88),rgba(243,251,246,0.88))]"
-      }`}
-    >
+    <section className="min-w-0 space-y-6 rounded-3xl bg-surface/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
-      <Card className="overflow-hidden border-stone-200 bg-white shadow-sm animate-fade-up">
-        <CardContent className="space-y-5 p-6 md:p-8">
+      <article className="animate-fade-up overflow-hidden rounded-xl border border-hairline bg-page shadow-sm">
+        <div className="space-y-5 p-6 md:p-8">
           {data.imageUrl && failedImageUrl !== data.imageUrl && (
             <div className="-mx-6 -mt-6 md:-mx-8 md:-mt-8">
-              <div className="h-52 w-full overflow-hidden border-b border-stone-200 md:h-64">
+              <div className="h-52 w-full overflow-hidden border-b border-hairline md:h-64">
                 <FramedImage
                   src={data.imageUrl}
                   alt={`${data.title} banner`}
@@ -220,72 +208,69 @@ export function EventDetailsPage() {
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant="outline"
-              className="border-stone-300 bg-stone-100 text-stone-700"
-            >
+            <Badge tone="neutral" className="border-hairline bg-surface">
               {data.category}
             </Badge>
-            <Badge variant="secondary" className={statusTone}>
+            <Badge tone={statusTone} className={statusClass}>
               {statusLabel}
             </Badge>
           </div>
 
           <div className="space-y-2">
-            <h1 className="wrap-break-word font-heading text-3xl font-bold leading-tight text-stone-900 md:text-4xl">
+            <h1 className="wrap-break-word font-heading text-3xl font-bold leading-tight text-ink-display md:text-4xl">
               {data.title}
             </h1>
-            <p className="flex min-w-0 items-center gap-2 text-stone-600">
-              <User className="h-4 w-4 text-stone-400" /> Hosted by{" "}
+            <p className="flex min-w-0 items-center gap-2 text-ink-body">
+              <User className="h-4 w-4 text-ink-muted" /> Hosted by{" "}
               <span className="wrap-break-word">{data.hostDisplayName}</span>
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <div className="rounded-lg border border-hairline bg-surface p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 Date
               </p>
-              <p className="flex items-start gap-2 text-sm font-medium text-stone-800">
-                <Calendar className="mt-0.5 h-4 w-4 text-stone-500" />{" "}
+              <p className="flex items-start gap-2 text-sm font-medium text-ink-display">
+                <Calendar className="mt-0.5 h-4 w-4 text-ink-muted" />{" "}
                 {dateLabel}
               </p>
             </div>
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <div className="rounded-lg border border-hairline bg-surface p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 Time
               </p>
-              <p className="flex items-start gap-2 text-sm font-medium text-stone-800">
-                <Clock3 className="mt-0.5 h-4 w-4 text-stone-500" /> {timeLabel}
+              <p className="flex items-start gap-2 text-sm font-medium text-ink-display">
+                <Clock3 className="mt-0.5 h-4 w-4 text-ink-muted" /> {timeLabel}
               </p>
             </div>
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <div className="rounded-lg border border-hairline bg-surface p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 Location
               </p>
-              <p className="flex min-w-0 items-start gap-2 text-sm font-medium text-stone-800">
-                <MapPin className="mt-0.5 h-4 w-4 text-stone-500" />{" "}
+              <p className="flex min-w-0 items-start gap-2 text-sm font-medium text-ink-display">
+                <MapPin className="mt-0.5 h-4 w-4 text-ink-muted" />{" "}
                 <span className="wrap-break-word">
                   {data.locationWithinCommunity}
                 </span>
               </p>
             </div>
-            <div className="rounded-lg border border-stone-200 bg-stone-50 p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">
+            <div className="rounded-lg border border-hairline bg-surface p-3">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 Attendance
               </p>
-              <p className="flex items-start gap-2 text-sm font-medium text-stone-800">
-                <Users className="mt-0.5 h-4 w-4 text-stone-500" />
+              <p className="flex items-start gap-2 text-sm font-medium text-ink-display">
+                <Users className="mt-0.5 h-4 w-4 text-ink-muted" />
                 {data.attendeeCount}{" "}
                 {data.maxAttendees ? `/ ${data.maxAttendees}` : ""}
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </article>
 
       {actionError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="rounded-xl border border-danger bg-danger-faded p-4 text-danger-display">
           {actionError}
         </div>
       )}
@@ -320,38 +305,38 @@ export function EventDetailsPage() {
             </div>
           )}
 
-          <Card className="border-stone-200 bg-white shadow-sm animate-fade-up animate-delay-100">
-            <CardHeader>
-              <h2 className="font-heading text-xl font-semibold text-stone-900">
+          <article className="animate-fade-up animate-delay-100 rounded-xl border border-hairline bg-page shadow-sm">
+            <div className="px-6 pb-3 pt-6">
+              <h2 className="font-heading text-xl font-semibold text-ink-display">
                 About this event
               </h2>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-line wrap-break-word leading-relaxed text-stone-600">
+            </div>
+            <div className="px-6 pb-6">
+              <p className="whitespace-pre-line wrap-break-word leading-relaxed text-ink-body">
                 {data.description}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </article>
 
           {authStore.isLoggedIn && !authStore.isAdmin && isCancelled && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+            <div className="rounded-xl border border-signal/45 bg-signal-faded p-4 text-signal-display">
               This event is cancelled. Joining is disabled.
             </div>
           )}
 
           {authStore.isAdmin && (
-            <Card className="border-stone-200 bg-white shadow-sm animate-fade-up animate-delay-200">
-              <CardHeader>
-                <h2 className="font-heading text-xl font-semibold text-stone-900">
+            <article className="animate-fade-up animate-delay-200 rounded-xl border border-hairline bg-page shadow-sm">
+              <div className="px-6 pb-3 pt-6">
+                <h2 className="font-heading text-xl font-semibold text-ink-display">
                   Attendees
                 </h2>
-              </CardHeader>
-              <CardContent>
+              </div>
+              <div className="px-6 pb-6">
                 {attendeesQuery.isLoading && (
-                  <p className="text-stone-500">Loading attendees...</p>
+                  <p className="text-ink-muted">Loading attendees...</p>
                 )}
                 {attendeesQuery.isError && (
-                  <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+                  <p className="rounded-lg border border-danger bg-danger-faded p-3 text-danger-display">
                     Failed to load attendees.
                   </p>
                 )}
@@ -361,8 +346,8 @@ export function EventDetailsPage() {
                     totalCount={attendeesQuery.data.length}
                   />
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </article>
           )}
         </div>
 
@@ -378,15 +363,15 @@ export function EventDetailsPage() {
           />
 
           {authStore.isAdmin && (
-            <Card className="border-stone-200 bg-white shadow-sm xl:sticky xl:top-24">
-              <CardHeader>
-                <h3 className="font-heading text-lg font-semibold text-stone-900">
+            <article className="rounded-xl border border-hairline bg-page shadow-sm xl:sticky xl:top-24">
+              <div className="px-6 pb-3 pt-6">
+                <h3 className="font-heading text-lg font-semibold text-ink-display">
                   Admin tools
                 </h3>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
+              </div>
+              <div className="flex flex-col gap-2 px-6 pb-6">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full justify-start"
                   onClick={() => {
                     setEditOpen((prev) => !prev);
@@ -396,10 +381,11 @@ export function EventDetailsPage() {
                   {editOpen ? "Close editor" : "Edit event"}
                 </Button>
                 <Button
-                  className={`w-full justify-start text-white ${
+                  variant={isCancelled ? "primary" : "secondary"}
+                  className={`w-full justify-start ${
                     isCancelled
-                      ? "bg-emerald-600 hover:bg-emerald-700"
-                      : "bg-amber-600 hover:bg-amber-700"
+                      ? ""
+                      : "border-signal/45 bg-signal-faded text-signal-display hover:bg-signal-faded/85"
                   }`}
                   onClick={isCancelled ? handlePublish : handleCancel}
                   disabled={
@@ -417,20 +403,21 @@ export function EventDetailsPage() {
                       : "Cancel event"}
                 </Button>
                 <Button
-                  className="w-full justify-start bg-red-600 text-white hover:bg-red-700"
+                  variant="danger"
+                  className="w-full justify-start"
                   onClick={handleDelete}
                   disabled={deleteMutation.isPending}
                 >
                   {deleteMutation.isPending ? "Deleting..." : "Delete event"}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </article>
           )}
         </div>
       </div>
 
       {(joinMutation.isPending || leaveMutation.isPending) && (
-        <div className="text-sm text-stone-500">Updating attendance...</div>
+        <div className="text-sm text-ink-muted">Updating attendance...</div>
       )}
     </section>
   );

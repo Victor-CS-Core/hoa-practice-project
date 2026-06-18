@@ -1,6 +1,7 @@
 import { Heart, CalendarDays, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../../../app/theme/theme-context";
+import { Button } from "../../../components/design-system/ui/button";
 import { BRAND } from "../../../app/branding";
 
 export function CommunityInfo() {
@@ -16,32 +17,31 @@ export function CommunityInfo() {
   const iconTone = isDark ? "text-emerald-300" : "text-emerald-600";
 
   return (
-    <section className="animate-fade-up animate-delay-400 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+    <section className="animate-fade-up animate-delay-400 overflow-hidden rounded-2xl border border-hairline bg-page shadow-sm">
       <div className="grid items-center gap-0 md:grid-cols-2">
         {/* Left: text content */}
         <div className="p-8 md:p-10">
           <div className="mb-4 flex items-center gap-2">
             <Heart className="h-5 w-5 text-rose-500" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-stone-400">
+            <span className="text-sm font-semibold tracking-wider text-ink-muted uppercase">
               Our Community
             </span>
           </div>
-          <h2 className="font-heading text-2xl font-bold text-stone-900">
+          <h2 className="font-heading text-2xl font-bold text-ink-display">
             Building Stronger Connections
           </h2>
-          <p className="mt-3 leading-relaxed text-stone-600">
+          <p className="mt-3 leading-relaxed text-ink-body">
             {BRAND.appName} brings neighbors together through shared
             experiences. From pool parties to board meetings, every event is an
             opportunity to strengthen our community bonds.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-            >
-              <CalendarDays className="h-4 w-4" />
-              Explore Events
-            </Link>
+            <Button asChild variant="primary" className="h-auto py-2.5">
+              <Link to="/events">
+                <CalendarDays className="h-4 w-4" />
+                Explore Events
+              </Link>
+            </Button>
           </div>
         </div>
 

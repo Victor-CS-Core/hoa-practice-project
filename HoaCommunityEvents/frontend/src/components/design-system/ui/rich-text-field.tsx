@@ -22,6 +22,7 @@ export interface RichTextFieldProps {
   onChange?: (markdown: string) => void;
   placeholder?: string;
   readOnly?: boolean;
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -77,9 +78,7 @@ const indentIcon = `
 
 type ListMode = "bullet" | "ordered" | "task";
 
-function detectCurrentList(
-  ctx: Ctx,
-): { mode: ListMode; depth: number } | null {
+function detectCurrentList(ctx: Ctx): { mode: ListMode; depth: number } | null {
   const view = ctx.get(editorViewCtx);
   const { $from } = view.state.selection;
   const bullet = bulletListSchema.type(ctx);
@@ -145,8 +144,7 @@ function toggleListMode(ctx: Ctx, target: ListMode) {
     // {spread, order}. Carrying the old `order` attr across to bullet_list
     // would be rejected and the type swap would silently no-op.
     const spread = listNode.attrs.spread ?? false;
-    const newAttrs =
-      target === "ordered" ? { spread, order: 1 } : { spread };
+    const newAttrs = target === "ordered" ? { spread, order: 1 } : { spread };
     tr = tr.setNodeMarkup(listPos, targetListType, newAttrs);
   }
   // Reset each list_item's Crepe-managed attrs to match the new list type.
@@ -170,7 +168,14 @@ function toggleListMode(ctx: Ctx, target: ListMode) {
 
 const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
   (
-    { defaultValue = "", onChange, placeholder, readOnly = false, className },
+    {
+      defaultValue = "",
+      onChange,
+      placeholder,
+      readOnly = false,
+      ariaLabel = "Rich text editor",
+      className,
+    },
     ref,
   ) => {
     const localRef = React.useRef<HTMLDivElement>(null);
@@ -184,6 +189,23 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
     React.useEffect(() => {
       const root = localRef.current;
       if (!root) return;
+
+      const applyEditorA11yName = () => {
+        const editable = root.querySelector(".ProseMirror");
+        if (editable instanceof HTMLElement) {
+          editable.setAttribute("aria-label", ariaLabel);
+          editable.setAttribute("title", ariaLabel);
+        }
+      };
+
+      const observer = new MutationObserver(() => {
+        applyEditorA11yName();
+      });
+      observer.observe(root, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+      });
 
       const crepe = new Crepe({
         root,
@@ -258,6 +280,8 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
       root.addEventListener("keydown", onKeyDown);
 
       crepe.create().then(() => {
+        applyEditorA11yName();
+
         crepe.on((listener) => {
           listener.markdownUpdated((_, markdown) => {
             onChangeRef.current?.(markdown);
@@ -266,10 +290,11 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
       });
 
       return () => {
+        observer.disconnect();
         root.removeEventListener("keydown", onKeyDown);
         crepe.destroy();
       };
-    }, [defaultValue, placeholder, readOnly]);
+    }, [ariaLabel, defaultValue, placeholder, readOnly]);
 
     return (
       <div
@@ -286,4 +311,3 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
 RichTextField.displayName = "RichTextField";
 
 export { RichTextField };
-

@@ -22,6 +22,7 @@ import { DataTableSection } from "@/components/design-system/sections/elements/D
 import { ModalSection } from "@/components/design-system/sections/elements/ModalSection";
 import { CalloutSection } from "@/components/design-system/sections/elements/CalloutSection";
 import { DropdownMenuSection } from "@/components/design-system/sections/elements/DropdownMenuSection";
+import { AccessibilityStandardsSection } from "@/components/design-system/sections/base-styles/AccessibilityStandardsSection";
 
 export function DesignSystem() {
   const [navOpen, setNavOpen] = React.useState(false);
@@ -107,6 +108,7 @@ export function DesignSystem() {
           <ModalSection />
           <DropdownMenuSection />
           <CalloutSection />
+          <AccessibilityStandardsSection />
           <BaseStylesSection />
         </main>
       </div>
@@ -115,4 +117,3 @@ export function DesignSystem() {
 }
 
 export default DesignSystem;
-

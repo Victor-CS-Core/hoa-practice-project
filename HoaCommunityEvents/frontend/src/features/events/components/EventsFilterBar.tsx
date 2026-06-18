@@ -20,9 +20,9 @@ export function EventsFilterBar({
   const currentStatus = filter.status || "All";
 
   return (
-    <div className="mb-8 flex flex-col gap-6 rounded-xl border theme-border-surface theme-bg-surface p-4 shadow-sm md:flex-row">
+    <div className="mb-8 flex flex-col gap-6 rounded-xl border border-hairline bg-page p-4 shadow-sm md:flex-row">
       <div className="flex-1 space-y-3">
-        <h4 className="font-heading text-xs font-semibold uppercase tracking-wider theme-text-muted">
+        <h4 className="font-heading text-xs font-semibold tracking-wider text-ink-muted uppercase">
           Category
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -41,8 +41,8 @@ export function EventsFilterBar({
                 category === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
               } ${
                 currentCategory === category
-                  ? "bg-emerald-600 font-medium text-white shadow-sm"
-                  : "theme-bg-surface-muted theme-text-muted hover:brightness-95"
+                  ? "bg-accent font-medium text-accent-ink shadow-sm"
+                  : "border border-hairline bg-surface text-ink-muted hover:bg-hairline/35"
               }`}
             >
               {category}
@@ -51,10 +51,10 @@ export function EventsFilterBar({
         </div>
       </div>
 
-      <div className="hidden w-px theme-bg-surface-border md:block" />
+      <div className="hidden w-px bg-hairline md:block" />
 
       <div className="flex-1 space-y-3">
-        <h4 className="font-heading text-xs font-semibold uppercase tracking-wider theme-text-muted">
+        <h4 className="font-heading text-xs font-semibold tracking-wider text-ink-muted uppercase">
           Status
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -73,8 +73,8 @@ export function EventsFilterBar({
                 status === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
               } ${
                 currentStatus === status
-                  ? "bg-emerald-600 font-medium text-white shadow-sm"
-                  : "theme-bg-surface-muted theme-text-muted hover:brightness-95"
+                  ? "bg-accent font-medium text-accent-ink shadow-sm"
+                  : "border border-hairline bg-surface text-ink-muted hover:bg-hairline/35"
               }`}
             >
               {status}

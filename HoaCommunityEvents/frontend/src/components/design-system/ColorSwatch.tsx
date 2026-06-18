@@ -83,6 +83,7 @@ export function ColorSwatch({
       <div
         className="aspect-2/1 rounded-md border border-hairline"
         style={{ backgroundColor: currentHex }}
+        role="img"
         aria-label={`${name} (${isDark ? "dark" : "light"} mode preview)`}
       />
       <div className="text-xs">

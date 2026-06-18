@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Uploads } from "../../../app/api/agent";
 import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/design-system/ui/button";
+import { Input } from "../../../components/design-system/ui/input";
 import { getFieldError, type ApiErrorEnvelope } from "../../auth/authApiError";
 import type { CreateEventFormValues } from "../../../types/event";
 
@@ -139,9 +139,9 @@ export function AdminEventForm({
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-      <div className="border-b border-stone-200 bg-stone-50 px-6 py-4">
-        <h2 className="font-heading text-xl font-bold text-stone-900">
+    <div className="w-full max-w-full overflow-hidden rounded-xl border border-hairline bg-page shadow-sm">
+      <div className="border-b border-hairline bg-surface px-6 py-4">
+        <h2 className="font-heading text-xl font-bold text-ink-display">
           {mode === "create" ? "Create New Event" : "Edit Event"}
         </h2>
       </div>
@@ -173,7 +173,7 @@ export function AdminEventForm({
         className="space-y-6 p-4 sm:p-6"
       >
         {apiError && apiError.code !== "validation_failed" && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="flex items-start gap-3 rounded-lg border border-danger bg-danger-faded p-4 text-sm text-danger-display">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
               <p className="font-semibold">{apiError.message}</p>
@@ -183,40 +183,40 @@ export function AdminEventForm({
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">
-              Event Title <span className="text-red-500">*</span>
+            <label className="mb-1 block text-sm font-medium text-ink-display">
+              Event Title <span className="text-danger">*</span>
             </label>
             <Input
               {...register("title")}
               placeholder="e.g., Annual HOA Meeting"
               className={
                 getFieldError(apiError?.details, "Title")
-                  ? "border-red-300 focus-visible:ring-red-500"
+                  ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                   : ""
               }
             />
             {getFieldError(apiError?.details, "Title") && (
-              <p className="mt-1 text-xs text-red-500">
+              <p className="mt-1 text-xs text-danger">
                 {getFieldError(apiError?.details, "Title")}
               </p>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-700">
-              Description <span className="text-red-500">*</span>
+            <label className="mb-1 block text-sm font-medium text-ink-display">
+              Description <span className="text-danger">*</span>
             </label>
             <textarea
               {...register("description")}
-              className={`flex min-h-25 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`form-control form-control-textarea min-h-25 ${
                 getFieldError(apiError?.details, "Description")
-                  ? "border-red-300 focus-visible:ring-red-500"
-                  : "border-stone-200 focus-visible:ring-emerald-500"
+                  ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
+                  : ""
               }`}
               placeholder="Describe the event..."
             />
             {getFieldError(apiError?.details, "Description") && (
-              <p className="mt-1 text-xs text-red-500">
+              <p className="mt-1 text-xs text-danger">
                 {getFieldError(apiError?.details, "Description")}
               </p>
             )}
@@ -224,87 +224,87 @@ export function AdminEventForm({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
-                Start Date & Time <span className="text-red-500">*</span>
+              <label className="mb-1 block text-sm font-medium text-ink-display">
+                Start Date & Time <span className="text-danger">*</span>
               </label>
               <Input
                 type="datetime-local"
                 {...register("startDate")}
                 className={
                   getFieldError(apiError?.details, "StartDate")
-                    ? "border-red-300 focus-visible:ring-red-500"
+                    ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                     : ""
                 }
               />
               {getFieldError(apiError?.details, "StartDate") && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger">
                   {getFieldError(apiError?.details, "StartDate")}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
-                End Date & Time <span className="text-red-500">*</span>
+              <label className="mb-1 block text-sm font-medium text-ink-display">
+                End Date & Time <span className="text-danger">*</span>
               </label>
               <Input
                 type="datetime-local"
                 {...register("endDate")}
                 className={
                   getFieldError(apiError?.details, "EndDate")
-                    ? "border-red-300 focus-visible:ring-red-500"
+                    ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                     : ""
                 }
               />
               {getFieldError(apiError?.details, "EndDate") && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger">
                   {getFieldError(apiError?.details, "EndDate")}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
-                Category <span className="text-red-500">*</span>
+              <label className="mb-1 block text-sm font-medium text-ink-display">
+                Category <span className="text-danger">*</span>
               </label>
               <Input
                 {...register("category")}
                 placeholder="e.g., Board Meeting"
                 className={
                   getFieldError(apiError?.details, "Category")
-                    ? "border-red-300 focus-visible:ring-red-500"
+                    ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                     : ""
                 }
               />
               {getFieldError(apiError?.details, "Category") && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger">
                   {getFieldError(apiError?.details, "Category")}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
-                Location <span className="text-red-500">*</span>
+              <label className="mb-1 block text-sm font-medium text-ink-display">
+                Location <span className="text-danger">*</span>
               </label>
               <Input
                 {...register("locationWithinCommunity")}
                 placeholder="e.g., Clubhouse Room A"
                 className={
                   getFieldError(apiError?.details, "LocationWithinCommunity")
-                    ? "border-red-300 focus-visible:ring-red-500"
+                    ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                     : ""
                 }
               />
               {getFieldError(apiError?.details, "LocationWithinCommunity") && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger">
                   {getFieldError(apiError?.details, "LocationWithinCommunity")}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-700">
+              <label className="mb-1 block text-sm font-medium text-ink-display">
                 Max Attendees (Optional)
               </label>
               <Input
@@ -313,31 +313,31 @@ export function AdminEventForm({
                 placeholder="e.g., 50"
                 className={
                   getFieldError(apiError?.details, "MaxAttendees")
-                    ? "border-red-300 focus-visible:ring-red-500"
+                    ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                     : ""
                 }
               />
               {getFieldError(apiError?.details, "MaxAttendees") && (
-                <p className="mt-1 text-xs text-red-500">
+                <p className="mt-1 text-xs text-danger">
                   {getFieldError(apiError?.details, "MaxAttendees")}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+          <div className="rounded-lg border border-hairline bg-surface p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-stone-800">
+                <p className="text-sm font-semibold text-ink-display">
                   Banner image
                 </p>
-                <p className="text-xs text-stone-500">
+                <p className="text-xs text-ink-muted">
                   Add a hero image for event cards and details.
                 </p>
               </div>
               <Button
                 type="button"
-                variant={bannerEnabled ? "default" : "outline"}
+                variant={bannerEnabled ? "primary" : "secondary"}
                 className="min-w-26"
                 onClick={() => {
                   setBannerEnabled((prev) => {
@@ -361,14 +361,14 @@ export function AdminEventForm({
 
             {bannerEnabled && (
               <div className="space-y-3">
-                <div className="inline-flex rounded-md border border-stone-300 bg-white p-1">
+                <div className="inline-flex rounded-md border border-hairline bg-page p-1">
                   <button
                     type="button"
                     onClick={() => setImageSource("url")}
                     className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                       imageSource === "url"
-                        ? "bg-emerald-600 text-white"
-                        : "text-stone-600 hover:bg-stone-100"
+                        ? "bg-accent text-accent-ink"
+                        : "text-ink-muted hover:bg-surface"
                     }`}
                   >
                     URL
@@ -378,8 +378,8 @@ export function AdminEventForm({
                     onClick={() => setImageSource("upload")}
                     className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                       imageSource === "upload"
-                        ? "bg-emerald-600 text-white"
-                        : "text-stone-600 hover:bg-stone-100"
+                        ? "bg-accent text-accent-ink"
+                        : "text-ink-muted hover:bg-surface"
                     }`}
                   >
                     Upload
@@ -388,7 +388,7 @@ export function AdminEventForm({
 
                 {imageSource === "url" ? (
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-stone-700">
+                    <label className="mb-1 block text-sm font-medium text-ink-display">
                       Image URL
                     </label>
                     <Input
@@ -407,28 +407,28 @@ export function AdminEventForm({
                       }
                       className={
                         getFieldError(apiError?.details, "ImageUrl")
-                          ? "border-red-300 focus-visible:ring-red-500"
+                          ? "border-danger focus-visible:ring-danger focus-visible:border-danger"
                           : ""
                       }
                     />
                     {hideImageUrlValue && (
-                      <p className="mt-1 text-xs text-stone-500">
+                      <p className="mt-1 text-xs text-ink-muted">
                         The current uploaded image link is hidden.
                       </p>
                     )}
                     {getFieldError(apiError?.details, "ImageUrl") && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-danger">
                         {getFieldError(apiError?.details, "ImageUrl")}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
+                  <div className="rounded-md border border-dashed border-hairline bg-page p-3 text-sm text-ink-body">
                     Upload an image using a secure signed request.
                     <div className="mt-2">
                       <label
                         htmlFor="event-banner-upload"
-                        className="mb-1 block text-xs font-medium text-stone-700"
+                        className="mb-1 block text-xs font-medium text-ink-display"
                       >
                         Select event banner image
                       </label>
@@ -463,20 +463,20 @@ export function AdminEventForm({
                         }}
                       />
                     </div>
-                    <p className="mt-2 text-xs text-stone-500">
+                    <p className="mt-2 text-xs text-ink-muted">
                       Accepted: JPG, PNG, WebP. Max size: 5MB.
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => void handleCloudinaryUpload()}
                         disabled={!uploadFile || isUploading}
                       >
                         {isUploading ? "Uploading..." : "Upload Image"}
                       </Button>
                       {uploadFile && (
-                        <span className="break-all text-xs text-stone-500">
+                        <span className="break-all text-xs text-ink-muted">
                           Selected: {uploadFile.name}
                         </span>
                       )}
@@ -485,7 +485,7 @@ export function AdminEventForm({
                       <p
                         role="status"
                         aria-live="polite"
-                        className="mt-2 text-xs font-medium text-emerald-700"
+                        className="mt-2 text-xs font-medium text-accent-display"
                       >
                         {uploadSuccess}
                       </p>
@@ -494,7 +494,7 @@ export function AdminEventForm({
                       <p
                         role="alert"
                         aria-live="assertive"
-                        className="mt-2 text-xs font-medium text-red-600"
+                        className="mt-2 text-xs font-medium text-danger-display"
                       >
                         {uploadError}
                       </p>
@@ -503,14 +503,14 @@ export function AdminEventForm({
                 )}
 
                 {bannerEnabled && imageUrlValue && (
-                  <div className="rounded-md border border-stone-200 bg-white p-3">
+                  <div className="rounded-md border border-hairline bg-page p-3">
                     <div className="mb-2 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-                      <p className="text-xs font-medium text-stone-600">
+                      <p className="text-xs font-medium text-ink-muted">
                         Banner preview
                       </p>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         className="h-8 px-2 text-xs"
                         onClick={() => {
                           setValue("imageUrl", "", { shouldDirty: true });
@@ -549,7 +549,7 @@ export function AdminEventForm({
                           }}
                         />
                         <div className="mt-3">
-                          <label className="mb-1 block text-xs font-medium text-stone-600">
+                          <label className="mb-1 block text-xs font-medium text-ink-muted">
                             Zoom ({imageZoom.toFixed(2)}x)
                           </label>
                           <input
@@ -560,12 +560,12 @@ export function AdminEventForm({
                             {...register("imageZoom", {
                               valueAsNumber: true,
                             })}
-                            className="w-full accent-emerald-600"
+                            className="w-full accent-accent"
                           />
                         </div>
                       </>
                     ) : (
-                      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                      <p className="rounded-md border border-signal bg-signal-faded px-3 py-2 text-xs text-signal-display">
                         Unable to preview this image URL.
                       </p>
                     )}
@@ -576,17 +576,18 @@ export function AdminEventForm({
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 bg-stone-50 px-4 py-4 sm:px-6">
+        <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-hairline bg-surface px-4 py-4 sm:px-6">
           <Button
             variant="ghost"
             onClick={onCancel}
-            className="w-full text-stone-600 hover:text-stone-900 sm:w-auto"
+            className="w-full sm:w-auto"
             type="button"
           >
             Cancel
           </Button>
           <Button
-            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+            variant="primary"
+            className="w-full sm:w-auto"
             disabled={isSubmitting}
             type="submit"
           >

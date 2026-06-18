@@ -1,15 +1,8 @@
 import { Calendar, CheckCircle2, MapPin, User, Users } from "lucide-react";
 import { useState } from "react";
 import { FramedImage } from "../../../components/media/FramedImage";
-import { Badge } from "../../../components/ui/badge";
-import { Button } from "../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "../../../components/ui/card";
-import { useTheme } from "../../../app/theme/theme-context";
+import { Badge } from "../../../components/design-system/ui/badge";
+import { Button } from "../../../components/design-system/ui/button";
 import type { HoaEvent } from "../../../types/event";
 import { BRAND } from "../../../app/branding";
 
@@ -29,8 +22,6 @@ export function EventCard({
   onViewDetails,
 }: EventCardProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const isCancelled = event.status === "Cancelled";
   const startDateObj = new Date(event.startDate);
   const endDateObj = new Date(event.endDate);
@@ -43,28 +34,10 @@ export function EventCard({
       : "Published";
 
   const cardTone = isCancelled
-    ? isDark
-      ? "!border-red-700/60 !bg-red-950/35"
-      : "!border-red-300 !bg-red-100/80"
+    ? "border-danger/45 bg-danger-faded/60"
     : isEnded
-      ? isDark
-        ? "!border-slate-600/70 !bg-slate-900/55"
-        : "!border-slate-300 !bg-slate-200/70"
-      : isDark
-        ? "!border-emerald-700/55 !bg-emerald-950/25"
-        : "!border-emerald-300 !bg-emerald-100/65";
-
-  const statusTone = isCancelled
-    ? isDark
-      ? "!bg-red-900/70 !text-red-100"
-      : "!bg-red-200 !text-red-800"
-    : isEnded
-      ? isDark
-        ? "!bg-slate-700/80 !text-slate-100"
-        : "!bg-slate-300 !text-slate-800"
-      : isDark
-        ? "!bg-emerald-900/70 !text-emerald-100"
-        : "!bg-emerald-200 !text-emerald-800";
+      ? "border-hairline bg-surface"
+      : "border-accent/35 bg-accent-faded/55";
 
   const formattedDate = startDateObj.toLocaleDateString("en-US", {
     month: "short",
@@ -77,11 +50,11 @@ export function EventCard({
   });
 
   return (
-    <Card
-      className={`animate-zoom-in flex h-full flex-col overflow-hidden shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${cardTone}`}
+    <article
+      className={`animate-zoom-in flex h-full flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${cardTone}`}
     >
       {event.imageUrl && failedImageUrl !== event.imageUrl && (
-        <div className="h-40 w-full overflow-hidden border-b border-stone-200">
+        <div className="h-40 w-full overflow-hidden border-b border-hairline">
           <FramedImage
             src={event.imageUrl}
             alt={`${event.title} banner`}
@@ -95,58 +68,55 @@ export function EventCard({
           />
         </div>
       )}
-      <CardHeader className="border-b border-stone-100 pb-3">
+      <div className="border-b border-hairline px-6 pb-3 pt-6">
         <div className="mb-2 flex items-start justify-between gap-4">
-          <Badge
-            variant="outline"
-            className="rounded-full border-stone-200 bg-stone-100 font-medium text-stone-600"
-          >
+          <Badge tone="neutral" className="rounded-full font-medium">
             {event.category}
           </Badge>
           <Badge
-            variant="secondary"
-            className={`rounded-full font-medium ${statusTone}`}
+            tone={isEnded ? "muted" : "accent"}
+            className={`rounded-full font-medium ${isCancelled ? "bg-danger-faded text-danger-display" : ""}`}
           >
             {statusLabel}
           </Badge>
         </div>
-        <h3 className="font-heading text-xl font-semibold leading-tight text-stone-900">
+        <h3 className="font-heading text-xl font-semibold leading-tight text-ink-display">
           {event.title}
         </h3>
-      </CardHeader>
+      </div>
 
-      <CardContent className="flex grow flex-col gap-3 pb-4 pt-4">
-        <p className="mb-2 text-sm text-stone-600">{event.description}</p>
+      <div className="flex grow flex-col gap-3 px-6 pb-4 pt-4">
+        <p className="mb-2 text-sm text-ink-body">{event.description}</p>
 
-        <div className="mt-auto flex flex-col gap-2 text-sm text-stone-600">
+        <div className="mt-auto flex flex-col gap-2 text-sm text-ink-body">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 shrink-0 text-stone-400" />
+            <Calendar className="h-4 w-4 shrink-0 text-ink-muted" />
             <span className="truncate">
               {formattedDate} • {formattedTime}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0 text-stone-400" />
+            <MapPin className="h-4 w-4 shrink-0 text-ink-muted" />
             <span className="truncate">{event.locationWithinCommunity}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 shrink-0 text-stone-400" />
+            <Users className="h-4 w-4 shrink-0 text-ink-muted" />
             <span className="truncate">
               {event.attendeeCount}{" "}
               {event.maxAttendees ? `/ ${event.maxAttendees}` : ""} Attendees
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4 shrink-0 text-stone-400" />
+            <User className="h-4 w-4 shrink-0 text-ink-muted" />
             <span className="truncate">Hosted by {event.hostDisplayName}</span>
           </div>
         </div>
-      </CardContent>
+      </div>
 
-      <CardFooter className="mt-4 flex flex-col gap-3 border-t border-stone-100 px-5 pb-5 pt-4 sm:flex-row">
+      <div className="mt-4 flex flex-col gap-3 border-t border-hairline px-5 pb-5 pt-4 sm:flex-row">
         <Button
-          variant="outline"
-          className="w-full border-stone-300 text-stone-700 hover:bg-stone-50 sm:flex-1"
+          variant="secondary"
+          className="w-full sm:flex-1"
           onClick={() => onViewDetails?.(event.id)}
         >
           View Details
@@ -157,11 +127,9 @@ export function EventCard({
           !isEnded &&
           role !== "hoa_admin" && (
             <Button
-              variant={event.isCurrentUserAttending ? "secondary" : "default"}
+              variant={event.isCurrentUserAttending ? "soft" : "primary"}
               className={`w-full sm:flex-1 ${
-                event.isCurrentUserAttending
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                event.isCurrentUserAttending ? "border border-accent/35" : ""
               }`}
               onClick={() =>
                 onJoinLeave?.(event.id, !event.isCurrentUserAttending)
@@ -177,13 +145,13 @@ export function EventCard({
               )}
             </Button>
           )}
-      </CardFooter>
+      </div>
 
       {role === "hoa_admin" && (
-        <div className="border-t border-amber-200 bg-amber-100 py-1 text-center text-xs font-medium text-amber-800">
+        <div className="border-t border-signal/45 bg-signal-faded py-1 text-center text-xs font-medium text-signal-display">
           Managed by {BRAND.communityLabel}
         </div>
       )}
-    </Card>
+    </article>
   );
 }

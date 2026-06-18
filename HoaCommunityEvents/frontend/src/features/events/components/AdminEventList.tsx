@@ -10,9 +10,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
-import { Badge } from "../../../components/ui/badge";
-import { Button } from "../../../components/ui/button";
-import { Tooltip } from "../../../components/ui/tooltip";
+import { Badge } from "../../../components/design-system/ui/badge";
+import { Button } from "../../../components/design-system/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import { useTheme } from "../../../app/theme/theme-context";
+} from "../../../components/design-system/ui/dropdown-menu";
 import type { HoaEvent, PagedResult } from "../../../types/event";
 
 interface AdminEventListProps {
@@ -53,8 +51,6 @@ export function AdminEventList({
   renderExpandedEdit,
   renderExpandedAttendees,
 }: AdminEventListProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const now = new Date();
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === "undefined" || !window.matchMedia) {
@@ -82,9 +78,9 @@ export function AdminEventList({
   if (!feed.items.length) return null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-hairline bg-page shadow-sm">
       {!isDesktop && (
-        <div className="divide-y divide-stone-100">
+        <div className="divide-y divide-hairline">
           {feed.items.map((event) => {
             const startDate = new Date(event.startDate).toLocaleDateString();
             const isPending = event.status === "Pending";
@@ -103,36 +99,20 @@ export function AdminEventList({
                   : "Published";
 
             const rowTone = isCancelled
-              ? isDark
-                ? "bg-red-950/25"
-                : "bg-red-100/70"
+              ? "bg-danger-faded/65"
               : isEnded
-                ? isDark
-                  ? "bg-slate-900/45"
-                  : "bg-slate-200/70"
+                ? "bg-surface"
                 : isPending
-                  ? isDark
-                    ? "bg-amber-950/25"
-                    : "bg-amber-100/65"
-                  : isDark
-                    ? "bg-emerald-950/20"
-                    : "bg-emerald-100/60";
+                  ? "bg-signal-faded/70"
+                  : "bg-accent-faded/65";
 
             const badgeTone = isCancelled
-              ? isDark
-                ? "!bg-red-900/70 !text-red-100"
-                : "!bg-red-200 !text-red-800"
+              ? "danger"
               : isEnded
-                ? isDark
-                  ? "!bg-slate-700/80 !text-slate-100"
-                  : "!bg-slate-300 !text-slate-800"
+                ? "muted"
                 : isPending
-                  ? isDark
-                    ? "!bg-amber-900/70 !text-amber-100"
-                    : "!bg-amber-200 !text-amber-800"
-                  : isDark
-                    ? "!bg-emerald-900/70 !text-emerald-100"
-                    : "!bg-emerald-200 !text-emerald-800";
+                  ? "signal"
+                  : "accent";
 
             const isEditExpanded = expandedEditEventId === event.id;
             const isAttendeesExpanded = expandedAttendeesEventId === event.id;
@@ -142,10 +122,10 @@ export function AdminEventList({
               <Fragment key={event.id}>
                 <div className={`space-y-3 p-4 ${rowTone}`}>
                   <div className="space-y-1">
-                    <p className="wrap-break-word text-base font-semibold text-stone-900">
+                    <p className="wrap-break-word text-base font-semibold text-ink-display">
                       {event.title}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                       <span className="flex items-center gap-1 whitespace-nowrap">
                         <Calendar className="h-3 w-3" /> {startDate}
                       </span>
@@ -157,30 +137,27 @@ export function AdminEventList({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className={badgeTone}>
-                      {statusLabel}
-                    </Badge>
-                    <span className="inline-flex items-center gap-1 text-sm text-stone-600">
-                      <Users className="h-4 w-4 text-stone-400" />
+                    <Badge tone={badgeTone}>{statusLabel}</Badge>
+                    <span className="inline-flex items-center gap-1 text-sm text-ink-body">
+                      <Users className="h-4 w-4 text-ink-muted" />
                       {event.attendeeCount}
                       {event.maxAttendees ? ` / ${event.maxAttendees}` : ""}
                     </span>
                     {isEnded && (
-                      <Tooltip content="Ended is applied automatically when a published event's end date has passed.">
-                        <button
-                          type="button"
-                          className="inline-flex text-slate-500"
-                          aria-label="Ended status is date-derived from a published event"
-                        >
-                          <Info className="h-3.5 w-3.5" />
-                        </button>
-                      </Tooltip>
+                      <button
+                        type="button"
+                        className="inline-flex text-ink-muted"
+                        title="Ended is applied automatically when a published event's end date has passed."
+                        aria-label="Ended status is date-derived from a published event"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="min-h-10 w-full justify-start whitespace-normal text-left"
                       onClick={() => onEdit(event.id)}
@@ -188,7 +165,7 @@ export function AdminEventList({
                       <Edit className="mr-1 h-4 w-4" /> Edit
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="min-h-10 w-full justify-start whitespace-normal text-left"
                       onClick={() => onViewAttendees(event.id)}
@@ -197,9 +174,9 @@ export function AdminEventList({
                     </Button>
                     {isPending && !isEnded && (
                       <Button
-                        variant="outline"
+                        variant="primary"
                         size="sm"
-                        className="min-h-10 w-full justify-start whitespace-normal border-emerald-300 text-left text-emerald-700 hover:bg-emerald-50"
+                        className="min-h-10 w-full justify-start whitespace-normal text-left"
                         onClick={() => onPublish(event.id)}
                       >
                         Publish
@@ -207,9 +184,9 @@ export function AdminEventList({
                     )}
                     {(isPublished || isEnded) && (
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
-                        className="min-h-10 w-full justify-start whitespace-normal border-amber-300 text-left text-amber-700 hover:bg-amber-50"
+                        className="min-h-10 w-full justify-start whitespace-normal border-signal/45 bg-signal-faded text-left text-signal-display hover:bg-signal-faded/85"
                         onClick={() => onUnpublish(event.id)}
                       >
                         Unpublish
@@ -217,18 +194,18 @@ export function AdminEventList({
                     )}
                     {!isCancelled && !isEnded && (
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
-                        className="min-h-10 w-full justify-start whitespace-normal border-amber-300 text-left text-amber-700 hover:bg-amber-50"
+                        className="min-h-10 w-full justify-start whitespace-normal border-signal/45 bg-signal-faded text-left text-signal-display hover:bg-signal-faded/85"
                         onClick={() => onCancel(event.id)}
                       >
                         <XCircle className="mr-1 h-4 w-4" /> Cancel
                       </Button>
                     )}
                     <Button
-                      variant="outline"
+                      variant="danger"
                       size="sm"
-                      className="min-h-10 w-full justify-start whitespace-normal border-red-300 text-left text-red-700 hover:bg-red-50"
+                      className="min-h-10 w-full justify-start whitespace-normal text-left"
                       onClick={() => onDelete(event.id)}
                     >
                       <Trash2 className="mr-1 h-4 w-4" /> Delete
@@ -237,11 +214,7 @@ export function AdminEventList({
                 </div>
 
                 {showExpandedPanel && (
-                  <div
-                    className={
-                      isDark ? "bg-stone-900/45 p-4" : "bg-stone-50/70 p-4"
-                    }
-                  >
+                  <div className="bg-surface/80 p-4">
                     {isEditExpanded
                       ? renderExpandedEdit(event)
                       : renderExpandedAttendees(event)}
@@ -256,7 +229,7 @@ export function AdminEventList({
       {isDesktop && (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-stone-200 bg-stone-50 font-heading text-xs uppercase text-stone-500">
+            <thead className="border-b border-hairline bg-surface font-heading text-xs uppercase text-ink-muted">
               <tr>
                 <th className="px-6 py-4 font-semibold tracking-wider">
                   Event Details
@@ -272,7 +245,7 @@ export function AdminEventList({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody className="divide-y divide-hairline">
               {feed.items.map((event) => {
                 const startDate = new Date(
                   event.startDate,
@@ -293,36 +266,20 @@ export function AdminEventList({
                       : "Published";
 
                 const rowTone = isCancelled
-                  ? isDark
-                    ? "bg-red-950/25 hover:bg-red-900/30"
-                    : "bg-red-100/70 hover:bg-red-200/60"
+                  ? "bg-danger-faded/65 hover:bg-danger-faded"
                   : isEnded
-                    ? isDark
-                      ? "bg-slate-900/45 hover:bg-slate-800/60"
-                      : "bg-slate-200/70 hover:bg-slate-300/60"
+                    ? "bg-surface hover:bg-surface/90"
                     : isPending
-                      ? isDark
-                        ? "bg-amber-950/25 hover:bg-amber-900/30"
-                        : "bg-amber-100/65 hover:bg-amber-200/60"
-                      : isDark
-                        ? "bg-emerald-950/20 hover:bg-emerald-900/25"
-                        : "bg-emerald-100/60 hover:bg-emerald-200/55";
+                      ? "bg-signal-faded/70 hover:bg-signal-faded"
+                      : "bg-accent-faded/65 hover:bg-accent-faded";
 
                 const badgeTone = isCancelled
-                  ? isDark
-                    ? "!bg-red-900/70 !text-red-100"
-                    : "!bg-red-200 !text-red-800"
+                  ? "danger"
                   : isEnded
-                    ? isDark
-                      ? "!bg-slate-700/80 !text-slate-100"
-                      : "!bg-slate-300 !text-slate-800"
+                    ? "muted"
                     : isPending
-                      ? isDark
-                        ? "!bg-amber-900/70 !text-amber-100"
-                        : "!bg-amber-200 !text-amber-800"
-                      : isDark
-                        ? "!bg-emerald-900/70 !text-emerald-100"
-                        : "!bg-emerald-200 !text-emerald-800";
+                      ? "signal"
+                      : "accent";
 
                 const isEditExpanded = expandedEditEventId === event.id;
                 const isAttendeesExpanded =
@@ -333,10 +290,10 @@ export function AdminEventList({
                   <Fragment key={event.id}>
                     <tr className={`transition-colors ${rowTone}`}>
                       <td className="px-6 py-4">
-                        <div className="mb-1 wrap-break-word font-semibold text-stone-900">
+                        <div className="mb-1 wrap-break-word font-semibold text-ink-display">
                           {event.title}
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-stone-500 sm:gap-3">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-muted sm:gap-3">
                           <span className="flex items-center gap-1 whitespace-nowrap">
                             <Calendar className="h-3 w-3" /> {startDate}
                           </span>
@@ -348,25 +305,22 @@ export function AdminEventList({
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className={badgeTone}>
-                            {statusLabel}
-                          </Badge>
+                          <Badge tone={badgeTone}>{statusLabel}</Badge>
                           {isEnded && (
-                            <Tooltip content="Ended is applied automatically when a published event's end date has passed.">
-                              <button
-                                type="button"
-                                className="inline-flex text-slate-500"
-                                aria-label="Ended status is date-derived from a published event"
-                              >
-                                <Info className="h-3.5 w-3.5" />
-                              </button>
-                            </Tooltip>
+                            <button
+                              type="button"
+                              className="inline-flex text-ink-muted"
+                              title="Ended is applied automatically when a published event's end date has passed."
+                              aria-label="Ended status is date-derived from a published event"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-stone-600">
-                          <Users className="h-4 w-4 text-stone-400" />
+                        <div className="flex items-center gap-2 text-ink-body">
+                          <Users className="h-4 w-4 text-ink-muted" />
                           <span>
                             {event.attendeeCount}{" "}
                             {event.maxAttendees
@@ -381,7 +335,7 @@ export function AdminEventList({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="text-stone-500 hover:text-stone-900"
+                              className="text-ink-muted hover:text-ink-display"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                               <span className="sr-only">Open menu</span>
@@ -405,7 +359,7 @@ export function AdminEventList({
                             {isPending && !isEnded && (
                               <DropdownMenuItem
                                 onClick={() => onPublish(event.id)}
-                                className="text-emerald-700 focus:text-emerald-800"
+                                className="text-accent-display focus:text-accent-display"
                               >
                                 Publish Event
                               </DropdownMenuItem>
@@ -413,7 +367,7 @@ export function AdminEventList({
                             {(isPublished || isEnded) && (
                               <DropdownMenuItem
                                 onClick={() => onUnpublish(event.id)}
-                                className="text-amber-700 focus:text-amber-800"
+                                className="text-signal-display focus:text-signal-display"
                               >
                                 Unpublish Event
                               </DropdownMenuItem>
@@ -421,7 +375,7 @@ export function AdminEventList({
                             {!isCancelled && !isEnded && (
                               <DropdownMenuItem
                                 onClick={() => onCancel(event.id)}
-                                className="text-amber-600 focus:text-amber-700"
+                                className="text-signal-display focus:text-signal-display"
                               >
                                 <XCircle className="mr-2 h-4 w-4" /> Cancel
                                 Event
@@ -430,7 +384,7 @@ export function AdminEventList({
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => onDelete(event.id)}
-                              className="text-red-600 focus:text-red-700"
+                              destructive
                             >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Event
                             </DropdownMenuItem>
@@ -440,11 +394,7 @@ export function AdminEventList({
                     </tr>
 
                     {showExpandedPanel && (
-                      <tr
-                        className={
-                          isDark ? "bg-stone-900/45" : "bg-stone-50/70"
-                        }
-                      >
+                      <tr className="bg-surface/80">
                         <td colSpan={4} className="px-4 py-4 sm:px-6">
                           {isEditExpanded
                             ? renderExpandedEdit(event)
@@ -460,13 +410,13 @@ export function AdminEventList({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 border-t border-stone-200 bg-stone-50 px-6 py-4 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-hairline bg-surface px-6 py-4 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
         <span>
           Showing {feed.items.length} of {feed.totalCount} results
         </span>
         <div className="flex w-full gap-2 sm:w-auto">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="flex-1 sm:flex-none"
             aria-label="Go to previous page"
@@ -476,7 +426,7 @@ export function AdminEventList({
             Previous
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             className="flex-1 sm:flex-none"
             aria-label="Go to next page"

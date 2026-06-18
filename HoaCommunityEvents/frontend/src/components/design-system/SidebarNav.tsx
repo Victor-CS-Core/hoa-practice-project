@@ -38,6 +38,7 @@ const NAV: NavGroup[] = [
       { id: "modal", label: "Modal" },
       { id: "dropdown-menu", label: "Dropdown menu" },
       { id: "callout", label: "Callout" },
+      { id: "accessibility-standards", label: "Accessibility standards" },
     ],
   },
   {
@@ -119,4 +120,3 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
     </nav>
   );
 }
-

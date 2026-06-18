@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, Shield, UserCheck, UserX } from "lucide-react";
 import { useStore } from "../../app/stores/store";
-import { useTheme } from "../../app/theme/theme-context";
+import { Button } from "../../components/design-system/ui/button";
+import { Input } from "../../components/design-system/ui/input";
 import { BackNavigationButton } from "../../components/navigation/BackNavigationButton";
-import { LoadingState } from "../../components/ui/loading-state";
+import { LoadingState } from "../../components/design-system/ui/loading-state";
 import {
   useAdminUsers,
   useDeleteUser,
@@ -15,17 +16,14 @@ import { BRAND } from "../../app/branding";
 
 export function AdminUserManagementPage() {
   const { authStore } = useStore();
-  const { resolvedTheme } = useTheme();
   const [userSearch, setUserSearch] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
-  const isDark = resolvedTheme === "dark";
 
   const usersQuery = useAdminUsers();
   const promoteUserMutation = usePromoteUserToAdmin();
   const deleteUserMutation = useDeleteUser();
   const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const rowHoverTone = isDark ? "hover:bg-[#1a2637]" : "hover:bg-[#f4eee3]";
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
@@ -47,27 +45,17 @@ export function AdminUserManagementPage() {
     (user) => user.role !== "hoa_admin",
   ).length;
 
-  const panelTone = isDark
-    ? "border-[#2a3f58] bg-[#101b2b]/88 text-[#e8f3ff]"
-    : "border-[#d9b58f] bg-[#fffaf0] text-[#3d2c1d]";
-
-  const cardTone = isDark
-    ? "border-[#27384f] bg-[#0f1a2a]"
-    : "border-[#e2c7a8] bg-[#fffdf8]";
-
-  const textMutedTone = isDark ? "text-[#9fb4c9]" : "text-[#7a5e46]";
-
   if (!authStore.isAdmin) {
     return (
-      <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-        <h2 className="font-heading text-2xl font-bold text-amber-900">
+      <section className="rounded-xl border border-signal/45 bg-signal-faded p-6">
+        <h2 className="font-heading text-2xl font-bold text-signal-display">
           Admin Access Required
         </h2>
-        <p className="mt-2 text-amber-800">
+        <p className="mt-2 text-signal-display">
           This page is available only to community administrators.
         </p>
         <p className="mt-4">
-          <Link to="/events" className="text-amber-900 underline">
+          <Link to="/events" className="text-signal-display underline">
             Return to events
           </Link>
         </p>
@@ -105,27 +93,21 @@ export function AdminUserManagementPage() {
   };
 
   return (
-    <section className="space-y-6 rounded-3xl p-4 sm:p-6">
+    <section className="space-y-6 rounded-3xl bg-surface/70 p-4 sm:p-6">
       <div>
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
-      <div
-        className={`auth-motion-board rounded-[1.75rem] border p-6 shadow-[0_30px_50px_-38px_rgba(0,0,0,0.55)] ${panelTone}`}
-      >
+      <div className="auth-motion-board rounded-[1.75rem] border border-hairline bg-page p-6 text-ink-body shadow-[0_30px_50px_-38px_rgba(0,0,0,0.55)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p
-              className={`font-auth-ui text-xs tracking-[0.22em] uppercase ${isDark ? "text-[#8dd8ba]" : "text-[#9b5d1f]"}`}
-            >
+            <p className="font-auth-ui text-xs tracking-[0.22em] text-signal-display uppercase">
               {BRAND.adminToolsLabel}
             </p>
-            <h1
-              className={`mt-2 font-auth-display text-3xl font-semibold sm:text-4xl ${isDark ? "text-[#f3fbff]" : "text-[#352214]"}`}
-            >
+            <h1 className="mt-2 font-auth-display text-3xl font-semibold text-ink-display sm:text-4xl">
               User Management
             </h1>
-            <p className={`mt-2 max-w-2xl leading-relaxed ${textMutedTone}`}>
+            <p className="mt-2 max-w-2xl leading-relaxed text-ink-muted">
               Manage role assignments and account controls with a clear view of
               admin coverage across your community. Keep board access tightly
               governed while residents stay informed.
@@ -134,59 +116,27 @@ export function AdminUserManagementPage() {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className={`rounded-xl border p-4 ${cardTone}`}>
-            <p
-              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${textMutedTone}`}
-            >
+          <div className="rounded-xl border border-hairline bg-surface p-4">
+            <p className="font-auth-ui text-xs font-semibold tracking-[0.16em] text-ink-muted uppercase">
               Total Users
             </p>
-            <p
-              className={`mt-2 font-heading text-2xl font-bold ${isDark ? "text-[#f3fbff]" : "text-[#3c2a1a]"}`}
-            >
+            <p className="mt-2 font-heading text-2xl font-bold text-ink-display">
               {totalUsers}
             </p>
           </div>
-          <div
-            className={`rounded-xl border p-4 ${
-              isDark
-                ? "border-[#6e5d2b] bg-[#2f2715]"
-                : "border-[#e0b364] bg-[#fff3d8]"
-            }`}
-          >
-            <p
-              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${
-                isDark ? "text-[#efdb9c]" : "text-[#9a6814]"
-              }`}
-            >
+          <div className="rounded-xl border border-signal/45 bg-signal-faded p-4">
+            <p className="font-auth-ui text-xs font-semibold tracking-[0.16em] text-signal-display uppercase">
               Admins
             </p>
-            <p
-              className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
-                isDark ? "text-[#fff1c0]" : "text-[#6f470c]"
-              }`}
-            >
+            <p className="mt-2 flex items-center gap-2 font-heading text-2xl font-bold text-signal-display">
               <Shield className="h-5 w-5" /> {adminUsers}
             </p>
           </div>
-          <div
-            className={`rounded-xl border p-4 ${
-              isDark
-                ? "border-[#2e7760] bg-[#122c24]"
-                : "border-[#8ec7a8] bg-[#e9f7ed]"
-            }`}
-          >
-            <p
-              className={`font-auth-ui text-xs font-semibold tracking-[0.16em] uppercase ${
-                isDark ? "text-[#99e4c7]" : "text-[#1f6a4f]"
-              }`}
-            >
+          <div className="rounded-xl border border-accent/45 bg-accent-faded p-4">
+            <p className="font-auth-ui text-xs font-semibold tracking-[0.16em] text-accent-display uppercase">
               Residents
             </p>
-            <p
-              className={`mt-2 flex items-center gap-2 font-heading text-2xl font-bold ${
-                isDark ? "text-[#d1f9e9]" : "text-[#16513d]"
-              }`}
-            >
+            <p className="mt-2 flex items-center gap-2 font-heading text-2xl font-bold text-accent-display">
               <UserCheck className="h-5 w-5" /> {residentUsers}
             </p>
           </div>
@@ -194,68 +144,54 @@ export function AdminUserManagementPage() {
       </div>
 
       {flashMessage && (
-        <div
-          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#2e7b61] bg-[#102921] text-[#b8f5dc]" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}
-        >
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-accent/45 bg-accent-faded p-3 text-accent-display">
           <span>{flashMessage}</span>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => setFlashMessage(null)}
-            className="text-sm font-medium underline hover:no-underline"
+            className="h-auto p-0"
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
 
       {actionError && (
-        <div
-          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
-        >
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-danger bg-danger-faded p-3 text-danger-display">
           <span>{actionError}</span>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => setActionError(null)}
-            className="text-sm font-medium underline hover:no-underline"
+            className="h-auto p-0"
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
 
-      <div
-        className={`auth-motion-card rounded-2xl border shadow-[0_22px_45px_-34px_rgba(0,0,0,0.65)] ${cardTone}`}
-      >
-        <div
-          className={`border-b px-5 py-4 ${isDark ? "border-[#27384f]" : "border-[#e2c7a8]"}`}
-        >
+      <div className="auth-motion-card rounded-2xl border border-hairline bg-page shadow-[0_22px_45px_-34px_rgba(0,0,0,0.65)]">
+        <div className="border-b border-hairline px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2
-                className={`font-auth-display text-2xl font-semibold ${isDark ? "text-[#f2f8ff]" : "text-[#362214]"}`}
-              >
+              <h2 className="font-auth-display text-2xl font-semibold text-ink-display">
                 Accounts Directory
               </h2>
-              <p className={`mt-1 text-sm ${textMutedTone}`}>
+              <p className="mt-1 text-sm text-ink-muted">
                 Search by display name, username, or email and take role
                 actions.
               </p>
             </div>
 
             <label className="relative block w-full sm:w-90">
-              <Search
-                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark ? "text-[#7f95ad]" : "text-[#9c826b]"}`}
-              />
-              <input
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+              <Input
                 type="search"
                 value={userSearch}
                 onChange={(event) => setUserSearch(event.target.value)}
                 placeholder="Search users..."
-                className={`min-h-11 w-full rounded-md border pl-10 pr-3 py-2 text-sm ${
-                  isDark
-                    ? "border-[#35465e] bg-[#0f1826] text-[#eaf4ff] placeholder:text-[#8ea5bf]"
-                    : "border-[#d7b087] bg-[#fffcf5] text-[#3f2b1a] placeholder:text-[#8a6d55]"
-                }`}
+                className="min-h-11 w-full pl-10 text-sm"
               />
             </label>
           </div>
@@ -263,7 +199,7 @@ export function AdminUserManagementPage() {
 
         <div className="px-5 pb-5 pt-4">
           {!usersQuery.isLoading && !usersQuery.isError && (
-            <p className={`mb-3 text-xs font-medium ${textMutedTone}`}>
+            <p className="mb-3 text-xs font-medium text-ink-muted">
               Showing {filteredUsers.length} of {totalUsers} users
             </p>
           )}
@@ -273,9 +209,7 @@ export function AdminUserManagementPage() {
           )}
 
           {usersQuery.isError && (
-            <p
-              className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
-            >
+            <p className="rounded-lg border border-danger bg-danger-faded p-3 text-sm text-danger-display">
               Failed to load users.
             </p>
           )}
@@ -283,9 +217,7 @@ export function AdminUserManagementPage() {
           {!usersQuery.isLoading &&
             !usersQuery.isError &&
             filteredUsers.length === 0 && (
-              <p
-                className={`rounded-lg border p-3 text-sm ${isDark ? "border-[#2f4159] bg-[#101b2b] text-[#9cb2c9]" : "border-stone-200 bg-stone-50 text-stone-600"}`}
-              >
+              <p className="rounded-lg border border-hairline bg-surface p-3 text-sm text-ink-muted">
                 No users match your current search.
               </p>
             )}
@@ -303,19 +235,17 @@ export function AdminUserManagementPage() {
                   return (
                     <div
                       key={user.email}
-                      className={`rounded-xl border p-4 transition-colors ${rowHoverTone} ${isDark ? "border-[#2f4159] bg-[#101a2a]" : "border-[#ead4bb] bg-[#fffdfa]"}`}
+                      className="rounded-xl border border-hairline bg-page p-4 transition-colors hover:bg-surface"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
-                          <p
-                            className={`truncate font-semibold ${isDark ? "text-[#f3f9ff]" : "text-[#352214]"}`}
-                          >
+                          <p className="truncate font-semibold text-ink-display">
                             {user.displayName}
                           </p>
-                          <p className={`truncate text-sm ${textMutedTone}`}>
+                          <p className="truncate text-sm text-ink-muted">
                             @{user.username}
                           </p>
-                          <p className={`truncate text-sm ${textMutedTone}`}>
+                          <p className="truncate text-sm text-ink-muted">
                             {user.email}
                           </p>
                         </div>
@@ -324,12 +254,8 @@ export function AdminUserManagementPage() {
                           <span
                             className={`inline-flex min-h-8 items-center rounded-full px-3 py-1 text-xs font-semibold sm:w-auto ${
                               isAdminRole
-                                ? isDark
-                                  ? "bg-[#3d3215] text-[#ffe8ab]"
-                                  : "bg-amber-100 text-amber-800"
-                                : isDark
-                                  ? "bg-[#202f45] text-[#c0d2e6]"
-                                  : "bg-stone-100 text-stone-700"
+                                ? "bg-signal-faded text-signal-display"
+                                : "bg-surface text-ink-body"
                             }`}
                           >
                             {user.isMasterAdmin
@@ -340,44 +266,36 @@ export function AdminUserManagementPage() {
                           </span>
 
                           {!isAdminRole && (
-                            <button
+                            <Button
                               type="button"
+                              variant="primary"
                               onClick={() => handlePromote(user.email)}
                               disabled={isBusy}
-                              className={`inline-flex min-h-11 w-full items-center justify-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60 sm:w-auto ${
-                                isDark
-                                  ? "bg-[#1f815c] text-[#eafff6] hover:bg-[#1a6f4f]"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-                              }`}
+                              className="min-h-11 w-full sm:w-auto"
                             >
                               {promoteUserMutation.isPending
                                 ? "Updating..."
                                 : "Promote to Admin"}
-                            </button>
+                            </Button>
                           )}
 
                           {user.canDelete ? (
-                            <button
+                            <Button
                               type="button"
+                              variant="danger"
                               onClick={() =>
                                 handleDeleteUser(user.email, user.displayName)
                               }
                               disabled={isBusy}
-                              className={`inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60 sm:w-auto ${
-                                isDark
-                                  ? "bg-[#8b3a37] text-[#ffe5e3] hover:bg-[#7a2f2d]"
-                                  : "bg-red-600 text-white hover:bg-red-700"
-                              }`}
+                              className="min-h-11 w-full gap-1 sm:w-auto"
                             >
                               <UserX className="h-4 w-4" />
                               {deleteUserMutation.isPending
                                 ? "Deleting..."
                                 : "Delete User"}
-                            </button>
+                            </Button>
                           ) : (
-                            <span
-                              className={`inline-flex min-h-8 items-center rounded-md px-3 py-1 text-xs font-medium sm:bg-transparent sm:px-0 sm:py-0 ${isDark ? "bg-[#202f45] text-[#9cb2c9]" : "bg-stone-100 text-stone-500"}`}
-                            >
+                            <span className="inline-flex min-h-8 items-center rounded-md bg-surface px-3 py-1 text-xs font-medium text-ink-muted sm:bg-transparent sm:px-0 sm:py-0">
                               Delete locked
                             </span>
                           )}

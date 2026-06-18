@@ -17,7 +17,10 @@ export function CodeBlock({ code, language = "tsx" }: CodeBlockProps) {
 
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-md border border-hairline bg-page p-4 text-xs leading-relaxed">
+      <pre
+        tabIndex={0}
+        className="overflow-x-auto rounded-md border border-hairline bg-page p-4 text-xs leading-relaxed"
+      >
         <code className={`language-${language} text-ink-body`}>{code}</code>
       </pre>
       <button
@@ -39,4 +42,3 @@ export function CodeBlock({ code, language = "tsx" }: CodeBlockProps) {
     </div>
   );
 }
-

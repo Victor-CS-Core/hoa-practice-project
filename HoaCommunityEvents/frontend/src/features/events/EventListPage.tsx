@@ -3,9 +3,9 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreateEvent, useEvents } from "../../hooks/useEvents";
 import { useStore } from "../../app/stores/store";
-import { useTheme } from "../../app/theme/theme-context";
+import { Button } from "../../components/design-system/ui/button";
 import { EventCard } from "./components/EventCard";
-import { LoadingState } from "../../components/ui/loading-state";
+import { LoadingState } from "../../components/design-system/ui/loading-state";
 import { EventsFilterBar } from "./components/EventsFilterBar";
 import { EventsPagination } from "./components/EventsPagination";
 import { AdminEventForm } from "./components/AdminEventForm";
@@ -19,8 +19,6 @@ import { BRAND } from "../../app/branding";
 
 export function EventListPage() {
   const { authStore } = useStore();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -106,30 +104,20 @@ export function EventListPage() {
   };
 
   return (
-    <section
-      className={`space-y-6 rounded-3xl p-4 sm:p-5 ${
-        isDark
-          ? "bg-[linear-gradient(155deg,rgba(16,28,42,0.72),rgba(14,24,36,0.72))]"
-          : "bg-[linear-gradient(155deg,rgba(255,249,238,0.88),rgba(243,251,246,0.88))]"
-      }`}
-    >
+    <section className="space-y-6 rounded-3xl bg-surface/70 p-4 sm:p-5">
       <div>
         <BackNavigationButton to="/" label="Back to home" />
       </div>
 
-      <div
-        className={`flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 ${isDark ? "border-[#28405b] bg-[#101a2a]" : "border-[#e2c8a9] bg-[#fffaf1]"}`}
-      >
+      <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-hairline bg-page p-5">
         <div>
-          <p
-            className={`font-auth-ui text-xs font-semibold tracking-[0.2em] uppercase ${isDark ? "text-[#93d9bc]" : "text-[#9b5d1f]"}`}
-          >
+          <p className="font-auth-ui text-xs font-semibold tracking-[0.2em] text-signal-display uppercase">
             Community Calendar
           </p>
-          <h1 className="font-heading text-3xl font-bold text-(--text-primary)">
+          <h1 className="font-heading text-3xl font-bold text-ink-display">
             {BRAND.appName}
           </h1>
-          <p className="mt-2 text-(--text-muted)">
+          <p className="mt-2 text-ink-muted">
             Find upcoming events and manage your attendance.
           </p>
         </div>
@@ -137,20 +125,21 @@ export function EventListPage() {
 
       {authStore.isAdmin && (
         <div className="space-y-4">
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={() => {
               setCreateOpen((prev) => !prev);
               setCreateError(null);
               setCreateSuccessMessage(null);
             }}
-            className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="min-h-11"
           >
             {createOpen ? "Hide Create Event Form" : "Create New Event"}
-          </button>
+          </Button>
 
           {createSuccessMessage && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+            <div className="rounded-xl border border-accent/45 bg-accent-faded p-4 text-accent-display">
               {createSuccessMessage}
             </div>
           )}
@@ -177,23 +166,19 @@ export function EventListPage() {
       {isLoading && <LoadingState label="Loading events..." />}
 
       {isError && (
-        <div
-          className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
-        >
+        <div className="rounded-xl border border-danger bg-danger-faded p-4 text-danger-display">
           Failed to load events. Please refresh and try again.
         </div>
       )}
 
       {actionError && (
-        <div
-          className={`rounded-xl border p-4 ${isDark ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]" : "border-red-200 bg-red-50 text-red-700"}`}
-        >
+        <div className="rounded-xl border border-danger bg-danger-faded p-4 text-danger-display">
           {actionError}
         </div>
       )}
 
       {!isLoading && !isError && data && data.items.length === 0 && (
-        <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
+        <div className="rounded-xl border border-hairline bg-page p-8 text-center text-ink-muted">
           {category || status
             ? "No events match your current filters."
             : "No events are available yet."}

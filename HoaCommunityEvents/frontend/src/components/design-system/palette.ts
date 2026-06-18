@@ -9,20 +9,20 @@ export const SURFACES: PaletteEntry[] = [
   {
     name: "page",
     utility: "bg-page",
-    hexLight: "#ffffff",
-    hexDark: "#020617",
+    hexLight: "#fafaf9",
+    hexDark: "#111827",
   },
   {
     name: "surface",
     utility: "bg-surface",
-    hexLight: "#f8fafc",
+    hexLight: "#ffffff",
     hexDark: "#0f172a",
   },
   {
     name: "hairline",
     utility: "border-hairline",
-    hexLight: "#e2e8f0",
-    hexDark: "#1e293b",
+    hexLight: "#e7e5e4",
+    hexDark: "#334155",
   },
 ];
 
@@ -30,20 +30,20 @@ export const TEXT: PaletteEntry[] = [
   {
     name: "ink-body",
     utility: "text-ink-body",
-    hexLight: "#334155",
-    hexDark: "#e2e8f0",
+    hexLight: "#44403c",
+    hexDark: "#e7e5e4",
   },
   {
     name: "ink-display",
     utility: "text-ink-display",
-    hexLight: "#0f172a",
+    hexLight: "#1c1917",
     hexDark: "#f8fafc",
   },
   {
     name: "ink-muted",
     utility: "text-ink-muted",
-    hexLight: "#64748b",
-    hexDark: "#94a3b8",
+    hexLight: "#78716c",
+    hexDark: "#d6d3d1",
   },
 ];
 
@@ -51,38 +51,38 @@ export const SPLASH: PaletteEntry[] = [
   {
     name: "accent",
     utility: "bg-accent / text-accent",
-    hexLight: "oklch(71.5% 0.143 215.221)",
-    hexDark: "oklch(78.9% 0.154 211.53)",
+    hexLight: "#2f7a5b",
+    hexDark: "#3ea77d",
   },
   {
     name: "accent-faded",
     utility: "bg-accent-faded",
-    hexLight: "oklch(96% 0.025 215.221)",
-    hexDark: "oklch(22% 0.045 211.53)",
+    hexLight: "#ecfdf5",
+    hexDark: "#052e2b",
   },
   {
     name: "accent-display",
     utility: "bg-accent-display / text-accent-display",
-    hexLight: "oklch(62% 0.135 215.221)",
-    hexDark: "oklch(86% 0.135 211.53)",
+    hexLight: "#245f47",
+    hexDark: "#8ee1bc",
   },
   {
     name: "signal",
     utility: "bg-signal / text-signal",
-    hexLight: "#fcd34d",
-    hexDark: "#fcd34d",
+    hexLight: "#be7f3d",
+    hexDark: "#d3ab69",
   },
   {
     name: "signal-faded",
     utility: "bg-signal-faded",
-    hexLight: "#fffaea",
-    hexDark: "#2f2b21",
+    hexLight: "#f8ecd9",
+    hexDark: "#2e2516",
   },
   {
     name: "signal-display",
     utility: "bg-signal-display / text-signal-display",
-    hexLight: "oklch(76% 0.165 82)",
-    hexDark: "oklch(93% 0.13 95)",
+    hexLight: "#8a5a2b",
+    hexDark: "#f1d6a7",
   },
   {
     name: "danger",

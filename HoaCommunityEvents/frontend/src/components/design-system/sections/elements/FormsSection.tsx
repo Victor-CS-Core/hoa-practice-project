@@ -63,7 +63,7 @@ import { RichTextField } from "@/components/design-system/ui/rich-text-field";
   {/* Rich text (milkdown) */}
   <div className="space-y-2">
     <label htmlFor="bio">Bio</label>
-    <RichTextField placeholder="Tell us about yourself…" />
+    <RichTextField ariaLabel="Bio" placeholder="Tell us about yourself…" />
   </div>
 
   <Button type="submit">Save</Button>
@@ -87,14 +87,23 @@ export function FormsSection() {
       whenToUse={
         <ul>
           <li>All data-entry surfaces.</li>
-          <li>Wrap fields with their own <code>&lt;label&gt;</code> for accessibility.</li>
-          <li>Use <code>&lt;fieldset&gt;</code> + <code>&lt;legend&gt;</code> around radio groups.</li>
+          <li>
+            Wrap fields with their own <code>&lt;label&gt;</code> for
+            accessibility.
+          </li>
+          <li>
+            Use <code>&lt;fieldset&gt;</code> + <code>&lt;legend&gt;</code>{" "}
+            around radio groups.
+          </li>
         </ul>
       }
       whenNotToUse={
         <ul>
           <li>Inline filters in toolbars — use compact controls instead.</li>
-          <li>Single-button calls to action — those don't need a form wrapper unless they POST.</li>
+          <li>
+            Single-button calls to action — those don't need a form wrapper
+            unless they POST.
+          </li>
         </ul>
       }
       preview={
@@ -162,7 +171,10 @@ export function FormsSection() {
 
           <div className="space-y-2">
             <label htmlFor="ds-form-bio">Bio</label>
-            <RichTextField placeholder="Tell us about yourself…" />
+            <RichTextField
+              ariaLabel="Bio"
+              placeholder="Tell us about yourself…"
+            />
           </div>
 
           <Button type="submit">Save</Button>
@@ -171,15 +183,35 @@ export function FormsSection() {
       code={code}
       options={
         <ul className="list-disc pl-5">
-          <li>Use HTML <code>&lt;label htmlFor&gt;</code> with the field's <code>id</code> for accessibility.</li>
-          <li>Helper text uses <code>text-xs text-ink-muted</code> directly under the field.</li>
-          <li>Error states: render a <code>text-xs text-danger-display</code> message in the same slot as helper text and add <code>aria-invalid</code> to the field.</li>
-          <li>Radio groups: wrap in <code>&lt;fieldset&gt;</code> + <code>&lt;legend&gt;</code> and share a <code>name</code> across all <code>&lt;Radio&gt;</code> inputs.</li>
-          <li>Selects: use a disabled empty <code>&lt;option&gt;</code> as a placeholder when no default makes sense.</li>
-          <li>Rich text: <code>&lt;RichTextField&gt;</code> wraps milkdown's Crepe — emits markdown via <code>onChange</code>. Requires <code>@milkdown/crepe</code>.</li>
+          <li>
+            Use HTML <code>&lt;label htmlFor&gt;</code> with the field's{" "}
+            <code>id</code> for accessibility.
+          </li>
+          <li>
+            Helper text uses <code>text-xs text-ink-muted</code> directly under
+            the field.
+          </li>
+          <li>
+            Error states: render a <code>text-xs text-danger-display</code>{" "}
+            message in the same slot as helper text and add{" "}
+            <code>aria-invalid</code> to the field.
+          </li>
+          <li>
+            Radio groups: wrap in <code>&lt;fieldset&gt;</code> +{" "}
+            <code>&lt;legend&gt;</code> and share a <code>name</code> across all{" "}
+            <code>&lt;Radio&gt;</code> inputs.
+          </li>
+          <li>
+            Selects: use a disabled empty <code>&lt;option&gt;</code> as a
+            placeholder when no default makes sense.
+          </li>
+          <li>
+            Rich text: <code>&lt;RichTextField&gt;</code> wraps milkdown's Crepe
+            — emits markdown via <code>onChange</code>. Requires{" "}
+            <code>@milkdown/crepe</code>.
+          </li>
         </ul>
       }
     />
   );
 }
-
