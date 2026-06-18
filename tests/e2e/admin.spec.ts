@@ -15,7 +15,7 @@ test.describe('Admin Workflows', () => {
       name: /board budget review/i,
     });
     await pendingRow.getByRole('button', { name: /open menu/i }).click();
-    await page.getByRole('button', { name: /publish event/i }).click();
+    await page.getByRole('menuitem', { name: /publish event/i }).click();
     await expect(page.getByText(/event published successfully/i)).toBeVisible();
 
     await page.getByRole('button', { name: /create new event/i }).click();
@@ -48,7 +48,7 @@ test.describe('Admin Workflows', () => {
       name: /playwright hoa test event/i,
     });
     await createdRow.getByRole('button', { name: /open menu/i }).click();
-    await page.getByRole('button', { name: /delete event/i }).click();
+    await page.getByRole('menuitem', { name: /delete event/i }).click();
     await page.getByRole('button', { name: /yes, delete/i }).click();
     await expect(page.getByText(/event deleted successfully/i)).toBeVisible();
   });

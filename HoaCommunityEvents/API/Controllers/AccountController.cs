@@ -3,12 +3,14 @@ using HoaCommunityEvents.Application.Common.Interfaces;
 using HoaCommunityEvents.Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HoaCommunityEvents.API.Controllers;
 
 public class AccountController(IAccountService accountService) : BaseApiController
 {
     [AllowAnonymous]
+    [EnableRateLimiting("auth-login-register")]
     [HttpPost("register")]
     public async Task<ActionResult<UserDto>> Register(RegisterDto dto)
     {
@@ -22,6 +24,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth-login-register")]
     [HttpPost("login")]
     public async Task<ActionResult<UserDto>> Login(LoginDto dto)
     {

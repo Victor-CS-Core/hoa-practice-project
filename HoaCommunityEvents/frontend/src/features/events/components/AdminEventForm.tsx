@@ -188,6 +188,7 @@ export function AdminEventForm({
             </label>
             <Input
               {...register("title")}
+              autoFocus={mode === "edit"}
               placeholder="e.g., Annual HOA Meeting"
               className={
                 getFieldError(apiError?.details, "Title")

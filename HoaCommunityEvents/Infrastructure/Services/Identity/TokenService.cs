@@ -15,6 +15,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
     {
         var tokenKey = configuration["TokenKey"]
             ?? throw new InvalidOperationException("TokenKey is not configured.");
+        var tokenIssuer = configuration["Jwt:Issuer"] ?? "HoaCommunityEvents.API";
+        var tokenAudience = configuration["Jwt:Audience"] ?? "HoaCommunityEvents.Client";
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
@@ -33,6 +35,8 @@ public class TokenService(IConfiguration configuration) : ITokenService
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddDays(7),
+            Issuer = tokenIssuer,
+            Audience = tokenAudience,
             SigningCredentials = creds
         };
 

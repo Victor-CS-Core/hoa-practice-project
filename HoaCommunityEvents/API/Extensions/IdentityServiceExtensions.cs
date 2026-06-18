@@ -17,6 +17,9 @@ public static class IdentityServiceExtensions
             options.User.RequireUniqueEmail = true;
             options.Password.RequireNonAlphanumeric = false;
             options.Password.RequireUppercase = false;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
         })
         .AddRoles<IdentityRole>()
         .AddSignInManager<SignInManager<AppUser>>()
@@ -24,6 +27,8 @@ public static class IdentityServiceExtensions
 
         var tokenKey = configuration["TokenKey"]
             ?? throw new InvalidOperationException("TokenKey is not configured.");
+        var tokenIssuer = configuration["Jwt:Issuer"] ?? "HoaCommunityEvents.API";
+        var tokenAudience = configuration["Jwt:Audience"] ?? "HoaCommunityEvents.Client";
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
 
@@ -50,8 +55,10 @@ public static class IdentityServiceExtensions
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = key,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = tokenIssuer,
+                    ValidateAudience = true,
+                    ValidAudience = tokenAudience,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1)
                 };

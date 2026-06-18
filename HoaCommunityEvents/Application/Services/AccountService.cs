@@ -54,7 +54,7 @@ public class AccountService(
             return null;
         }
 
-        var passwordResult = await signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
+        var passwordResult = await signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
         if (!passwordResult.Succeeded)
         {
             return null;
