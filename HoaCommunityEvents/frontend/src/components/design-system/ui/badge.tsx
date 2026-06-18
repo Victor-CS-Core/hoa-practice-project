@@ -1,23 +1,8 @@
 // bm-design-system: badge primitive
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
+import { badgeVariants } from "@/components/design-system/ui/badge-variants";
 import { cn } from "@/lib/utils";
-
-const badgeVariants = cva("badge", {
-  variants: {
-    tone: {
-      neutral: "badge-neutral",
-      accent: "badge-accent",
-      signal: "badge-signal",
-      danger: "badge-danger",
-      muted: "badge-muted",
-      solid: "badge-solid",
-    },
-  },
-  defaultVariants: {
-    tone: "neutral",
-  },
-});
 
 export interface BadgeProps
   extends
@@ -37,4 +22,4 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
 );
 Badge.displayName = "Badge";
 
-export { Badge, badgeVariants };
+export { Badge };

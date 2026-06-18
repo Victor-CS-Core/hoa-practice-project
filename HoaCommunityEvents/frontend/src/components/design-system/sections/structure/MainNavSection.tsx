@@ -264,12 +264,11 @@ function UserMenu({ open }: { open: boolean }) {
 }`;
 
 function useMainNavOpen() {
-  const [open, setOpen] = React.useState<boolean>(true);
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [open, setOpen] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) setOpen(stored === "true");
-  }, []);
+    return stored !== null ? stored === "true" : true;
+  });
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, String(open));

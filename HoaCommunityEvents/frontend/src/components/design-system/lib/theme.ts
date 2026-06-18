@@ -39,7 +39,6 @@ export function useTheme() {
     // component was unmounted, and to ensure the <html> class is consistent
     // even if the inline boot script in the HTML layout was bypassed.
     const stored = getStoredTheme();
-    setThemeState(stored);
     applyTheme(stored);
   }, []);
 

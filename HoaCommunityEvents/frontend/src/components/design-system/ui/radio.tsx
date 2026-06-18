@@ -2,8 +2,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface RadioProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {}
+export type RadioProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "type"
+>;
 
 const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
   ({ className, ...props }, ref) => {
@@ -46,4 +48,3 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 RadioGroup.displayName = "RadioGroup";
 
 export { Radio, RadioGroup };
-

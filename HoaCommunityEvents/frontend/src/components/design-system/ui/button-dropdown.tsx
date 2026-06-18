@@ -1,7 +1,8 @@
 // bm-design-system: button-dropdown primitive (split button + menu)
 import * as React from "react";
 import { ChevronDown } from "lucide-react";
-import { Button, buttonVariants, type ButtonProps } from "@/components/design-system/ui/button";
+import { Button, type ButtonProps } from "@/components/design-system/ui/button";
+import { buttonVariants } from "@/components/design-system/ui/button-variants";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +13,10 @@ import { cn } from "@/lib/utils";
 type Variant = NonNullable<ButtonProps["variant"]>;
 type Size = NonNullable<ButtonProps["size"]>;
 
-export interface ButtonDropdownProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+export interface ButtonDropdownProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> {
   /** Visible label / content of the main (left) action button. */
   action: React.ReactNode;
   /** Dropdown menu items — pass DropdownMenuItem / DropdownMenuSeparator children. */
@@ -77,7 +80,9 @@ const ButtonDropdown = React.forwardRef<HTMLButtonElement, ButtonDropdownProps>(
               <ChevronDown className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align={menuAlign}>{children}</DropdownMenuContent>
+          <DropdownMenuContent align={menuAlign}>
+            {children}
+          </DropdownMenuContent>
         </DropdownMenu>
       </div>
     );
@@ -86,4 +91,3 @@ const ButtonDropdown = React.forwardRef<HTMLButtonElement, ButtonDropdownProps>(
 ButtonDropdown.displayName = "ButtonDropdown";
 
 export { ButtonDropdown };
-
