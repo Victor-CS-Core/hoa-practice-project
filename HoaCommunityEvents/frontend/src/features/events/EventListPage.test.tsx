@@ -6,7 +6,6 @@ import { EventListPage } from "./EventListPage";
 import type { HoaEvent, PagedResult } from "../../types/event";
 
 const mockUseEvents = vi.fn();
-const mockUseCreateEvent = vi.fn();
 const mockUseJoinEvent = vi.fn();
 const mockUseLeaveEvent = vi.fn();
 const mockUseStore = vi.fn();
@@ -14,7 +13,6 @@ const mockNavigate = vi.fn();
 
 vi.mock("../../hooks/useEvents", () => ({
   useEvents: (filter: unknown) => mockUseEvents(filter),
-  useCreateEvent: () => mockUseCreateEvent(),
 }));
 
 vi.mock("../../hooks/useAttendance", () => ({
@@ -92,10 +90,6 @@ function setupAuth(isAdmin: boolean) {
 describe("EventListPage", () => {
   it("shows loading state", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
-    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -115,10 +109,6 @@ describe("EventListPage", () => {
 
   it("shows error state", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
-    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -142,10 +132,6 @@ describe("EventListPage", () => {
 
   it("shows filtered empty-state message", () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
-    });
     mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
     mockUseEvents.mockReturnValue({
@@ -167,10 +153,6 @@ describe("EventListPage", () => {
 
   it("renders events and supports joining", async () => {
     setupAuth(false);
-    mockUseCreateEvent.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
-    });
     const joinMutateAsync = vi.fn().mockResolvedValue(undefined);
     const leaveMutateAsync = vi.fn().mockResolvedValue(undefined);
 
@@ -196,30 +178,5 @@ describe("EventListPage", () => {
 
     expect(joinMutateAsync).toHaveBeenCalledWith("evt-1");
     expect(leaveMutateAsync).not.toHaveBeenCalled();
-  });
-
-  it("shows create event button for admins", () => {
-    setupAuth(true);
-    mockUseCreateEvent.mockReturnValue({
-      isPending: false,
-      mutateAsync: vi.fn(),
-    });
-    mockUseJoinEvent.mockReturnValue({ mutateAsync: vi.fn() });
-    mockUseLeaveEvent.mockReturnValue({ mutateAsync: vi.fn() });
-    mockUseEvents.mockReturnValue({
-      data: makeFeed([makeEvent()]),
-      isLoading: false,
-      isError: false,
-    });
-
-    render(
-      <MemoryRouter>
-        <EventListPage />
-      </MemoryRouter>,
-    );
-
-    expect(
-      screen.getByRole("button", { name: /create new event/i }),
-    ).toBeInTheDocument();
   });
 });
