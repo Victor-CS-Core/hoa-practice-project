@@ -13,6 +13,18 @@
   );
   --bg-mid: color-mix(in oklab, var(--color-surface), var(--color-page) 55%);
   --bg-end: var(--color-page);
+  --app-shell-radial: radial-gradient(
+    96% 76% at 50% 0%,
+    color-mix(in oklab, var(--color-accent-faded), transparent 52%) 0%,
+    color-mix(in oklab, var(--color-accent), transparent 90%) 24%,
+    transparent 54%
+  );
+  --app-shell-linear: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-accent-faded), var(--color-page) 66%) 0%,
+    color-mix(in oklab, var(--color-accent-faded), var(--color-page) 78%) 50%,
+    color-mix(in oklab, var(--color-page), #eef2f0 28%) 100%
+  );
   --text-primary: var(--color-ink-display);
   --text-muted: var(--color-ink-muted);
   --surface: var(--color-surface);
@@ -34,6 +46,19 @@
 }
 
 .dark {
+  --app-shell-radial: radial-gradient(
+    96% 76% at 50% 0%,
+    color-mix(in oklab, var(--color-accent-faded), transparent 52%) 0%,
+    color-mix(in oklab, var(--color-accent), transparent 88%) 24%,
+    transparent 54%
+  );
+  --app-shell-linear: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-accent), black 82%) 0%,
+    color-mix(in oklab, var(--color-accent), black 89%) 52%,
+    #040605 78%,
+    #020303 100%
+  );
   --ui-card-shadow: 0 24px 45px -36px rgba(0, 0, 0, 0.7);
   --ui-card-radius: 1rem;
   color-scheme: dark;
@@ -139,6 +164,10 @@ body {
   transition:
     background 250ms ease,
     color 250ms ease;
+}
+
+.app-shell-background {
+  background: var(--app-shell-radial), var(--app-shell-linear);
 }
 
 .font-heading {
