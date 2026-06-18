@@ -113,8 +113,7 @@
 
   a {
     color: var(--color-accent-display);
-    text-decoration: underline;
-    text-underline-offset: 0.15em;
+    text-decoration: none;
     transition: color 120ms ease;
   }
   a:hover {
@@ -189,6 +188,10 @@
 .body-content ol {
   padding-left: 1.5rem;
 }
+.body-content a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
 .body-content ul {
   list-style: disc;
 }
@@ -200,6 +203,88 @@
 }
 .body-content li + li {
   margin-top: 0.25rem;
+}
+
+.home-hero-banner {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-accent-display), black 10%) 0%,
+    var(--color-accent) 30%,
+    color-mix(in oklab, var(--color-accent), var(--color-accent-faded) 25%) 70%,
+    color-mix(in oklab, var(--color-accent), white 20%) 100%
+  );
+}
+
+.home-hero-glow {
+  background: radial-gradient(
+    circle at 80% 20%,
+    rgba(255, 255, 255, 0.12) 0%,
+    transparent 50%
+  );
+}
+
+.home-hero-orb {
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 70%
+  );
+}
+
+.community-info-visual {
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-faded) 0%,
+    color-mix(in oklab, var(--color-accent-faded), var(--color-accent) 20%) 40%,
+    color-mix(in oklab, var(--color-accent-faded), var(--color-accent) 35%) 100%
+  );
+}
+
+.community-info-badge {
+  background: color-mix(in oklab, var(--color-surface), transparent 28%);
+}
+
+.community-info-badge-text {
+  color: var(--color-accent-display);
+}
+
+.community-info-icon {
+  color: var(--color-accent-display);
+}
+
+.profile-hero-gradient {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-accent-display), black 10%) 0%,
+    var(--color-accent) 45%,
+    color-mix(in oklab, var(--color-accent), white 22%) 100%
+  );
+}
+
+.profile-hero-gradient-soft {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-accent-display), transparent 45%) 0%,
+    color-mix(in oklab, var(--color-accent), transparent 45%) 45%,
+    color-mix(in oklab, var(--color-accent), white 40%) 100%
+  );
+}
+
+.profile-hero-glow {
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 255, 255, 0.22),
+    transparent 55%
+  );
+}
+
+.dark .community-info-badge {
+  background: color-mix(in oklab, var(--color-page), transparent 22%);
+}
+
+.dark .community-info-badge-text,
+.dark .community-info-icon {
+  color: var(--color-accent-ink);
 }
 
 @layer components {
@@ -290,6 +375,9 @@
   }
   .badge-signal {
     @apply bg-signal-faded text-signal-display;
+  }
+  .badge-danger {
+    @apply bg-danger-faded text-danger-display;
   }
   .badge-muted {
     @apply bg-transparent text-ink-muted border border-hairline;
@@ -467,6 +555,8 @@ html {
    the dark-mode color too. */
 .bm-rich-text .milkdown .ProseMirror a {
   color: var(--color-accent-display);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .bm-rich-text .milkdown .ProseMirror ul,

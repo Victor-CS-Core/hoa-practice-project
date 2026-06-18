@@ -343,7 +343,7 @@ export function AdminEventList({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            side="auto"
+                            side="bottom"
                             className="w-48"
                           >
                             <DropdownMenuLabel>Event Actions</DropdownMenuLabel>

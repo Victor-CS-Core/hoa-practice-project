@@ -9,7 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/design-system/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/design-system/ui/theme-toggle";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -32,7 +31,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/design-system/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/design-system/ui/theme-toggle";
 import {
   ChevronsLeft, ChevronsRight, Folder, Home, LogOut, Menu,
   Settings, User, Users, X,
@@ -259,10 +257,6 @@ function UserMenu({ open }: { open: boolean }) {
         <DropdownMenuItem><User /> Profile</DropdownMenuItem>
         <DropdownMenuItem><Settings /> Settings</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <div className="px-2 py-2">
-          <ThemeToggle block />
-        </div>
-        <DropdownMenuSeparator />
         <DropdownMenuItem><LogOut /> Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -358,10 +352,6 @@ function PreviewUserMenu({ open }: { open: boolean }) {
         <DropdownMenuItem>
           <Settings /> Settings
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <div className="px-2 py-2">
-          <ThemeToggle block />
-        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <LogOut /> Sign out
@@ -504,32 +494,37 @@ export function MainNavSection() {
       title="Main navigation"
       description={
         <>
-          A vertical rail at the left edge of the shell. The rail has two
-          fixed widths — collapsed (<code>w-14</code>, icons only) and
-          expanded (<code>w-56</code>, icons plus labels) — and a chevron
-          toggle switches between them. When expanded, the toggle sits in
-          the brand row at the top; when collapsed, an expand chevron sits
-          just above the user menu at the bottom of the rail. The choice is persisted to{" "}
+          A vertical rail at the left edge of the shell. The rail has two fixed
+          widths — collapsed (<code>w-14</code>, icons only) and expanded (
+          <code>w-56</code>, icons plus labels) — and a chevron toggle switches
+          between them. When expanded, the toggle sits in the brand row at the
+          top; when collapsed, an expand chevron sits just above the user menu
+          at the bottom of the rail. The choice is persisted to{" "}
           <code>localStorage</code>. When collapsed, hovering an item pops a
-          tooltip-style label out to the right of the rail without resizing
-          it. A user-account dropdown above the bottom edge holds a
-          signed-in-as label, Profile / Settings, the theme toggle, and Sign
-          out — and shows the avatar plus email when expanded, avatar only
-          when collapsed. On screens narrower than <code>lg</code>, the rail
-          is hidden in favor of a hamburger button fixed to the top-right
-          corner that opens the same nav as a slide-in drawer.
+          tooltip-style label out to the right of the rail without resizing it.
+          A user-account dropdown above the bottom edge holds a signed-in-as
+          label, Profile / Settings, and Sign out — and shows the avatar plus
+          email when expanded, avatar only when collapsed. On screens narrower
+          than <code>lg</code>, the rail is hidden in favor of a hamburger
+          button fixed to the top-right corner that opens the same nav as a
+          slide-in drawer.
         </>
       }
       whenToUse={
         <ul>
           <li>One per shell. Always present and sticky on desktop.</li>
-          <li>Top-level destinations only — secondary items belong in sub-nav tabs.</li>
+          <li>
+            Top-level destinations only — secondary items belong in sub-nav
+            tabs.
+          </li>
           <li>4–8 items max; beyond that, group with hairline separators.</li>
         </ul>
       }
       whenNotToUse={
         <ul>
-          <li>For deep, multi-level menus — use sub-nav tabs or a command palette.</li>
+          <li>
+            For deep, multi-level menus — use sub-nav tabs or a command palette.
+          </li>
           <li>Marketing/landing pages — those use a horizontal top nav.</li>
         </ul>
       }
@@ -559,52 +554,47 @@ export function MainNavSection() {
           </li>
           <li>
             <strong>Persistence</strong>: open/closed state is written to{" "}
-            <code>localStorage</code> under <code>main-nav-open</code>{" "}
-            (rename per app). Hydrate inside <code>useEffect</code> so SSR
-            stays deterministic.
+            <code>localStorage</code> under <code>main-nav-open</code> (rename
+            per app). Hydrate inside <code>useEffect</code> so SSR stays
+            deterministic.
           </li>
           <li>
-            <strong>Toggle position</strong>: the collapse chevron lives in
-            the brand row when the rail is expanded (next to the brand on
-            the right). When the rail is collapsed there's no room for it
-            there, so the expand chevron sits just above the user menu at
-            the bottom of the rail.
+            <strong>Toggle position</strong>: the collapse chevron lives in the
+            brand row when the rail is expanded (next to the brand on the
+            right). When the rail is collapsed there's no room for it there, so
+            the expand chevron sits just above the user menu at the bottom of
+            the rail.
           </li>
           <li>
-            <strong>Active item highlight (collapsed)</strong>: each item is
-            a 36px square pill (<code>h-9 w-9</code>) centered with{" "}
+            <strong>Active item highlight (collapsed)</strong>: each item is a
+            36px square pill (<code>h-9 w-9</code>) centered with{" "}
             <code>mx-auto</code> inside the 40px-wide nav column — keeps the{" "}
             <code>bg-accent-faded</code> highlight as a square rather than a
             full-width strip.
           </li>
           <li>
-            <strong>Floating labels (collapsed)</strong>: each item is its
-            own <code>group/nav-item</code> with an{" "}
-            <code>absolute left-full</code> tooltip-style label. The label
-            is <code>pointer-events-none</code> and only opacity-toggles, so
-            the rail width is never disturbed.
+            <strong>Floating labels (collapsed)</strong>: each item is its own{" "}
+            <code>group/nav-item</code> with an <code>absolute left-full</code>{" "}
+            tooltip-style label. The label is <code>pointer-events-none</code>{" "}
+            and only opacity-toggles, so the rail width is never disturbed.
           </li>
           <li>
-            <strong>Account menu</strong>: a Radix{" "}
-            <code>DropdownMenu</code> with{" "}
-            <code>side="top" align="start"</code> so it slides up from the
-            bottom-left corner. Contents (top to bottom): signed-in-as
-            label, Profile, Settings, separator, the{" "}
-            <code>&lt;ThemeToggle block /&gt;</code> primitive, separator,
-            Sign out. Trigger shows avatar + email when expanded, avatar
-            only when collapsed.
+            <strong>Account menu</strong>: a Radix <code>DropdownMenu</code>{" "}
+            with <code>side="top" align="start"</code> so it slides up from the
+            bottom-left corner. Contents (top to bottom): signed-in-as label,
+            Profile, Settings, separator, and Sign out. Trigger shows avatar +
+            email when expanded, avatar only when collapsed.
           </li>
           <li>
             <strong>Mobile</strong>: hide the rail with{" "}
             <code>hidden lg:flex</code>, render a hamburger fixed to{" "}
             <code>right-3 top-3</code> with <code>z-30</code> and{" "}
-            <code>bg-page</code> so it stays readable while the page
-            scrolls. The drawer is <code>w-64</code> with its own brand row
-            and close button at the top.
+            <code>bg-page</code> so it stays readable while the page scrolls.
+            The drawer is <code>w-64</code> with its own brand row and close
+            button at the top.
           </li>
         </ul>
       }
     />
   );
 }
-

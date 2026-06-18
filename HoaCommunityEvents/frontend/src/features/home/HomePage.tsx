@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../app/stores/store";
-import { useTheme } from "../../app/theme/theme-context";
 import { useEvents } from "../../hooks/useEvents";
 import { useJoinEvent, useLeaveEvent } from "../../hooks/useAttendance";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
@@ -16,9 +15,7 @@ import { CommunityInfo } from "./components/CommunityInfo";
 
 export const HomePage = observer(function HomePage() {
   const { authStore } = useStore();
-  const { resolvedTheme } = useTheme();
   const [actionError, setActionError] = useState<string | null>(null);
-  const isDark = resolvedTheme === "dark";
 
   const joinMutation = useJoinEvent();
   const leaveMutation = useLeaveEvent();
@@ -81,13 +78,7 @@ export const HomePage = observer(function HomePage() {
   };
 
   return (
-    <div
-      className={`space-y-8 rounded-3xl p-4 sm:p-5 ${
-        isDark
-          ? "bg-[linear-gradient(155deg,rgba(16,28,42,0.72),rgba(14,24,36,0.72))]"
-          : "bg-[linear-gradient(155deg,rgba(255,249,238,0.88),rgba(243,251,246,0.88))]"
-      }`}
-    >
+    <div className="space-y-8 rounded-3xl bg-surface/70 p-4 sm:p-5">
       {/* Hero Banner */}
       <HeroBanner user={authStore.user} isAdmin={authStore.isAdmin} />
 
@@ -101,13 +92,7 @@ export const HomePage = observer(function HomePage() {
 
       {/* Action error toast */}
       {actionError && (
-        <div
-          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${
-            isDark
-              ? "border-[#8b3a37] bg-[#311615] text-[#ffcbc8]"
-              : "border-red-200 bg-red-50 text-red-700"
-          }`}
-        >
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-danger-display/35 bg-danger-faded p-3 text-danger-display">
           <span className="text-sm">{actionError}</span>
           <button
             type="button"

@@ -2,8 +2,8 @@ import { AlertCircle, Image, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Uploads } from "../../../app/api/agent";
 import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/design-system/ui/button";
+import { Input } from "../../../components/design-system/ui/input";
 import type { UpdateProfileValues } from "../../../types/profile";
 import type { ApiErrorEnvelope } from "../../auth/authApiError";
 import { getFieldError } from "../../auth/authApiError";
@@ -199,21 +199,15 @@ export function ProfileEditForm({
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-2xl border theme-border-surface theme-bg-surface shadow-sm animate-fade-up">
-      <div
-        className="relative overflow-hidden border-b theme-border-surface px-6 pb-7 pt-6 sm:px-8"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(6,95,70,0.9) 0%, rgba(4,120,87,0.85) 45%, rgba(20,184,166,0.75) 100%)",
-        }}
-      >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_55%)]" />
+    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-hairline bg-page shadow-sm animate-fade-up">
+      <div className="profile-hero-gradient relative overflow-hidden border-b border-hairline px-6 pb-7 pt-6 sm:px-8">
+        <div className="profile-hero-glow pointer-events-none absolute inset-0" />
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-heading text-2xl font-bold text-white sm:text-3xl">
               Edit Profile
             </h2>
-            <p className="mt-1 text-sm text-emerald-100">
+            <p className="mt-1 text-sm text-accent-ink">
               Update your public identity details, avatar, and banner.
             </p>
           </div>
@@ -222,7 +216,7 @@ export function ProfileEditForm({
 
       <div className="grid gap-6 p-4 sm:p-8 lg:grid-cols-2">
         {apiError && apiError.code !== "validation_failed" && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 lg:col-span-2">
+          <div className="flex items-start gap-3 rounded-lg border border-danger-display/35 bg-danger-faded p-4 text-sm text-danger-display lg:col-span-2">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
             <p className="font-semibold">
               {apiError.message ?? "Failed to update profile."}
@@ -230,19 +224,19 @@ export function ProfileEditForm({
           </div>
         )}
 
-        <div className="animate-fade-up animate-delay-100 min-w-0 space-y-5 rounded-xl border theme-border-surface theme-bg-surface-muted p-5 lg:col-span-2">
+        <div className="animate-fade-up animate-delay-100 min-w-0 space-y-5 rounded-xl border border-hairline bg-surface p-5 lg:col-span-2">
           <div>
-            <h3 className="font-heading text-lg font-semibold theme-text-primary">
+            <h3 className="font-heading text-lg font-semibold text-ink-display">
               Account Identity
             </h3>
-            <p className="mt-1 text-xs theme-text-muted">
+            <p className="mt-1 text-xs text-ink-muted">
               These values are visible to community members.
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium theme-text-primary">
-              Display Name <span className="text-red-500">*</span>
+            <label className="mb-1 block text-sm font-medium text-ink-display">
+              Display Name <span className="text-danger-display">*</span>
             </label>
             <Input
               value={formValues.displayName}
@@ -255,17 +249,19 @@ export function ProfileEditForm({
               placeholder="e.g., Jane Doe"
               className={
                 displayNameError
-                  ? "border-red-300 focus-visible:ring-red-500"
+                  ? "border-danger-display/45 focus-visible:ring-danger-display"
                   : ""
               }
             />
             {displayNameError && (
-              <p className="mt-1 text-xs text-red-500">{displayNameError}</p>
+              <p className="mt-1 text-xs text-danger-display">
+                {displayNameError}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium theme-text-primary">
+            <label className="mb-1 block text-sm font-medium text-ink-display">
               Bio (Optional)
             </label>
             <textarea
@@ -276,32 +272,32 @@ export function ProfileEditForm({
                   bio: event.target.value,
                 }))
               }
-              className={`flex min-h-36 w-full rounded-md border bg-transparent px-3 py-2 text-sm theme-text-primary shadow-sm theme-placeholder-text-muted focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`flex min-h-36 w-full rounded-md border bg-transparent px-3 py-2 text-sm text-ink-display shadow-sm placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 ${
                 bioError
-                  ? "border-red-300 focus-visible:ring-red-500"
-                  : "theme-border-surface focus-visible:ring-emerald-500"
+                  ? "border-danger-display/45 focus-visible:ring-danger-display"
+                  : "border-hairline focus-visible:ring-accent"
               }`}
               placeholder="Tell your neighbors a bit about yourself..."
             />
             {bioError && (
-              <p className="mt-1 text-xs text-red-500">{bioError}</p>
+              <p className="mt-1 text-xs text-danger-display">{bioError}</p>
             )}
           </div>
         </div>
 
-        <div className="animate-fade-up animate-delay-200 min-w-0 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+        <div className="animate-fade-up animate-delay-200 min-w-0 space-y-4 rounded-xl border border-hairline bg-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-heading text-lg font-semibold theme-text-primary">
+              <h3 className="font-heading text-lg font-semibold text-ink-display">
                 Avatar Image
               </h3>
-              <p className="mt-1 text-xs theme-text-muted">
+              <p className="mt-1 text-xs text-ink-muted">
                 Upload an image or use a direct image URL.
               </p>
             </div>
             <Button
               type="button"
-              variant={avatarEnabled ? "default" : "outline"}
+              variant={avatarEnabled ? "primary" : "secondary"}
               className="min-w-26 shrink-0"
               onClick={() => {
                 setAvatarEnabled((prev) => {
@@ -326,7 +322,7 @@ export function ProfileEditForm({
             </Button>
           </div>
 
-          <div className="mx-auto flex w-full flex-col items-center gap-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
+          <div className="mx-auto flex w-full flex-col items-center gap-3 rounded-lg border border-hairline bg-page p-4">
             <div className="flex h-34 w-34 items-center justify-center overflow-hidden rounded-full border-4 border-white/70 bg-white/90 shadow-md">
               {canShowPreview ? (
                 <div
@@ -355,24 +351,24 @@ export function ProfileEditForm({
                   />
                 </div>
               ) : (
-                <User className="h-12 w-12 text-emerald-700" />
+                <User className="h-12 w-12 text-accent-display" />
               )}
             </div>
-            <span className="text-xs font-medium uppercase tracking-wider theme-text-muted">
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
               Avatar Preview
             </span>
           </div>
 
           {avatarEnabled && (
-            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
-              <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
+            <div className="space-y-3 rounded-lg border border-hairline bg-page p-4">
+              <div className="inline-flex rounded-md border border-hairline bg-page p-1">
                 <button
                   type="button"
                   onClick={() => setImageSource("url")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     imageSource === "url"
-                      ? "bg-emerald-600 text-white"
-                      : "theme-text-muted theme-hover-bg-surface-muted"
+                      ? "bg-accent text-white"
+                      : "text-ink-muted hover:bg-surface"
                   }`}
                 >
                   URL
@@ -382,8 +378,8 @@ export function ProfileEditForm({
                   onClick={() => setImageSource("upload")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     imageSource === "upload"
-                      ? "bg-emerald-600 text-white"
-                      : "theme-text-muted theme-hover-bg-surface-muted"
+                      ? "bg-accent text-white"
+                      : "text-ink-muted hover:bg-surface"
                   }`}
                 >
                   Upload
@@ -392,7 +388,7 @@ export function ProfileEditForm({
 
               {imageSource === "url" ? (
                 <div>
-                  <label className="mb-1 block text-sm font-medium theme-text-primary">
+                  <label className="mb-1 block text-sm font-medium text-ink-display">
                     Avatar Image URL
                   </label>
                   <Input
@@ -416,28 +412,28 @@ export function ProfileEditForm({
                     }
                     className={
                       profileImageError
-                        ? "border-red-300 focus-visible:ring-red-500"
+                        ? "border-danger-display/45 focus-visible:ring-danger-display"
                         : ""
                     }
                   />
                   {hideAvatarUrlValue && (
-                    <p className="mt-1 text-xs theme-text-muted">
+                    <p className="mt-1 text-xs text-ink-muted">
                       The current uploaded image link is hidden.
                     </p>
                   )}
                   {profileImageError && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-danger-display">
                       {profileImageError}
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
+                <div className="rounded-md border border-dashed border-hairline bg-surface p-3 text-sm text-ink-muted">
                   Upload using a secure signed request.
                   <div className="mt-2">
                     <label
                       htmlFor="profile-avatar-upload"
-                      className="mb-1 block text-xs font-medium theme-text-primary"
+                      className="mb-1 block text-xs font-medium text-ink-display"
                     >
                       Select avatar image
                     </label>
@@ -472,20 +468,20 @@ export function ProfileEditForm({
                       }}
                     />
                   </div>
-                  <p className="mt-2 text-xs theme-text-muted">
+                  <p className="mt-2 text-xs text-ink-muted">
                     Accepted: JPG, PNG, WebP. Max size: 5MB.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => void handleCloudinaryUpload()}
                       disabled={!uploadFile || isUploading}
                     >
                       {isUploading ? "Uploading..." : "Upload Image"}
                     </Button>
                     {uploadFile && (
-                      <span className="break-all text-xs theme-text-muted">
+                      <span className="break-all text-xs text-ink-muted">
                         Selected: {uploadFile.name}
                       </span>
                     )}
@@ -494,13 +490,11 @@ export function ProfileEditForm({
               )}
 
               {imageUrl && (
-                <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs theme-text-muted">
-                    Avatar image is set.
-                  </p>
+                <div className="flex flex-col items-start gap-2 rounded-md border border-hairline bg-surface p-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-ink-muted">Avatar image is set.</p>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="h-8 px-2 text-xs"
                     onClick={() => {
                       setFormValues((current) => ({
@@ -520,9 +514,9 @@ export function ProfileEditForm({
               )}
 
               {canShowPreview && (
-                <div className="space-y-3 rounded-md border theme-border-surface theme-bg-surface-muted p-3">
+                <div className="space-y-3 rounded-md border border-hairline bg-surface p-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide theme-text-muted">
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
                       Zoom ({(formValues.profileImageZoom ?? 1).toFixed(2)}x)
                     </label>
                     <input
@@ -540,7 +534,7 @@ export function ProfileEditForm({
                             : 1,
                         }));
                       }}
-                      className="w-full accent-emerald-600"
+                      className="w-full accent-accent"
                     />
                   </div>
                 </div>
@@ -550,7 +544,7 @@ export function ProfileEditForm({
                 <p
                   role="status"
                   aria-live="polite"
-                  className="text-xs font-medium text-emerald-700"
+                  className="text-xs font-medium text-accent-display"
                 >
                   {uploadSuccess}
                 </p>
@@ -559,7 +553,7 @@ export function ProfileEditForm({
                 <p
                   role="alert"
                   aria-live="assertive"
-                  className="text-xs font-medium text-red-600"
+                  className="text-xs font-medium text-danger-display"
                 >
                   {uploadError}
                 </p>
@@ -568,19 +562,19 @@ export function ProfileEditForm({
           )}
         </div>
 
-        <div className="animate-fade-up animate-delay-[240ms] min-w-0 space-y-4 rounded-xl border theme-border-surface theme-bg-surface-muted p-5">
+        <div className="animate-fade-up animate-delay-[240ms] min-w-0 space-y-4 rounded-xl border border-hairline bg-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h3 className="font-heading text-lg font-semibold theme-text-primary">
+              <h3 className="font-heading text-lg font-semibold text-ink-display">
                 Profile Banner
               </h3>
-              <p className="mt-1 text-xs theme-text-muted">
+              <p className="mt-1 text-xs text-ink-muted">
                 Upload a banner image or use a direct image URL.
               </p>
             </div>
             <Button
               type="button"
-              variant={bannerEnabled ? "default" : "outline"}
+              variant={bannerEnabled ? "primary" : "secondary"}
               className="min-w-26 shrink-0"
               onClick={() => {
                 setBannerEnabled((prev) => {
@@ -605,11 +599,11 @@ export function ProfileEditForm({
             </Button>
           </div>
 
-          <div className="space-y-2 rounded-lg border theme-border-surface theme-bg-surface p-3">
-            <span className="text-xs font-medium uppercase tracking-wider theme-text-muted">
+          <div className="space-y-2 rounded-lg border border-hairline bg-page p-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-ink-muted">
               Banner Preview
             </span>
-            <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-md border theme-border-surface theme-bg-surface-muted">
+            <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-md border border-hairline bg-surface">
               {canShowBannerPreview ? (
                 <ImageCropEditor
                   imageUrl={bannerImageUrl}
@@ -633,15 +627,15 @@ export function ProfileEditForm({
                   }}
                 />
               ) : (
-                <Image className="h-8 w-8 theme-text-muted" />
+                <Image className="h-8 w-8 text-ink-muted" />
               )}
             </div>
           </div>
 
           {bannerEnabled && bannerImageUrl && (
-            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-3">
+            <div className="space-y-3 rounded-lg border border-hairline bg-page p-3">
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide theme-text-muted">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
                   Zoom ({(formValues.bannerImageZoom ?? 1).toFixed(2)}x)
                 </label>
                 <input
@@ -659,22 +653,22 @@ export function ProfileEditForm({
                         : 1,
                     }));
                   }}
-                  className="w-full accent-emerald-600"
+                  className="w-full accent-accent"
                 />
               </div>
             </div>
           )}
 
           {bannerEnabled && (
-            <div className="space-y-3 rounded-lg border theme-border-surface theme-bg-surface p-4">
-              <div className="inline-flex rounded-md border theme-border-surface theme-bg-surface p-1">
+            <div className="space-y-3 rounded-lg border border-hairline bg-page p-4">
+              <div className="inline-flex rounded-md border border-hairline bg-page p-1">
                 <button
                   type="button"
                   onClick={() => setBannerImageSource("url")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     bannerImageSource === "url"
-                      ? "bg-emerald-600 text-white"
-                      : "theme-text-muted theme-hover-bg-surface-muted"
+                      ? "bg-accent text-white"
+                      : "text-ink-muted hover:bg-surface"
                   }`}
                 >
                   URL
@@ -684,8 +678,8 @@ export function ProfileEditForm({
                   onClick={() => setBannerImageSource("upload")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     bannerImageSource === "upload"
-                      ? "bg-emerald-600 text-white"
-                      : "theme-text-muted theme-hover-bg-surface-muted"
+                      ? "bg-accent text-white"
+                      : "text-ink-muted hover:bg-surface"
                   }`}
                 >
                   Upload
@@ -694,7 +688,7 @@ export function ProfileEditForm({
 
               {bannerImageSource === "url" ? (
                 <div>
-                  <label className="mb-1 block text-sm font-medium theme-text-primary">
+                  <label className="mb-1 block text-sm font-medium text-ink-display">
                     Banner Image URL
                   </label>
                   <Input
@@ -718,28 +712,28 @@ export function ProfileEditForm({
                     }
                     className={
                       bannerImageError
-                        ? "border-red-300 focus-visible:ring-red-500"
+                        ? "border-danger-display/45 focus-visible:ring-danger-display"
                         : ""
                     }
                   />
                   {hideBannerUrlValue && (
-                    <p className="mt-1 text-xs theme-text-muted">
+                    <p className="mt-1 text-xs text-ink-muted">
                       The current uploaded image link is hidden.
                     </p>
                   )}
                   {bannerImageError && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-danger-display">
                       {bannerImageError}
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="rounded-md border border-dashed theme-border-surface theme-bg-surface-muted p-3 text-sm theme-text-muted">
+                <div className="rounded-md border border-dashed border-hairline bg-surface p-3 text-sm text-ink-muted">
                   Upload a banner image using a secure signed request.
                   <div className="mt-2">
                     <label
                       htmlFor="profile-banner-upload"
-                      className="mb-1 block text-xs font-medium theme-text-primary"
+                      className="mb-1 block text-xs font-medium text-ink-display"
                     >
                       Select banner image
                     </label>
@@ -774,20 +768,20 @@ export function ProfileEditForm({
                       }}
                     />
                   </div>
-                  <p className="mt-2 text-xs theme-text-muted">
+                  <p className="mt-2 text-xs text-ink-muted">
                     Accepted: JPG, PNG, WebP. Max size: 5MB.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => void handleBannerCloudinaryUpload()}
                       disabled={!bannerUploadFile || isBannerUploading}
                     >
                       {isBannerUploading ? "Uploading..." : "Upload Banner"}
                     </Button>
                     {bannerUploadFile && (
-                      <span className="break-all text-xs theme-text-muted">
+                      <span className="break-all text-xs text-ink-muted">
                         Selected: {bannerUploadFile.name}
                       </span>
                     )}
@@ -796,13 +790,11 @@ export function ProfileEditForm({
               )}
 
               {bannerImageUrl && (
-                <div className="flex flex-col items-start gap-2 rounded-md border theme-border-surface theme-bg-surface-muted p-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs theme-text-muted">
-                    Banner image is set.
-                  </p>
+                <div className="flex flex-col items-start gap-2 rounded-md border border-hairline bg-surface p-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-ink-muted">Banner image is set.</p>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     className="h-8 px-2 text-xs"
                     onClick={() => {
                       setFormValues((current) => ({
@@ -825,7 +817,7 @@ export function ProfileEditForm({
                 <p
                   role="status"
                   aria-live="polite"
-                  className="text-xs font-medium text-emerald-700"
+                  className="text-xs font-medium text-accent-display"
                 >
                   {bannerUploadSuccess}
                 </p>
@@ -834,7 +826,7 @@ export function ProfileEditForm({
                 <p
                   role="alert"
                   aria-live="assertive"
-                  className="text-xs font-medium text-red-600"
+                  className="text-xs font-medium text-danger-display"
                 >
                   {bannerUploadError}
                 </p>
@@ -844,17 +836,17 @@ export function ProfileEditForm({
         </div>
       </div>
 
-      <div className="animate-fade-up animate-delay-300 flex flex-wrap items-center justify-end gap-3 border-t theme-border-surface theme-bg-surface-muted px-4 py-4 sm:px-8">
+      <div className="animate-fade-up animate-delay-300 flex flex-wrap items-center justify-end gap-3 border-t border-hairline bg-surface px-4 py-4 sm:px-8">
         <Button
           variant="ghost"
           onClick={onCancel}
-          className="w-full theme-text-muted theme-hover-text-primary sm:w-auto"
+          className="w-full text-ink-muted hover:text-ink-display sm:w-auto"
           disabled={isSubmitting}
         >
           Cancel
         </Button>
         <Button
-          className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+          className="w-full bg-accent text-white hover:bg-accent/90 sm:w-auto"
           disabled={isSubmitting}
           onClick={() =>
             onSubmit({

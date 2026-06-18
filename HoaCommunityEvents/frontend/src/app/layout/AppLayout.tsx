@@ -31,7 +31,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "../../components/design-system/ui/dropdown-menu";
 import { Tooltip } from "../../components/ui/tooltip";
 import { BRAND } from "../branding";
 

@@ -42,7 +42,7 @@ export const TEXT: PaletteEntry[] = [
   {
     name: "ink-muted",
     utility: "text-ink-muted",
-    hexLight: "#78716c",
+    hexLight: "#6f6963",
     hexDark: "#d6d3d1",
   },
 ];

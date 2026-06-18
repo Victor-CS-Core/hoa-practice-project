@@ -193,8 +193,13 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
       const applyEditorA11yName = () => {
         const editable = root.querySelector(".ProseMirror");
         if (editable instanceof HTMLElement) {
-          editable.setAttribute("aria-label", ariaLabel);
-          editable.setAttribute("title", ariaLabel);
+          // Guard writes so observer callbacks do not retrigger endlessly.
+          if (editable.getAttribute("aria-label") !== ariaLabel) {
+            editable.setAttribute("aria-label", ariaLabel);
+          }
+          if (editable.getAttribute("title") !== ariaLabel) {
+            editable.setAttribute("title", ariaLabel);
+          }
         }
       };
 
@@ -204,7 +209,6 @@ const RichTextField = React.forwardRef<HTMLDivElement, RichTextFieldProps>(
       observer.observe(root, {
         childList: true,
         subtree: true,
-        attributes: true,
       });
 
       const crepe = new Crepe({

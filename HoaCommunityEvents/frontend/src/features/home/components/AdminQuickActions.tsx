@@ -6,7 +6,6 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useTheme } from "../../../app/theme/theme-context";
 import type { HoaEvent } from "../../../types/event";
 
 interface AdminQuickActionsProps {
@@ -27,62 +26,42 @@ function ActionCard({ to, icon, title, description, accent }: ActionCardProps) {
       to={to}
       className={`group flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${accent}`}
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 transition-transform group-hover:scale-110">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-signal-faded text-signal-display transition-transform group-hover:scale-110">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-heading text-sm font-semibold text-stone-900">
+        <p className="font-heading text-sm font-semibold text-ink-display">
           {title}
         </p>
-        <p className="text-xs text-stone-500">{description}</p>
+        <p className="text-xs text-ink-muted">{description}</p>
       </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-stone-300 transition-colors group-hover:text-amber-600" />
+      <ArrowRight className="h-4 w-4 shrink-0 text-ink-muted transition-colors group-hover:text-signal-display" />
     </Link>
   );
 }
 
 export function AdminQuickActions({ events }: AdminQuickActionsProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const publishedCount = events.filter((e) => e.status === "Published").length;
   const cancelledCount = events.filter((e) => e.status === "Cancelled").length;
 
-  const sectionTone = isDark
-    ? "border-amber-700/40 bg-linear-to-br from-stone-900 to-stone-800/80"
-    : "border-amber-200 bg-linear-to-br from-amber-50 to-orange-50/50";
-
-  const headerTone = isDark
-    ? "border-amber-700/30 bg-amber-900/25"
-    : "border-amber-200 bg-amber-100/50";
-
-  const titleTone = isDark ? "text-amber-200" : "text-amber-900";
-  const statsTone = isDark ? "text-amber-300" : "text-amber-700";
-  const badgeTone = isDark
-    ? "bg-amber-800/60 text-amber-100"
-    : "bg-amber-200 text-amber-800";
-  const actionAccent = isDark
-    ? "border-amber-700/40 bg-stone-900/70 hover:border-amber-500"
-    : "border-amber-200 bg-white hover:border-amber-300";
+  const actionAccent =
+    "border-signal/35 bg-page hover:border-signal-display hover:bg-signal-faded";
 
   return (
-    <section
-      className={`animate-fade-up animate-delay-300 h-full overflow-hidden rounded-xl border-2 shadow-sm ${sectionTone}`}
-    >
-      <div className={`border-b px-6 py-4 ${headerTone}`}>
+    <section className="animate-fade-up animate-delay-300 h-full overflow-hidden rounded-xl border border-signal/35 bg-signal-faded/40 shadow-sm">
+      <div className="border-b border-signal/35 bg-signal-faded px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <LayoutDashboard className={`h-5 w-5 ${titleTone}`} />
-            <h2 className={`font-heading text-xl font-bold ${titleTone}`}>
+            <LayoutDashboard className="h-5 w-5 text-signal-display" />
+            <h2 className="font-heading text-xl font-bold text-ink-display">
               Admin Quick Actions
             </h2>
           </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeTone}`}
-          >
+          <span className="rounded-full bg-signal px-3 py-1 text-xs font-semibold text-page">
             Admin
           </span>
         </div>
-        <div className={`mt-2 flex gap-4 text-sm ${statsTone}`}>
+        <div className="mt-2 flex gap-4 text-sm text-signal-display">
           <span className="flex items-center gap-1">
             <CalendarDays className="h-3.5 w-3.5" />
             {publishedCount} published

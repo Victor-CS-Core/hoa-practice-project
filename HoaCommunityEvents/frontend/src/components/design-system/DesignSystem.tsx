@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Menu, X } from "lucide-react";
 import { SidebarNav } from "@/components/design-system/SidebarNav";
-import { ThemeToggle } from "@/components/design-system/ui/theme-toggle";
 import { ColorsSection } from "@/components/design-system/sections/branding/ColorsSection";
 import { TypographySection } from "@/components/design-system/sections/branding/TypographySection";
 import { ShellsSection } from "@/components/design-system/sections/structure/ShellsSection";
@@ -43,7 +42,6 @@ export function DesignSystem() {
             Design System
           </span>
         </div>
-        <ThemeToggle />
       </header>
 
       <div className="mx-auto flex max-w-7xl">

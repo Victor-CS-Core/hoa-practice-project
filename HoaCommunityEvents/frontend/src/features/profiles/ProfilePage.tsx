@@ -20,7 +20,7 @@ export const ProfilePage = observer(function ProfilePage() {
 
   if (!authStore.user || !username) {
     return (
-      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
+      <div className="rounded-xl border border-hairline bg-page p-8 text-center text-ink-muted">
         Profile not available.
       </div>
     );
@@ -32,7 +32,7 @@ export const ProfilePage = observer(function ProfilePage() {
 
   if (isError || !data) {
     return (
-      <div className="rounded-xl border border-(--surface-border) bg-(--surface) p-8 text-center text-(--text-muted)">
+      <div className="rounded-xl border border-hairline bg-page p-8 text-center text-ink-muted">
         Profile not found.
       </div>
     );
@@ -64,11 +64,11 @@ export const ProfilePage = observer(function ProfilePage() {
         <BackNavigationButton to="/events" label="Back to events" />
       </div>
 
-      <div className="rounded-2xl border theme-border-surface theme-bg-surface p-6 shadow-sm animate-fade-up">
-        <h1 className="font-heading text-3xl font-bold theme-text-primary">
+      <div className="animate-fade-up rounded-2xl border border-hairline bg-page p-6 shadow-sm">
+        <h1 className="font-heading text-3xl font-bold text-ink-display">
           {isOwnProfile ? "My Profile" : `${data.displayName}'s Profile`}
         </h1>
-        <p className="mt-2 text-sm theme-text-muted">
+        <p className="mt-2 text-sm text-ink-muted">
           {isOwnProfile
             ? "Manage your public profile details, avatar, and banner image."
             : "Community member profile overview."}
