@@ -37,7 +37,10 @@ type ConfirmState = { action: "cancel" | "delete"; eventId: string } | null;
 export function AdminDashboardPage() {
   const { authStore } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [formState, setFormState] = useState<FormState>(null);
+  const hasCreateIntent = searchParams.get("create") === "1";
+  const [formState, setFormState] = useState<FormState>(() =>
+    hasCreateIntent ? { mode: "create" } : null,
+  );
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
   const [selectedAttendeesEventId, setSelectedAttendeesEventId] = useState<
     string | null
@@ -76,6 +79,13 @@ export function AdminDashboardPage() {
     !!selectedAttendeesEventId,
   );
   const hasActiveFilters = !!status || !!category;
+
+  const clearCreateIntent = () => {
+    if (!searchParams.has("create")) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("create");
+    setSearchParams(params);
+  };
 
   if (!authStore.isAdmin) {
     return (
@@ -126,6 +136,7 @@ export function AdminDashboardPage() {
       const created = await createMutation.mutateAsync(values);
       setFlashMessage(`Created event: ${created.title}`);
       setFormState(null);
+      clearCreateIntent();
     } catch (error) {
       const next = toApiError(error);
       setFormError(next ?? { message: "Failed to create event." });
@@ -243,6 +254,7 @@ export function AdminDashboardPage() {
               setFormState((prev) =>
                 prev?.mode === "create" ? null : { mode: "create" },
               );
+              clearCreateIntent();
             }}
             className="min-h-11 w-full shrink-0 sm:w-auto"
           >
@@ -259,6 +271,7 @@ export function AdminDashboardPage() {
             onCancel={() => {
               setFormError(null);
               setFormState(null);
+              clearCreateIntent();
             }}
             onSubmit={handleCreate}
           />

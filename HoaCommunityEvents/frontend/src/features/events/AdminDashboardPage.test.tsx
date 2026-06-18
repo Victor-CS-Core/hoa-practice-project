@@ -197,6 +197,20 @@ describe("AdminDashboardPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("opens create form when create intent query is present", () => {
+    setupDefaults();
+
+    render(
+      <MemoryRouter initialEntries={["/admin/events?create=1"]}>
+        <AdminDashboardPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /create new event/i }),
+    ).toBeInTheDocument();
+  });
+
   it("shows loading and error states", () => {
     setupDefaults();
     mockUseEvents.mockReturnValueOnce({

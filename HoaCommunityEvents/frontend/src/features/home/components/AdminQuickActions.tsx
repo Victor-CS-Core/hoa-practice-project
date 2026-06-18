@@ -72,7 +72,7 @@ export function AdminQuickActions({ events }: AdminQuickActionsProps) {
 
       <div className="grid gap-3 p-5 sm:grid-cols-3">
         <ActionCard
-          to="/events/create"
+          to="/admin/events?create=1"
           icon={<Plus className="h-5 w-5" />}
           title="Create Event"
           description="Add a new community event"
