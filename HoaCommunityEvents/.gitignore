@@ -1,2 +1,6 @@
 .agents/
 skills-lock.json
+
+# Generated architecture diagram artifacts
+docs/architecture/*.drawio
+docs/architecture/*.png
