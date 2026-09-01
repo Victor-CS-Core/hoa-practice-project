@@ -117,6 +117,20 @@ The API exposes `GET /api/events/{eventId}/stream`, authorized for residents and
 
 The first broker is process-local. Production must initially run one API instance. If horizontal scale becomes necessary, the interfaces remain stable while Infrastructure changes to Azure Web PubSub, Redis pub/sub, or another shared broker.
 
+## Axios and TanStack Query Are Different Layers
+
+The request path is:
+
+```text
+React page -> TanStack Query hook -> Axios API agent -> HTTP API
+```
+
+Axios is the transport client in `frontend/src/app/api/agent.ts`. It knows the API base URL, sends HTTP methods and bodies, includes browser credentials, attaches the antiforgery header, parses JSON, and normalizes HTTP failures.
+
+TanStack Query is the server-state coordinator in `frontend/src/hooks/useEvents.ts`, `useAttendance.ts`, `useProfile.ts`, and `useAdminUsers.ts`. It decides when a request runs, tracks loading/error/success state, caches results under query keys, deduplicates consumers, drives mutations, and invalidates/refetches cached data after writes or SSE notifications. TanStack Query does not choose or require an HTTP client; its query function calls Axios here.
+
+Decision: keep both. Replacing Axios with native `fetch` is technically possible, but this codebase would immediately need a replacement wrapper for credentials, CSRF, JSON, and standardized errors. Removing TanStack Query would require substantially more custom cache and lifecycle code. Because both libraries are already installed and their boundary is clear, deleting either during the security/SSE migration would create churn without reducing the application's conceptual responsibilities.
+
 ## Switch Interaction Pattern
 
 Add one reusable design-system `Switch` with `role="switch"`, `aria-checked`, keyboard activation, a visible label, optional description, focus styling, and disabled styling. Use it for:
@@ -145,6 +159,7 @@ No database migration is required for cookie auth, SSE, or the switch styling be
 - One deployable application is simpler and safer for browser cookies, but frontend and backend can no longer be released independently.
 - SSE is ideal for the current one-way invalidation use case, but it is not a replacement for bidirectional live collaboration.
 - The in-memory broker is intentionally small and testable, but it constrains the first deployment to one API instance until a shared broker is introduced.
+- Axios remains a small transport layer and TanStack Query remains the server-state layer; consolidate only if future measurements show that maintaining both has a real cost.
 
 ## Reference Basis
 

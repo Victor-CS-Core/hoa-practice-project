@@ -267,8 +267,9 @@
 
 1. Replace every JWT/SignalR/separate-deployment statement with cookie/CSRF/SSE/BFF behavior.
 2. Explain the exact folder responsibilities, request pipeline, login lifecycle, role evaluation, SSE flow, Vite development proxy, production bundling, Azure SQL vs Cloudinary storage, and the one-instance SSE constraint.
-3. Include both current source paths and “follow this request” walkthroughs suitable for a non-technical presenter.
-4. Verify repository searches find no obsolete `TokenKey`, `JwtOptions`, `ITokenService`, `@microsoft/signalr`, `MapHub`, `useSignalR`, or `localStorage.getItem('jwt')` references outside historical design notes.
+3. Add an explicit Axios-versus-TanStack section that traces `React page -> TanStack hook -> Axios agent -> API`, defines transport versus server-state responsibilities, explains why neither replaces the other, and records the Ponytail decision to keep both rather than replace Axios with a new fetch wrapper during this migration.
+4. Include both current source paths and “follow this request” walkthroughs suitable for a non-technical presenter.
+5. Verify repository searches find no obsolete `TokenKey`, `JwtOptions`, `ITokenService`, `@microsoft/signalr`, `MapHub`, `useSignalR`, or `localStorage.getItem('jwt')` references outside historical design notes.
 
 ## Task 14: Update and republish the OpenAI Sites learning guide
 
@@ -277,6 +278,7 @@
 1. Preserve the existing Sites project and production URL.
 2. Update the interactive folder map to the new `frontend/` and `backend/src|tests` paths.
 3. Add deep-linked beginner lessons for:
+   - Axios versus TanStack Query, including a clickable request trace through `agent.ts`, a feature hook, query keys, mutation invalidation, and the consuming page;
    - what a BFF is and how this .NET host serves the SPA;
    - cookie creation, encryption, browser sending, middleware reconstruction, logout, and current-user lookup;
    - CSRF threats and the exact token bootstrap/header validation path;
