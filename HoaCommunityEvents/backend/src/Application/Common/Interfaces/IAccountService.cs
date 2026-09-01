@@ -7,6 +7,7 @@ public interface IAccountService
 {
     Task<(bool Succeeded, IEnumerable<string> Errors, UserDto? User)> RegisterAsync(RegisterDto dto);
     Task<LoginResult> LoginAsync(LoginDto dto);
+    Task LogoutAsync();
     Task<UserDto?> GetCurrentUserAsync(ClaimsPrincipal principal);
     Task<IReadOnlyList<AdminUserDto>> GetAllUsersForAdminAsync(ClaimsPrincipal principal);
     Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> PromoteUserToAdminAsync(PromoteUserToAdminDto dto);

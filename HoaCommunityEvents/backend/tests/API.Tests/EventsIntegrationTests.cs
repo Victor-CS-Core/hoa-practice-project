@@ -24,13 +24,18 @@ public class EventsIntegrationTests(ApiTestFactory factory) : IClassFixture<ApiT
     }
 
     [Fact]
-    public async Task CreateEvent_WithoutToken_ReturnsUnauthorized()
+    public async Task CreateEvent_AuthenticatedAdminRequiresCsrf_AndValidCsrfCreatesEvent()
     {
-        var request = BuildJsonRequest(HttpMethod.Post, "/api/events", BuildCreateEventPayload("Unauthorized event"));
+        var email = $"admin.{Guid.NewGuid():N}@example.com";
+        const string password = "Passw0rd!";
+        await factory.CreateAdminUserAsync(email, $"admin_{Guid.NewGuid():N}"[..30], password, "Admin Test User");
+        using var admin = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.OK, (await admin.SendAsync(await factory.WithCsrfAsync(admin, HttpMethod.Post, "/api/account/login", new { email, password }))).StatusCode);
 
-        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.SendAsync(BuildJsonRequest(HttpMethod.Post, "/api/events", BuildCreateEventPayload("Missing CSRF event")))).StatusCode);
+        var response = await admin.SendAsync(await factory.WithCsrfAsync(admin, HttpMethod.Post, "/api/events", BuildCreateEventPayload("Authorized event")));
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]

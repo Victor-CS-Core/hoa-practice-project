@@ -2,10 +2,11 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using HoaCommunityEvents.API.Models;
 using HoaCommunityEvents.Application.Common.Interfaces;
-using HoaCommunityEvents.Application.Services;
 using HoaCommunityEvents.Application.Validators;
 using HoaCommunityEvents.Infrastructure.Services;
 using HoaCommunityEvents.Infrastructure.Services.Identity;
+using HoaCommunityEvents.Infrastructure.Services.Profiles;
+using HoaCommunityEvents.API.OpenApi;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,19 @@ namespace HoaCommunityEvents.API.Extensions;
 
 public static class ApplicationServiceExtensions
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         var configuredCorsOrigins = GetConfiguredCorsOrigins(configuration);
 
-        services.AddControllers();
+        services.AddControllersWithViews(options => options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+        services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-CSRF-TOKEN";
+            options.Cookie.Name = "HoaCommunityEvents.Antiforgery";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
+        });
         services.Configure<CloudinarySettings>(configuration.GetSection("Cloudinary"));
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
@@ -62,24 +71,7 @@ public static class ApplicationServiceExtensions
                 return controller is null ? ["API"] : [controller];
             });
 
-            var bearerScheme = new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "Enter JWT token as: Bearer {token}"
-            };
-
-            options.AddSecurityDefinition("Bearer", bearerScheme);
-            options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecuritySchemeReference("Bearer", null),
-                    []
-                }
-            });
+            options.OperationFilter<AntiforgeryOperationFilter>();
         });
         services.AddSignalR();
         services.AddRateLimiter(options =>
@@ -168,7 +160,6 @@ public static class ApplicationServiceExtensions
 
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IProfileService, ProfileService>();
-        services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ICloudinaryAssetService, CloudinaryAssetService>();

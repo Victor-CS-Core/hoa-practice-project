@@ -1,6 +1,7 @@
 using HoaCommunityEvents.Domain.Common;
 using HoaCommunityEvents.Domain.Entities;
 using HoaCommunityEvents.Persistence.Data;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -24,7 +25,6 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
         {
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["TokenKey"] = "ThisIsASecureTestTokenKeyAtLeast64CharactersLong1234567890AbcDef",
                 ["Seed:EnableBootstrap"] = "false",
                 ["Seed:EnableDemoData"] = "false"
             });
@@ -50,6 +50,26 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
                 options.UseInMemoryDatabase(_databaseName);
             });
         });
+    }
+
+    public HttpClient CreateCookieClient(bool handleCookies = true) => CreateClient(new WebApplicationFactoryClientOptions
+    {
+        AllowAutoRedirect = false,
+        HandleCookies = handleCookies
+    });
+
+    public async Task<HttpRequestMessage> WithCsrfAsync(HttpClient client, HttpMethod method, string path, object? payload = null)
+    {
+        var csrfResponse = await client.GetAsync("/api/security/csrf");
+        if (!csrfResponse.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(await csrfResponse.Content.ReadAsStringAsync());
+        }
+        var csrf = await csrfResponse.Content.ReadFromJsonAsync<CsrfTokenResponse>();
+        var request = new HttpRequestMessage(method, path);
+        request.Headers.Add("X-CSRF-TOKEN", csrf?.RequestToken ?? throw new InvalidOperationException("CSRF token was not returned."));
+        if (payload is not null) request.Content = JsonContent.Create(payload);
+        return request;
     }
 
     public async Task EnsureRolesAsync()
@@ -99,4 +119,9 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
 
         await userManager.AddToRoleAsync(user, AppRoles.HoaAdmin);
     }
+}
+
+public sealed class CsrfTokenResponse
+{
+    public string RequestToken { get; set; } = string.Empty;
 }

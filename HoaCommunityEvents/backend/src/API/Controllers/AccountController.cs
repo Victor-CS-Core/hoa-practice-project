@@ -57,8 +57,9 @@ public class AccountController(IAccountService accountService) : BaseApiControll
 
     [Authorize(Policy = AuthorizationPolicies.ResidentOrAdmin)]
     [HttpPost("logout")]
-    public ActionResult Logout()
+    public async Task<ActionResult> Logout()
     {
+        await accountService.LogoutAsync();
         return NoContent();
     }
 

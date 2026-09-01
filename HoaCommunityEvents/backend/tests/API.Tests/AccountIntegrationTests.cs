@@ -7,145 +7,95 @@ namespace HoaCommunityEvents.API.Tests;
 
 public class AccountIntegrationTests(ApiTestFactory factory) : IClassFixture<ApiTestFactory>
 {
-    private readonly HttpClient _client = factory.CreateClient();
-
     [Fact]
-    public async Task Register_ValidPayload_ReturnsCreatedUserWithToken()
+    public async Task Register_Current_AndLogout_UseCookieSessionWithoutTokenJson()
     {
         await factory.EnsureRolesAsync();
+        using var client = factory.CreateCookieClient();
+        var payload = NewRegistration("register");
+        var register = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", payload));
 
-        var payload = new
+        Assert.Equal(HttpStatusCode.Created, register.StatusCode);
+        Assert.True(register.Headers.TryGetValues("Set-Cookie", out var cookies));
+        Assert.Contains(cookies, value => value.Contains("HttpOnly", StringComparison.OrdinalIgnoreCase));
+        using (var json = await ReadJsonAsync(register))
         {
-            email = UniqueEmail("register"),
-            username = UniqueUserName("register"),
-            displayName = "Register Test User",
-            password = "Passw0rd!"
-        };
+            Assert.False(json.RootElement.TryGetProperty("token", out _));
+            Assert.Equal("resident", GetString(json, "role"));
+        }
 
-        var response = await _client.PostAsJsonAsync("/api/account/register", payload);
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        using var json = await ReadJsonAsync(response);
-        Assert.Equal("resident", GetString(json, "role"));
-        Assert.False(string.IsNullOrWhiteSpace(GetString(json, "token")));
-        Assert.Equal(payload.email, GetString(json, "email"), ignoreCase: true);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/account/current")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/logout"))).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/account/current")).StatusCode);
     }
 
     [Fact]
-    public async Task Login_AfterRegister_ReturnsOkWithToken()
+    public async Task Login_ReturnsCookieAndNoTokenJson()
     {
         await factory.EnsureRolesAsync();
+        using var client = factory.CreateCookieClient();
+        var payload = NewRegistration("login");
+        Assert.Equal(HttpStatusCode.Created, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", payload))).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/logout"))).StatusCode);
 
-        var email = UniqueEmail("login");
-        var password = "Passw0rd!";
-
-        await RegisterAsync(email, UniqueUserName("login"), "Login Test User", password);
-
-        var response = await _client.PostAsJsonAsync("/api/account/login", new
-        {
-            email,
-            password
-        });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        using var json = await ReadJsonAsync(response);
-        Assert.False(string.IsNullOrWhiteSpace(GetString(json, "token")));
-        Assert.Equal(email, GetString(json, "email"), ignoreCase: true);
+        var login = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { payload.email, payload.password }));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.True(login.Headers.TryGetValues("Set-Cookie", out var cookies));
+        Assert.Contains(cookies, value => value.Contains("HttpOnly", StringComparison.OrdinalIgnoreCase));
+        using var json = await ReadJsonAsync(login);
+        Assert.False(json.RootElement.TryGetProperty("token", out _));
+        Assert.Equal(payload.email, GetString(json, "email", ignoreCase: true));
     }
 
     [Fact]
-    public async Task Current_WithoutToken_ReturnsUnauthorized()
+    public async Task ProtectedRequests_AnonymousReturn401WithoutRedirect_AndResidentGets403ForAdminEndpoint()
     {
-        var response = await _client.GetAsync("/api/account/current");
+        using var anonymous = factory.CreateCookieClient();
+        var anonymousResponse = await anonymous.GetAsync("/api/account/current");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymousResponse.StatusCode);
+        Assert.Null(anonymousResponse.Headers.Location);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await factory.EnsureRolesAsync();
+        using var resident = factory.CreateCookieClient();
+        var payload = NewRegistration("resident");
+        Assert.Equal(HttpStatusCode.Created, (await resident.SendAsync(await factory.WithCsrfAsync(resident, HttpMethod.Post, "/api/account/register", payload))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await resident.GetAsync("/api/account/users")).StatusCode);
     }
 
     [Fact]
-    public async Task Register_InvalidPayload_ReturnsValidationFailed()
+    public async Task TamperedAuthenticationCookie_IsRejected()
     {
-        var response = await _client.PostAsJsonAsync("/api/account/register", new
-        {
-            email = string.Empty,
-            username = string.Empty,
-            displayName = string.Empty,
-            password = string.Empty
-        });
+        await factory.EnsureRolesAsync();
+        using var authenticated = factory.CreateCookieClient();
+        var register = await authenticated.SendAsync(await factory.WithCsrfAsync(authenticated, HttpMethod.Post, "/api/account/register", NewRegistration("tampered")));
+        var cookiePair = register.Headers.GetValues("Set-Cookie").First(value => value.Contains("HttpOnly", StringComparison.OrdinalIgnoreCase)).Split(';', 2)[0];
+        var separator = cookiePair.IndexOf('=');
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        using var json = await ReadJsonAsync(response);
-        Assert.Equal("validation_failed", GetString(json, "code", ignoreCase: true));
-        Assert.True(json.RootElement.TryGetProperty("details", out _));
+        using var tampered = factory.CreateCookieClient(handleCookies: false);
+        tampered.DefaultRequestHeaders.Add("Cookie", $"{cookiePair[..(separator + 1)]}{cookiePair[(separator + 1)..]}x");
+        Assert.Equal(HttpStatusCode.Unauthorized, (await tampered.GetAsync("/api/account/current")).StatusCode);
     }
 
     [Fact]
-    public async Task Login_InvalidCredentials_ReturnsUnauthorizedEnvelope()
+    public async Task UnsafeRequests_RequireValidCsrfTokenBeforeNormalValidationOrAuthorization()
     {
-        var response = await _client.PostAsJsonAsync("/api/account/login", new
-        {
-            email = "does-not-exist@example.com",
-            password = "WrongPass1!"
-        });
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/account/register", NewRegistration("missing"))).StatusCode);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        var invalid = new HttpRequestMessage(HttpMethod.Post, "/api/account/register") { Content = JsonContent.Create(NewRegistration("invalid")) };
+        invalid.Headers.Add("X-CSRF-TOKEN", "invalid");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(invalid)).StatusCode);
 
-        using var json = await ReadJsonAsync(response);
-        Assert.Equal("invalid_credentials", GetString(json, "code", ignoreCase: true));
+        Assert.Equal(HttpStatusCode.Created, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", NewRegistration("valid")))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/uploads/cloudinary/signature", new { scope = "invalid" }))).StatusCode);
     }
 
-    private async Task RegisterAsync(string email, string username, string displayName, string password)
-    {
-        var registerResponse = await _client.PostAsJsonAsync("/api/account/register", new
-        {
-            email,
-            username,
-            displayName,
-            password
-        });
-
-        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
-    }
-
-    private static async Task<JsonDocument> ReadJsonAsync(HttpResponseMessage response)
-    {
-        var payload = await response.Content.ReadAsStringAsync();
-        return JsonDocument.Parse(payload);
-    }
-
-    private static string GetString(JsonDocument json, string propertyName)
-    {
-        return GetString(json, propertyName, ignoreCase: false);
-    }
-
-    private static string GetString(JsonDocument json, string propertyName, bool ignoreCase)
-    {
-        if (!ignoreCase)
-        {
-            return json.RootElement.GetProperty(propertyName).GetString() ?? string.Empty;
-        }
-
-        foreach (var property in json.RootElement.EnumerateObject())
-        {
-            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                return property.Value.GetString() ?? string.Empty;
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static string UniqueEmail(string prefix)
-    {
-        return $"{prefix}.{Guid.NewGuid():N}@example.com";
-    }
-
-    private static string UniqueUserName(string prefix)
-    {
-        var suffix = Guid.NewGuid().ToString("N")[..8];
-        return $"{prefix}_{suffix}";
-    }
+    private static RegistrationPayload NewRegistration(string prefix) => new(UniqueEmail(prefix), UniqueUserName(prefix), "Integration Test User", "Passw0rd!");
+    private static async Task<JsonDocument> ReadJsonAsync(HttpResponseMessage response) => JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+    private static string GetString(JsonDocument json, string propertyName, bool ignoreCase = false) => !ignoreCase
+        ? json.RootElement.GetProperty(propertyName).GetString() ?? string.Empty
+        : json.RootElement.EnumerateObject().FirstOrDefault(property => string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase)).Value.GetString() ?? string.Empty;
+    private static string UniqueEmail(string prefix) => $"{prefix}.{Guid.NewGuid():N}@example.com";
+    private static string UniqueUserName(string prefix) => $"{prefix}_{Guid.NewGuid():N}"[..30];
+    private sealed record RegistrationPayload(string email, string username, string displayName, string password);
 }
