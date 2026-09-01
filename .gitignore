@@ -68,6 +68,7 @@ HoaCommunityEvents/artifacts/
 # Tool caches
 .cache/
 .turbo/
+.worktrees/
 
 # DesignOS handoff inputs (reference only)
 product-plan/
