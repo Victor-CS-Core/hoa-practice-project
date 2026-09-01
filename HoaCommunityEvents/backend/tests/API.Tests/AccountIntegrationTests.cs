@@ -5,8 +5,11 @@ using Xunit;
 
 namespace HoaCommunityEvents.API.Tests;
 
-public class AccountIntegrationTests(ApiTestFactory factory) : IClassFixture<ApiTestFactory>
+public class AccountIntegrationTests : IDisposable
 {
+    private readonly ApiTestFactory factory = new();
+
+    public void Dispose() => factory.Dispose();
     [Fact]
     public async Task Register_Current_AndLogout_UseCookieSessionWithoutTokenJson()
     {
@@ -77,8 +80,23 @@ public class AccountIntegrationTests(ApiTestFactory factory) : IClassFixture<Api
     }
 
     [Fact]
+    public async Task DeletedUserCookie_IsRejectedAtSecurityStampValidationInterval()
+    {
+        await factory.EnsureRolesAsync();
+        using var client = factory.CreateCookieClient();
+        var payload = NewRegistration("deleted");
+        Assert.Equal(HttpStatusCode.Created, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", payload))).StatusCode);
+
+        await factory.DeleteUserAsync(payload.email);
+
+        var response = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/uploads/cloudinary/signature", new { scope = "invalid" }));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task UnsafeRequests_RequireValidCsrfTokenBeforeNormalValidationOrAuthorization()
     {
+        await factory.EnsureRolesAsync();
         using var client = factory.CreateCookieClient();
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/account/register", NewRegistration("missing"))).StatusCode);
 
@@ -86,8 +104,42 @@ public class AccountIntegrationTests(ApiTestFactory factory) : IClassFixture<Api
         invalid.Headers.Add("X-CSRF-TOKEN", "invalid");
         Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(invalid)).StatusCode);
 
-        Assert.Equal(HttpStatusCode.Created, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", NewRegistration("valid")))).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/uploads/cloudinary/signature", new { scope = "invalid" }))).StatusCode);
+        var registration = NewRegistration("valid");
+        Assert.Equal(HttpStatusCode.Created, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", registration))).StatusCode);
+
+        var profile = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Put, $"/api/profiles/{registration.username}", new { displayName = "Updated Test User", bio = "Updated bio", profileImagePositionX = 25, profileImagePositionY = 75, profileImageZoom = 1.2 }));
+        Assert.Equal(HttpStatusCode.OK, profile.StatusCode);
+        using (var profileJson = await ReadJsonAsync(profile))
+        {
+            Assert.Equal("Updated Test User", GetString(profileJson, "displayName"));
+            Assert.Equal("Updated bio", GetString(profileJson, "bio"));
+        }
+
+        var upload = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/uploads/cloudinary/signature", new { scope = "invalid" }));
+        Assert.Equal(HttpStatusCode.BadRequest, upload.StatusCode);
+        using var uploadJson = await ReadJsonAsync(upload);
+        Assert.Equal("invalid_upload_scope", GetString(uploadJson, "code", ignoreCase: true));
+    }
+
+    [Fact]
+    public async Task Register_InvalidPayload_ReturnsValidationEnvelopeWithValidCsrf()
+    {
+        using var client = factory.CreateCookieClient();
+        var response = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/register", new { email = "", username = "", displayName = "", password = "" }));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var json = await ReadJsonAsync(response);
+        Assert.Equal("validation_failed", GetString(json, "code", ignoreCase: true));
+        Assert.True(json.RootElement.TryGetProperty("details", out _));
+    }
+
+    [Fact]
+    public async Task Login_InvalidCredentials_ReturnsUnauthorizedEnvelopeWithValidCsrf()
+    {
+        using var client = factory.CreateCookieClient();
+        var response = await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { email = "missing@example.com", password = "WrongPass1!" }));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var json = await ReadJsonAsync(response);
+        Assert.Equal("invalid_credentials", GetString(json, "code", ignoreCase: true));
     }
 
     private static RegistrationPayload NewRegistration(string prefix) => new(UniqueEmail(prefix), UniqueUserName(prefix), "Integration Test User", "Passw0rd!");

@@ -26,7 +26,10 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Seed:EnableBootstrap"] = "false",
-                ["Seed:EnableDemoData"] = "false"
+                ["Seed:EnableDemoData"] = "false",
+                ["Cloudinary:CloudName"] = "test-cloud",
+                ["Cloudinary:ApiKey"] = "test-key",
+                ["Cloudinary:ApiSecret"] = "test-secret"
             });
         });
 
@@ -49,6 +52,7 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase(_databaseName);
             });
+            services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
         });
     }
 
@@ -118,6 +122,15 @@ public sealed class ApiTestFactory : WebApplicationFactory<Program>
         }
 
         await userManager.AddToRoleAsync(user, AppRoles.HoaAdmin);
+    }
+
+    public async Task DeleteUserAsync(string email)
+    {
+        using var scope = Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var user = await userManager.FindByEmailAsync(email) ?? throw new InvalidOperationException("Test user was not found.");
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded) throw new InvalidOperationException("Test user could not be deleted.");
     }
 }
 

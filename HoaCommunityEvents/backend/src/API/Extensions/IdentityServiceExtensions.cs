@@ -24,7 +24,9 @@ public static class IdentityServiceExtensions
         .AddEntityFrameworkStores<AppDbContext>();
 
         services.AddAuthentication(IdentityConstants.ApplicationScheme)
-            .AddCookie(IdentityConstants.ApplicationScheme, options =>
+            .AddIdentityCookies();
+
+        services.ConfigureApplicationCookie(options =>
             {
                 options.Cookie.Name = "HoaCommunityEvents.Auth";
                 options.Cookie.HttpOnly = true;
