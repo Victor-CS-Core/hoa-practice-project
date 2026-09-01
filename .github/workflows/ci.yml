@@ -23,15 +23,15 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore HoaCommunityEvents/HoaCommunityEvents.slnx
+        run: dotnet restore HoaCommunityEvents/backend/HoaCommunityEvents.slnx
 
       - name: Build
-        run: dotnet build HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-restore
+        run: dotnet build HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-restore
 
       - name: Test
         env:
           TokenKey: ThisIsASecureCiTestTokenKeyAtLeast64CharsLong_1234567890abcdef
-        run: dotnet test HoaCommunityEvents/HoaCommunityEvents.slnx --configuration Release --no-build
+        run: dotnet test HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-build
 
   frontend:
     name: Frontend Lint and Build

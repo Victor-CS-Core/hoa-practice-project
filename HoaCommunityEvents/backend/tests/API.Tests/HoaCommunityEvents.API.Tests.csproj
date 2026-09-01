@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\API\HoaCommunityEvents.API.csproj" />
+    <ProjectReference Include="..\..\src\API\HoaCommunityEvents.API.csproj" />
   </ItemGroup>
 
 </Project>

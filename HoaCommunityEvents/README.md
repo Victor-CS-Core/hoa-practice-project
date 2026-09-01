@@ -44,12 +44,15 @@ This repository uses a Clean Architecture backend with a React SPA frontend.
 
 ```text
 HoaCommunityEvents/
-  API/              Web host, controllers, middleware, startup wiring
-  Application/      Use-cases, DTOs, interfaces, options, validators
-  Domain/           Entities and domain constants
-  Infrastructure/   Cross-cutting services (token service, hubs)
-  Persistence/      AppDbContext, migrations, seeding
-  API.Tests/        Backend integration tests
+  backend/
+    src/
+      API/              Web host, controllers, middleware, startup wiring
+      Application/      Use-cases, DTOs, interfaces, options, validators
+      Domain/           Entities and domain constants
+      Infrastructure/   Cross-cutting services (token service, hubs)
+      Persistence/      AppDbContext, migrations, seeding
+    tests/
+      API.Tests/        Backend integration tests
   frontend/         React SPA
 ```
 
@@ -196,7 +199,7 @@ Important routing behavior:
 ### 1) Backend setup
 
 ```bash
-cd HoaCommunityEvents/API
+cd HoaCommunityEvents/backend/src/API
 dotnet user-secrets init
 dotnet user-secrets set "TokenKey" "replace-with-long-random-dev-key-at-least-64-characters"
 ```
@@ -206,8 +209,8 @@ Set a development SQL Server connection in appsettings.Development.json.
 ### 2) Apply migrations
 
 ```bash
-cd ..
-dotnet ef database update -p Persistence -s API
+cd ../..
+dotnet ef database update -p src/Persistence -s src/API
 ```
 
 ### 3) Frontend setup
@@ -228,7 +231,7 @@ VITE_API_URL=http://localhost:5284/api
 Backend (solution root):
 
 ```bash
-dotnet run --project API
+dotnet run --project backend/src/API
 ```
 
 Frontend:
@@ -248,8 +251,8 @@ npm run dev
 From solution root:
 
 ```bash
-dotnet build HoaCommunityEvents.slnx
-dotnet test API.Tests
+dotnet build backend/HoaCommunityEvents.slnx
+dotnet test backend/HoaCommunityEvents.slnx
 ```
 
 From frontend:
@@ -260,10 +263,10 @@ npm run test
 npm run build
 ```
 
-E2E tests (workspace root):
+E2E tests (frontend):
 
 ```bash
-npx playwright test
+npm run test:e2e
 ```
 
 ## Deployment Overview
