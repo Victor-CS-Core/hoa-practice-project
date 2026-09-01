@@ -27,7 +27,9 @@ Reshape the repository and runtime so the code is easier to learn, safer in the 
 
 ```text
 HoaCommunityEvents/
-  frontend/                         React, TypeScript, Vite, Vitest
+  frontend/                         React, TypeScript, Vite, Vitest, Playwright
+    tests/e2e/                      browser workflow and accessibility tests
+    playwright.config.ts
   backend/
     HoaCommunityEvents.slnx
     src/
@@ -44,6 +46,8 @@ HoaCommunityEvents/
 ```
 
 `frontend/` and `backend/` are the two product halves. Root-level `docs/`, generated analysis, repository configuration, and README files remain at the root because they describe both halves. Project and namespace names stay unchanged to avoid a cosmetic rename with no architectural value.
+
+The existing monorepo-root Playwright tests/configuration and E2E-only npm package are consolidated into `frontend/`; there is no longer a separate root frontend-test package.
 
 As part of the move, the Identity-dependent `AccountService` and `ProfileService` implementations move from Application to Infrastructure while their interfaces and DTOs stay in Application. This restores the inward dependency direction without redesigning the existing Identity database model.
 

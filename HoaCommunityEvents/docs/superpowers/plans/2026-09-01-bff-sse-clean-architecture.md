@@ -16,6 +16,7 @@
 
 1. Run `dotnet test HoaCommunityEvents.slnx` from the repository folder.
 2. Run `npm run lint`, `npm run test:run`, and `npm run build` from `frontend/`.
+   Also install the existing monorepo-root E2E package with `npm ci` and run `npm run test:e2e` from the monorepo root before moving it; install only Playwright Chromium if the required browser is missing.
 3. Record any pre-existing failures without changing unrelated files.
 4. Confirm the only planned moves are:
    - `API` -> `backend/src/API`
@@ -25,12 +26,15 @@
    - `Persistence` -> `backend/src/Persistence`
    - `API.Tests` -> `backend/tests/API.Tests`
    - `HoaCommunityEvents.slnx` -> `backend/HoaCommunityEvents.slnx`
+   - monorepo-root `tests/e2e` -> `frontend/tests/e2e`
+   - monorepo-root `playwright.config.ts` -> `frontend/playwright.config.ts`
+   - merge the monorepo-root E2E-only package scripts/dependencies into `frontend/package.json`, regenerate its lockfile, then remove the redundant root package files
 
 ## Task 2: Move the .NET projects without changing behavior
 
-**Modify:** `backend/HoaCommunityEvents.slnx`, every moved `.csproj`, root `README.md`, and parent `.github/workflows/ci.yml`.
+**Modify:** `backend/HoaCommunityEvents.slnx`, every moved `.csproj`, root `README.md`, parent `.github/workflows/ci.yml`, parent `.github/instructions/testing-expectations.instructions.md`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/.gitignore`, and moved `frontend/playwright.config.ts`.
 
-1. Move the seven targets with `git mv`; do not move `frontend`, `docs`, `graphify-out`, or repository metadata.
+1. Move the seven .NET targets and the two root-level E2E targets with `git mv`; do not move `frontend`, `docs`, `graphify-out`, or repository metadata. Merge the root E2E-only npm package into frontend, retaining the frontend's compatible Node type dependency; remove the redundant root package files after regenerating the frontend lockfile. Adjust Playwright's web-server working directory and generated-output ignore rules to the new location.
 2. Update solution paths to `src/*` and `tests/API.Tests`.
 3. Update project references:
    - API -> `../Application`, `../Infrastructure`
@@ -40,6 +44,7 @@
    - API.Tests -> `../../src/API`
 4. Update CI restore/build/test paths to `HoaCommunityEvents/backend/HoaCommunityEvents.slnx`.
 5. Run `dotnet restore backend/HoaCommunityEvents.slnx`, `dotnet build backend/HoaCommunityEvents.slnx --no-restore`, and `dotnet test backend/HoaCommunityEvents.slnx --no-build`.
+   Run frontend lint/unit/build checks and `npm run test:e2e` to verify the E2E relocation without behavior changes.
 6. Commit only the structural move and path corrections.
 
 ## Task 3: Write failing cookie-session integration tests
@@ -127,6 +132,8 @@
 - `frontend/src/types/user.ts`
 - `frontend/vite.config.ts`
 - `frontend/.env.example`
+- `frontend/tests/e2e/support/mockApi.ts` and its `mock-api` account/session helpers
+- affected authentication, session-expiry, and route-guard Playwright specs
 
 **Create:** `frontend/src/app/api/agent.test.ts`.
 
@@ -139,6 +146,7 @@
 7. Make logout await `POST /account/logout` before clearing state; update both desktop and mobile handlers to await it before navigation.
 8. Add a Vite `/api` proxy to the local ASP.NET Core URL so local cookies remain first-party from the browser's perspective.
 9. Run the focused agent/store tests, then all frontend tests.
+10. Replace the E2E harness's JWT/localStorage simulation with cookie/session and antiforgery behavior. Update affected auth/session/route-guard specs and run them against the new frontend contract.
 
 ## Task 7: Write the SSE contracts and broker tests
 
@@ -199,6 +207,8 @@
 - `frontend/package-lock.json`
 - `frontend/vite.config.ts`
 
+Also update the E2E API mock to recognize the SSE route so browser tests never accidentally call a live API.
+
 1. Mock `EventSource` and write tests for URL construction, attendance-event filtering, all three TanStack Query invalidations, and cleanup on unmount/event-id change.
 2. Implement `useEventStream(eventId)` with native `EventSource('/api/events/{id}/stream')` and an `attendance-changed` listener.
 3. Keep errors quiet for the MVP because EventSource reconnects automatically and normal mutations already invalidate local queries.
@@ -228,6 +238,7 @@
 5. Preserve existing form submission semantics and add concise copy explaining that turning a setting off means the image will not be saved/displayed.
 6. Do not convert publish/unpublish, cancel, delete, theme, tabs, or navigation buttons.
 7. Run focused form/switch tests and the full frontend suite.
+8. Update and run the existing profile and event-image Playwright specs for the switch controls.
 
 ## Task 11: Build and serve the SPA from the .NET BFF
 
@@ -292,6 +303,7 @@
 
 1. Run `dotnet test backend/HoaCommunityEvents.slnx`.
 2. Run frontend `npm run lint`, `npm run test:run`, and `npm run build`.
+   Run `npm run test:e2e` from the same frontend folder.
 3. Run a Release `dotnet publish` and local end-to-end smoke test.
 4. Inspect `git diff --check`, `git status --short`, and all changed-file diffs; leave unrelated repository-root files untouched.
 5. Use the verification-before-completion skill before claiming success.
