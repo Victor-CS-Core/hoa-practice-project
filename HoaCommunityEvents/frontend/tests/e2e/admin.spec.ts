@@ -4,7 +4,7 @@ import { AdminDashboardPage } from './support/adminDashboardPage';
 
 test.describe('Admin Workflows', () => {
   test('admin can create, publish, and delete an event from dashboard', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
     const dashboard = new AdminDashboardPage(page);
 
     await page.goto('/admin/events');
@@ -45,7 +45,7 @@ test.describe('Admin Workflows', () => {
   });
 
   test('admin user management supports search, promote, and delete', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/admin/users');
     await expect(page.getByRole('heading', { name: /user management/i })).toBeVisible();

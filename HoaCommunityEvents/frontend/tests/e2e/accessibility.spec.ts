@@ -39,7 +39,7 @@ test.describe('Section 508 / WCAG 2 AA audit', () => {
   });
 
   test('resident route set has no accessibility violations', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await gotoAndAudit(page, '/', 'resident:/');
     await gotoAndAudit(page, '/events', 'resident:/events');
@@ -48,7 +48,7 @@ test.describe('Section 508 / WCAG 2 AA audit', () => {
   });
 
   test('admin route set has no accessibility violations', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await gotoAndAudit(page, '/admin/events', 'admin:/admin/events');
     await gotoAndAudit(page, '/admin/attendees', 'admin:/admin/attendees');

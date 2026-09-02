@@ -14,7 +14,7 @@ test.describe('Route Guards', () => {
   });
 
   test('resident is redirected away from admin routes', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/admin/events');
 
@@ -23,7 +23,7 @@ test.describe('Route Guards', () => {
   });
 
   test('resident is redirected away from admin design system route', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/admin/design-system');
 
@@ -32,7 +32,7 @@ test.describe('Route Guards', () => {
   });
 
   test('admin can access admin dashboard', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/admin/events');
 
@@ -42,7 +42,7 @@ test.describe('Route Guards', () => {
   });
 
   test('admin can access admin design system route', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/admin/design-system');
 

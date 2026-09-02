@@ -6,6 +6,20 @@ import path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7011',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'https://localhost:7011',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   build: {
     rollupOptions: {
       onwarn(warning, defaultHandler) {

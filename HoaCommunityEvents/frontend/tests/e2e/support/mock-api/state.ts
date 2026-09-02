@@ -11,7 +11,6 @@ export function buildInitialState(now: number): State {
     displayName: 'Casey Resident',
     username: 'casey',
     email: 'casey@example.com',
-    token: 'token-resident',
     role: 'resident',
     password: 'Password123!',
     profileImageUrl: null,
@@ -21,15 +20,14 @@ export function buildInitialState(now: number): State {
     displayName: 'Alex Admin',
     username: 'alexadmin',
     email: 'alexadmin@example.com',
-    token: 'token-admin',
     role: 'hoa_admin',
     password: 'Password123!',
     profileImageUrl: null,
   };
 
-  const usersByToken = new Map<string, User>([
-    [resident.token, resident],
-    [admin.token, admin],
+  const sessions = new Map<string, User>([
+    ['resident', resident],
+    ['admin', admin],
   ]);
 
   const usersByEmail = new Map<string, User>([
@@ -140,5 +138,5 @@ export function buildInitialState(now: number): State {
     },
   ];
 
-  return { usersByToken, usersByEmail, profilesByUsername, events };
+  return { usersByEmail, sessions, csrfToken: 'mock-csrf-token', profilesByUsername, events };
 }

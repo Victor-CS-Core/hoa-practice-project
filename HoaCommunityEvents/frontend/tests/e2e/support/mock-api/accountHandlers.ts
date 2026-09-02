@@ -1,8 +1,13 @@
-import { json } from './helpers';
+import { json, setMockSession } from './helpers';
 import type { ApiRouteContext } from './types';
 
 export async function handleAccountRoute(context: ApiRouteContext): Promise<boolean> {
   const { path, method, route, currentUser, options, state } = context;
+
+  if (path === '/security/csrf' && method === 'GET') {
+    await json(route, 200, { requestToken: state.csrfToken });
+    return true;
+  }
 
   if (path === '/account/current' && method === 'GET') {
     if (!currentUser) {
@@ -14,7 +19,6 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       displayName: currentUser.displayName,
       username: currentUser.username,
       email: currentUser.email,
-      token: currentUser.token,
       role: currentUser.role,
       profileImageUrl: currentUser.profileImageUrl ?? null,
     });
@@ -38,11 +42,12 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       return true;
     }
 
+    await setMockSession(context.page, user.username);
+    state.sessions.set(user.username, user);
     await json(route, 200, {
       displayName: user.displayName,
       username: user.username,
       email: user.email,
-      token: user.token,
       role: user.role,
       profileImageUrl: user.profileImageUrl ?? null,
     });
@@ -68,18 +73,16 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       return true;
     }
 
-    const token = `token-${payload.username}`;
     const user = {
       displayName: payload.displayName,
       username: payload.username,
       email: payload.email,
-      token,
       role: 'resident' as const,
       password: payload.password,
       profileImageUrl: null,
     };
 
-    state.usersByToken.set(token, user);
+    state.sessions.set(user.username, user);
     state.usersByEmail.set(payload.email.toLowerCase(), user);
     state.profilesByUsername.set(payload.username, {
       displayName: payload.displayName,
@@ -97,11 +100,11 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       role: 'resident',
     });
 
+    await setMockSession(context.page, user.username);
     await json(route, 200, {
       displayName: user.displayName,
       username: user.username,
       email: user.email,
-      token: user.token,
       role: user.role,
       profileImageUrl: user.profileImageUrl,
     });
@@ -114,7 +117,7 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       return true;
     }
 
-    const users = [...state.usersByToken.values()].map((u) => ({
+    const users = [...state.usersByEmail.values()].map((u) => ({
       displayName: u.displayName,
       username: u.username,
       email: u.email,
@@ -149,7 +152,6 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
       displayName: user.displayName,
       username: user.username,
       email: user.email,
-      token: user.token,
       role: user.role,
     });
     return true;
@@ -170,10 +172,18 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
     }
 
     state.usersByEmail.delete(key);
-    state.usersByToken.delete(user.token);
+    for (const [session, user] of state.sessions) {
+      if (user.email === key) state.sessions.delete(session);
+    }
     state.profilesByUsername.delete(user.username);
 
     await json(route, 200, { message: 'User deleted.' });
+    return true;
+  }
+
+  if (path === '/account/logout' && method === 'POST') {
+    await setMockSession(context.page);
+    await route.fulfill({ status: 204, body: '' });
     return true;
   }
 

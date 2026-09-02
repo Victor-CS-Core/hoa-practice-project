@@ -3,7 +3,7 @@ import { installMockApi } from './support/mockApi';
 
 test.describe('Admin Event Image Editing', () => {
   test('uploaded hosted event image URL is hidden in edit form input', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.route('https://api.cloudinary.com/**', async (route) => {
       await route.fulfill({

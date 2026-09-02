@@ -1,4 +1,4 @@
-import type { Route } from '@playwright/test';
+import type { Page, Route } from '@playwright/test';
 import type { EventItem, State, User } from './types';
 
 export function json(route: Route, status: number, body: unknown) {
@@ -18,16 +18,24 @@ export function getApiPath(urlString: string) {
   return { path: raw, query: url.searchParams };
 }
 
-function getTokenFromAuthHeader(authHeader: string | undefined) {
-  if (!authHeader) return '';
-  const [, token] = authHeader.split(' ');
-  return token ?? '';
+function getCookie(cookieHeader: string | undefined, name: string) {
+  return cookieHeader?.split(';').map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
 export function resolveCurrentUser(route: Route, state: State) {
-  const token = getTokenFromAuthHeader(route.request().headers().authorization);
-  if (!token) return null;
-  return state.usersByToken.get(token) ?? null;
+  const session = getCookie(route.request().headers().cookie, 'mock-session');
+  return session ? state.sessions.get(session) ?? null : null;
+}
+
+export async function setMockSession(page: Page, session?: string) {
+  await page.context().addCookies([{
+    name: 'mock-session',
+    value: session ?? '',
+    url: 'http://127.0.0.1:4173',
+    httpOnly: true,
+    sameSite: 'Lax',
+    ...(session ? {} : { expires: 0 }),
+  }]);
 }
 
 export function toEventView(event: EventItem, currentUser: User | null) {

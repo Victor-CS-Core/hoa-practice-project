@@ -1,4 +1,4 @@
-import type { Route } from '@playwright/test';
+import type { Page, Route } from '@playwright/test';
 
 export type Role = 'resident' | 'hoa_admin';
 
@@ -6,7 +6,6 @@ export type User = {
   displayName: string;
   username: string;
   email: string;
-  token: string;
   role: Role;
   password: string;
   profileImageUrl?: string | null;
@@ -49,19 +48,21 @@ export type Profile = {
 };
 
 export type MockApiOptions = {
-  initialToken?: string;
+  initialSession?: 'resident' | 'admin' | 'expired';
   forceLoginFailure?: boolean;
 };
 
 export type State = {
-  usersByToken: Map<string, User>;
   usersByEmail: Map<string, User>;
+  sessions: Map<string, User>;
+  csrfToken: string;
   profilesByUsername: Map<string, Profile>;
   events: EventItem[];
 };
 
 export type ApiRouteContext = {
   route: Route;
+  page: Page;
   path: string;
   method: string;
   query: URLSearchParams;

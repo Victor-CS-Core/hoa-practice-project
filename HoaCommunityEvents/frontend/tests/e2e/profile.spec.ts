@@ -3,7 +3,7 @@ import { installMockApi } from './support/mockApi';
 
 test.describe('Profile Management', () => {
   test('uploaded hosted URLs are hidden in profile edit inputs', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/profile/casey');
 

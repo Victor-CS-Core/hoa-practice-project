@@ -11,6 +11,9 @@ test.describe('Auth Flows', () => {
     await expect(
       page.getByRole('heading', { name: /welcome back, neighbor/i }),
     ).toBeVisible();
+    await expect(
+      page.getByText(/your session expired\. please log in again\./i),
+    ).not.toBeVisible();
   });
 
   test('resident can log in and land on home with authenticated actions', async ({ page }) => {

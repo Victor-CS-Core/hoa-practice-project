@@ -1,5 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { isAxiosError } from 'axios';
 import { Account } from '../api/agent';
+import { queryClient } from '../queryClient';
 import type { LoginFormValues, RegisterFormValues, User } from '../../types/user';
 import type { RootStore } from './store';
 
@@ -26,7 +28,7 @@ export class AuthStore {
         runInAction(() => {
             this.user = user;
         });
-        localStorage.setItem('jwt', user.token);
+        queryClient.clear();
     };
 
     register = async (values: RegisterFormValues) => {
@@ -34,24 +36,18 @@ export class AuthStore {
         runInAction(() => {
             this.user = user;
         });
-        localStorage.setItem('jwt', user.token);
+        queryClient.clear();
     };
 
-    logout = () => {
-        localStorage.removeItem('jwt');
-        this.user = null;
+    logout = async () => {
+        await Account.logout();
+        runInAction(() => {
+            this.user = null;
+        });
+        queryClient.clear();
     };
 
     getCurrentUser = async () => {
-        const token = localStorage.getItem('jwt');
-        if (!token) {
-            runInAction(() => {
-                this.user = null;
-                this.loadingUser = false;
-            });
-            return;
-        }
-
         runInAction(() => {
             this.loadingUser = true;
         });
@@ -60,8 +56,12 @@ export class AuthStore {
             runInAction(() => {
                 this.user = user;
             });
-        } catch {
-            this.logout();
+        } catch (error) {
+            if (isAxiosError(error) && error.response?.status === 401) {
+                runInAction(() => {
+                    this.user = null;
+                });
+            }
         } finally {
             runInAction(() => {
                 this.loadingUser = false;

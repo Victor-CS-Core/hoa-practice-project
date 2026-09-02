@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { getApiPath, resolveCurrentUser } from './mock-api/helpers';
+import { getApiPath, resolveCurrentUser, setMockSession } from './mock-api/helpers';
 import { buildInitialState } from './mock-api/state';
 import { handleAccountRoute } from './mock-api/accountHandlers';
 import { handleEventRoute } from './mock-api/eventHandlers';
@@ -14,10 +14,8 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
   const now = Date.now();
   const state = buildInitialState(now);
 
-  if (options.initialToken) {
-    await page.addInitScript((token: string) => {
-      window.localStorage.setItem('jwt', token);
-    }, options.initialToken);
+  if (options.initialSession) {
+    await setMockSession(page, options.initialSession);
   }
 
   await page.route('**/*', async (route) => {
@@ -29,6 +27,7 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
 
     const context: ApiRouteContext = {
       route,
+      page,
       path: parsed.path,
       query: parsed.query,
       method: route.request().method(),
@@ -37,6 +36,12 @@ export async function installMockApi(page: Page, options: MockApiOptions = {}) {
       options,
       now,
     };
+
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(context.method) &&
+      route.request().headers()['x-csrf-token'] !== state.csrfToken) {
+      await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ message: 'Invalid antiforgery token.' }) });
+      return;
+    }
 
     const handled =
       (await handleAccountRoute(context)) ||

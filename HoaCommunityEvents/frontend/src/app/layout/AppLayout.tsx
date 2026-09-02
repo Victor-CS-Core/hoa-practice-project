@@ -119,10 +119,14 @@ export const AppLayout = observer(function AppLayout() {
   const closeMobile = () => setMobileOpen(false);
   const isDark = resolvedTheme === "dark";
 
-  const handleLogout = () => {
-    authStore.logout();
-    setMobileOpen(false);
-    void navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    try {
+      await authStore.logout();
+      setMobileOpen(false);
+      await navigate("/login", { replace: true });
+    } catch {
+      // Keep the current session visible when the server could not sign out.
+    }
   };
 
   const headerTone = isDark
@@ -317,7 +321,7 @@ export const AppLayout = observer(function AppLayout() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={handleLogout}
+                    onClick={() => void handleLogout()}
                     className="gap-2 text-danger-display hover:bg-danger-faded"
                   >
                     <LogOut className="h-4 w-4" /> Logout
@@ -413,7 +417,7 @@ export const AppLayout = observer(function AppLayout() {
 
                   <button
                     type="button"
-                    onClick={handleLogout}
+                    onClick={() => void handleLogout()}
                     className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-medium text-danger-display transition-all duration-200 hover:bg-danger-faded"
                   >
                     <LogOut className="h-4 w-4" /> Logout

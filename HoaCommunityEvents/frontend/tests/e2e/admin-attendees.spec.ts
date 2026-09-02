@@ -14,7 +14,7 @@ test.describe('Admin Attendees Route', () => {
   });
 
   test('resident is redirected away from /admin/attendees', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/admin/attendees');
 
@@ -23,7 +23,7 @@ test.describe('Admin Attendees Route', () => {
   });
 
   test('admin hitting /admin/attendees is redirected to /admin/users', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/admin/attendees');
 

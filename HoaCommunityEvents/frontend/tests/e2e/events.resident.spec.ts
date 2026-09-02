@@ -3,7 +3,7 @@ import { installMockApi } from './support/mockApi';
 
 test.describe('Resident Event Experience', () => {
   test('resident can filter events and join/leave from list', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/events');
 
@@ -23,7 +23,7 @@ test.describe('Resident Event Experience', () => {
   });
 
   test('resident can open details and use attendance action card', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/events');
     await page.getByRole('button', { name: /view details/i }).first().click();

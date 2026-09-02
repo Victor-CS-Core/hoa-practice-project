@@ -3,7 +3,7 @@ import { installMockApi } from './support/mockApi';
 
 test.describe('Routing Regressions', () => {
   test('/home route resolves for authenticated users', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/home');
 
@@ -12,7 +12,7 @@ test.describe('Routing Regressions', () => {
   });
 
   test('deprecated /events/create route redirects to /events', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/events/create');
 
@@ -21,7 +21,7 @@ test.describe('Routing Regressions', () => {
   });
 
   test('deprecated /events/:id/edit route redirects to details page', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/events/event-1/edit');
 
@@ -32,7 +32,7 @@ test.describe('Routing Regressions', () => {
   });
 
   test('unknown route renders not found page for authenticated users', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-resident' });
+    await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/definitely-not-a-real-route');
 

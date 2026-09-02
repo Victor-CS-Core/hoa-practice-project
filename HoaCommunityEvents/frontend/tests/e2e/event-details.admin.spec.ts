@@ -3,7 +3,7 @@ import { installMockApi } from './support/mockApi';
 
 test.describe('Admin Event Details', () => {
   test('admin can cancel event from details and view attendees', async ({ page }) => {
-    await installMockApi(page, { initialToken: 'token-admin' });
+    await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/events/event-1');
 
