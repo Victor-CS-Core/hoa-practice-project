@@ -403,10 +403,11 @@ AppLayout -> AuthStore -> Account.current
           -> GET /api/account/current
           -> authentication cookie principal
           -> AccountService.GetCurrentUserAsync
+          -> Identity renews the ticket from current database roles
           -> UserDto
 ```
 
-If the server returns 401, `AuthStore` sets `user = null`. `ProtectedRoute` then navigates to `/login`. There is no “decode a token in the browser” fallback.
+`GetCurrentUserAsync` calls `SignInManager.RefreshSignInAsync` before returning the DTO. That renewal matters after an administrator changes another user's role: the next `/account/current` request returns the database role and replaces the older cookie claims, so the UI and the next server authorization decision agree. If the server returns 401, `AuthStore` sets `user = null`. `ProtectedRoute` then navigates to `/login`. There is no “decode a token in the browser” fallback.
 
 ### How logout works
 
@@ -490,6 +491,8 @@ JavaScript does not read the cookie. It receives the paired **request token** in
 - `hoa_admin`
 
 Identity stores roles and user-role membership in SQL tables. `SeedData.cs` creates the roles when bootstrap seeding is explicitly enabled. Normal registration assigns `resident`. Admin promotion uses `UserManager.AddToRoleAsync` and removes the resident role.
+
+An already-issued cookie contains the role claims from its last sign-in or renewal. The target user's next `/api/account/current` request renews that ticket from the current database membership before the browser enters an admin route. This avoids the confusing state where the DTO says admin but the following server policy still evaluates an older resident-only ticket. It does not push a new cookie into a browser that makes no request; immediate global revocation would require a separate session-control design.
 
 There is also an `is_master_admin=true` **claim**. It is not a third role. It protects special operations such as deleting another admin and allows creation of an event in the past. `SeedData` grants that claim to the bootstrapped master admin.
 
@@ -666,8 +669,9 @@ The blank line ends one record. `TypedResults.ServerSentEvents` in `EventStreamE
 2. The hook creates `new EventSource('/api/events/{id}/stream')`.
 3. Because the URL is relative and same-origin, the browser includes the Identity cookie.
 4. Authentication reconstructs the principal and `ResidentOrAdmin` authorizes the endpoint.
-5. The endpoint calls `SubscribeAsync(eventId, context.RequestAborted)` on the singleton broker.
-6. ASP.NET keeps the HTTP response open and writes updates as they arrive.
+5. The endpoint asks `IEventService.GetEventAsync` to verify that the event exists and is visible to this caller. Missing or hidden events return JSON 404 without creating a broker bucket.
+6. Only then does the endpoint call `SubscribeAsync(eventId, context.RequestAborted)` on the singleton broker.
+7. ASP.NET keeps the HTTP response open and writes updates as they arrive.
 
 ### Broker mechanics
 
@@ -681,7 +685,7 @@ The blank line ends one record. `TypedResults.ServerSentEvents` in `EventStreamE
 
 Why capacity one is enough: the event is not the new attendance list. It only says, “Your cached snapshot may be stale; refetch.” If five notices arrive before the browser reads, the newest one carries the same meaning.
 
-The broker intentionally retains an empty dictionary for an event after the last subscriber leaves. This avoids a subtle remove-versus-subscribe race at the cost of one small empty dictionary per event streamed during that process lifetime.
+The broker intentionally retains an empty dictionary for an event after the last subscriber leaves. This avoids a subtle remove-versus-subscribe race at the cost of one small empty dictionary per real, caller-visible event streamed during that process lifetime. The endpoint's existence/visibility check prevents arbitrary GUID requests from creating retained buckets.
 
 ### Publish after commit
 
@@ -861,16 +865,16 @@ The factory:
 - Disables production/demo seeding.
 - Supplies test Cloudinary configuration.
 - Replaces the SQL Server DbContext registration with EF Core's named in-memory provider.
-- Sets security-stamp validation interval to zero so invalidation can be tested immediately.
+- Defaults the security-stamp validation interval to zero so invalidation can be tested immediately, while allowing a focused test to use the production-like 30-minute interval and prove explicit current-user renewal.
 - Creates cookie-aware `HttpClient` instances.
 - Provides `WithCsrfAsync`, which obtains the antiforgery pair and attaches the request-token header.
 - Provides helpers to create roles/admins and delete a test user.
 
 Important suites:
 
-- `AccountIntegrationTests.cs`: cookie issuance, no token JSON, current user, logout, 401/403, tampered cookie rejection, deleted-user security-stamp rejection, CSRF.
+- `AccountIntegrationTests.cs`: cookie issuance, no token JSON, current user, logout, 401/403, tampered-cookie and deleted-user rejection, CSRF, and role-claim renewal after promotion.
 - `EventsIntegrationTests.cs`: event read shape and protected creation with CSRF.
-- `EventStreamIntegrationTests.cs`: anonymous rejection and authenticated SSE record delivery.
+- `EventStreamIntegrationTests.cs`: anonymous rejection, valid authenticated SSE delivery, and unknown-event 404 without a subscription.
 - `AttendanceRealtimeIntegrationTests.cs`: publish only after successful join/leave commit; rejected write emits nothing.
 - `InMemoryEventUpdateBrokerTests.cs`: fan-out, event isolation, cleanup, concurrent cleanup, slow subscriber/drop-oldest, singleton registration.
 - `SpaHostingIntegrationTests.cs`: deep React route receives HTML; unknown API receives JSON 404.

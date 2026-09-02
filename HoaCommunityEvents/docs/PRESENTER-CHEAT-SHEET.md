@@ -256,7 +256,7 @@ Current: encrypted Identity cookie, CSRF header/cookie pair, native SSE/EventSou
 
 **What is middleware?** Ordered request gates shared by many endpoints.
 
-**Where do roles run?** Stored in Identity SQL tables, carried as claims in the protected cookie ticket, and evaluated by ASP.NET authorization policies on the server.
+**Where do roles run?** Stored in Identity SQL tables, carried as claims in the protected cookie ticket, and evaluated by ASP.NET authorization policies on the server. `/api/account/current` renews the ticket from current database roles, so a promoted user's next identity refresh and following authorization decision agree.
 
 **What is WebApplicationFactory?** A test host for the real ASP.NET `Program` and pipeline.
 

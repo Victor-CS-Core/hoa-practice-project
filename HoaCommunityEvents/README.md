@@ -91,7 +91,7 @@ The exact implementation is in:
 
 ## Realtime attendance
 
-`GET /api/events/{eventId}/stream` is an authenticated SSE stream. After a successful attendance database commit, `AttendanceService` publishes an `attendance-changed` notice to the in-memory broker. The browser's native `EventSource` receives the notice and `useEventStream.ts` invalidates the event, event-list, and attendee query keys. TanStack Query then refetches the authoritative JSON.
+`GET /api/events/{eventId}/stream` is an authenticated SSE stream. Before allocating a broker subscription, the endpoint verifies that the event exists and is visible to the caller; an unknown or hidden event returns JSON 404. After a successful attendance database commit, `AttendanceService` publishes an `attendance-changed` notice to the in-memory broker. The browser's native `EventSource` receives the notice and `useEventStream.ts` invalidates the event, event-list, and attendee query keys. TanStack Query then refetches the authoritative JSON.
 
 The broker is process-local. Production must remain at one API instance until a shared backplane or managed realtime service is introduced. Raw WebSockets, SignalR, or polling are credible alternatives; the detailed trade-offs are in the codebase guide.
 
