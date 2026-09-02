@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>HoaCommunityEvents.API-local-secrets</UserSecretsId>
+    <FrontendRoot>$(MSBuildProjectDirectory)\..\..\..\frontend\</FrontendRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,5 +23,18 @@
     <ProjectReference Include="..\Application\HoaCommunityEvents.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\HoaCommunityEvents.Infrastructure.csproj" />
   </ItemGroup>
+
+  <Target Name="BuildFrontendForPublish" AfterTargets="ComputeFilesToPublish">
+    <Exec WorkingDirectory="$(FrontendRoot)" Command="npm ci" />
+    <Exec WorkingDirectory="$(FrontendRoot)" Command="npm run build" />
+    <ItemGroup>
+      <FrontendDistFiles Include="$(FrontendRoot)dist\**\*" />
+      <ResolvedFileToPublish Include="@(FrontendDistFiles-&gt;'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>

@@ -1,6 +1,7 @@
 using HoaCommunityEvents.API.Extensions;
 using HoaCommunityEvents.API.Endpoints;
 using HoaCommunityEvents.API.Middleware;
+using HoaCommunityEvents.API.Models;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.Extensions.Configuration;
 
@@ -23,6 +24,8 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors("Frontend");
 app.UseRateLimiter();
 app.UseAuthentication();
@@ -31,6 +34,13 @@ app.MapControllers();
 app.MapEventStreamEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.Map("/api/{**path}", (HttpContext context) => Results.NotFound(new ApiErrorResponse
+{
+    Code = "not_found",
+    Message = "API endpoint not found.",
+    TraceId = context.TraceIdentifier
+}));
+app.MapFallbackToFile("index.html");
 
 using (var scope = app.Services.CreateScope())
 {

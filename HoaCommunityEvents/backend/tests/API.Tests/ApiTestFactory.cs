@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HoaCommunityEvents.API.Tests;
 
-public sealed class ApiTestFactory : WebApplicationFactory<Program>
+public class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"HoaCommunityEvents_Test_{Guid.NewGuid():N}";
 

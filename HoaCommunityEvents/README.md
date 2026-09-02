@@ -220,11 +220,7 @@ cd frontend
 npm install
 ```
 
-Create frontend/.env (or .env.local):
-
-```text
-VITE_API_URL=http://localhost:5284/api
-```
+No frontend API URL is required. Vite proxies `/api` and `/health` to the local ASP.NET Core host so authentication cookies remain same-origin in the browser.
 
 ### 4) Run the app
 
@@ -271,21 +267,16 @@ npm run test:e2e
 
 ## Deployment Overview
 
-### API
+### Combined application
 
 - Target: Azure App Service
 - Deployment workflow: .github/workflows/deploy-api-azure.yml
+- `dotnet publish backend/src/API/HoaCommunityEvents.API.csproj -c Release` runs a clean frontend install/build and places the Vite output in the published app's `wwwroot`.
+- ASP.NET Core serves the SPA and API from one origin. Unknown `/api/**` paths stay JSON 404 responses, while non-API deep links return `index.html` for React Router.
 - Optional EF migration step runs when SQL connection secret is configured
 - Attendance SSE notifications use an in-memory broker, so deploy this API as a single instance; notifications are not shared across instances.
 
-### Frontend
-
-- Target: Azure Static Web Apps
-- Workflow: .github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml
-- Build settings:
-  - app location: HoaCommunityEvents/frontend
-  - output location: dist
-- SPA fallback config: frontend/public/staticwebapp.config.json
+The former Static Web Apps workflow remains in the repository only until a later, explicitly verified Azure cutover. Do not enable both deployment paths for the same client-facing URL.
 
 ### CI
 
@@ -297,11 +288,11 @@ npm run test:e2e
 - Login/register CORS failures:
   - Verify frontend origin is present in API CORS config and restart API
 - SPA deep-link 404:
-  - Confirm staticwebapp.config.json is included in frontend deployment artifact
+  - Confirm the combined publish artifact contains `wwwroot/index.html`
 - TokenKey startup failure:
   - Ensure TokenKey is configured for the environment
-- Frontend calls wrong host:
-  - Verify VITE_API_URL and redeploy frontend
+- Frontend calls wrong host during development:
+  - Start the ASP.NET Core API on `https://localhost:7011`; Vite proxies `/api` and `/health` to that address
 
 ## Naming Conventions
 
