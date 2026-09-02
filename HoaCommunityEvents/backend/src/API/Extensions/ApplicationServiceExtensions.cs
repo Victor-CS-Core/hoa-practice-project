@@ -6,6 +6,7 @@ using HoaCommunityEvents.Application.Validators;
 using HoaCommunityEvents.Infrastructure.Services;
 using HoaCommunityEvents.Infrastructure.Services.Identity;
 using HoaCommunityEvents.Infrastructure.Services.Profiles;
+using HoaCommunityEvents.Infrastructure.Realtime;
 using HoaCommunityEvents.API.OpenApi;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
@@ -163,6 +164,9 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ICloudinaryAssetService, CloudinaryAssetService>();
+        services.AddSingleton<InMemoryEventUpdateBroker>();
+        services.AddSingleton<IEventUpdatePublisher>(provider => provider.GetRequiredService<InMemoryEventUpdateBroker>());
+        services.AddSingleton<IEventUpdateSubscriber>(provider => provider.GetRequiredService<InMemoryEventUpdateBroker>());
 
         return services;
     }
