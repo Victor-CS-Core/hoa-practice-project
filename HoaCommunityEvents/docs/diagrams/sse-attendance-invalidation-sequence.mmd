@@ -40,4 +40,4 @@ sequenceDiagram
     EventSource->>Query: Later open invalidates all three keys
   end
 
-  Note over Broker,Stream: Broker is process-local, so production must use one API instance until a shared backplane is added
+  Note over Broker,Stream: Scale limit: use one API instance until a shared backplane is added

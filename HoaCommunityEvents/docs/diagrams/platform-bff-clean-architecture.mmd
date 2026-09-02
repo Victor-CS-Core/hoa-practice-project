@@ -1,24 +1,29 @@
-flowchart LR
+flowchart TB
+  USER["Resident, manager,<br/>or administrator"]
+
   subgraph Browser["Browser - React single-page app"]
-    UI["Pages and forms"]
-    TQ["TanStack Query - server-state cache"]
-    AX["Axios - HTTP transport and CSRF header"]
-    ES["EventSource - attendance notices"]
+    direction TB
+    UI["Pages<br/>and forms"]
+    TQ["TanStack Query<br/>server-state cache"]
+    AX["Axios<br/>HTTP transport and CSRF header"]
+    ES["EventSource<br/>attendance notices"]
     UI --> TQ
     TQ --> AX
+    UI --> ES
   end
 
   subgraph APP["Azure App Service - one ASP.NET Core BFF"]
-    STATIC["Static-file host - Vite dist"]
-    PIPE["Middleware - errors, HTTPS, CORS, rate limits, auth"]
-    API["API - controllers and SSE endpoint"]
-    APPLICATION["Application - DTOs, validators, interfaces"]
-    INFRA["Infrastructure - Identity and use-case services"]
-    PERSIST["Persistence - EF Core DbContext and migrations"]
-    DOMAIN["Domain - users, events, attendance, roles"]
-    BROKER["In-memory SSE broker - one process"]
+    direction TB
+    STATIC["Static-file host<br/>Vite dist"]
+    PIPE["Middleware<br/>errors, HTTPS, CORS,<br/>rate limits, auth"]
+    API["API<br/>controllers and SSE endpoint"]
+    APPLICATION["Application<br/>DTOs, validators, interfaces"]
+    INFRA["Infrastructure<br/>Identity and use-case services"]
+    PERSIST["Persistence<br/>EF Core DbContext and migrations"]
+    DOMAIN["Domain<br/>users, events, attendance, roles"]
+    BROKER["In-memory SSE broker<br/>one process"]
 
-    STATIC -->|"loads app"| UI
+    STATIC --> PIPE
     PIPE --> API
     API --> APPLICATION
     API --> INFRA
@@ -30,9 +35,17 @@ flowchart LR
     INFRA --> BROKER
   end
 
-  AX -->|"same-origin /api and encrypted cookie"| PIPE
+  subgraph Storage["Managed storage"]
+    direction LR
+    SQL[("Azure SQL<br/>accounts, roles, events, attendance,<br/>image URLs and crop values")]
+    CLOUD[("Cloudinary<br/>image files and delivery")]
+  end
+
+  USER --> UI
+  STATIC -->|"loads app"| UI
+  AX -->|"same-origin /api<br/>and encrypted cookie"| PIPE
   ES -->|"GET /api/events/id/stream"| PIPE
-  PERSIST -->|"LINQ translated to SQL"| SQL[("Azure SQL - accounts, roles, events, attendance, image URLs and crop values")]
+  PERSIST -->|"LINQ translated to SQL"| SQL
   API -->|"signed upload parameters"| UI
-  UI -->|"image bytes uploaded directly"| CLOUD[("Cloudinary - image files and delivery")]
-  INFRA -->|"delete replaced owned images"| CLOUD
+  UI -->|"image bytes<br/>uploaded directly"| CLOUD
+  INFRA -->|"delete replaced<br/>owned images"| CLOUD
