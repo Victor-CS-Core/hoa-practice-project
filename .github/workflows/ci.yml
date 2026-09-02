@@ -22,6 +22,13 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
+
       - name: Restore
         run: dotnet restore HoaCommunityEvents/backend/HoaCommunityEvents.slnx
 
@@ -29,9 +36,14 @@ jobs:
         run: dotnet build HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-restore
 
       - name: Test
-        env:
-          TokenKey: ThisIsASecureCiTestTokenKeyAtLeast64CharsLong_1234567890abcdef
         run: dotnet test HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-build
+
+      - name: Publish combined BFF
+        run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj --configuration Release --no-restore --output "$RUNNER_TEMP/hoa-bff-publish"
+
+      - name: Verify published SPA entry point
+        shell: bash
+        run: test -f "$RUNNER_TEMP/hoa-bff-publish/wwwroot/index.html"
 
   frontend:
     name: Frontend Lint and Build

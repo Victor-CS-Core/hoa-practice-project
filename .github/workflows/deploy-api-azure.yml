@@ -1,4 +1,4 @@
-name: Deploy API to Azure App Service
+name: Deploy HOA BFF to Azure App Service
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -8,7 +8,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy API
+    name: Deploy Combined BFF
     runs-on: ubuntu-latest
     env:
       APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
@@ -24,8 +24,15 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Publish API
-        run: dotnet publish HoaCommunityEvents/API/HoaCommunityEvents.API.csproj -c Release -o ${{ github.workspace }}/api-publish
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
+
+      - name: Publish combined BFF
+        run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj -c Release -o ${{ github.workspace }}/bff-publish
 
       - name: Optionally apply database migrations
         shell: bash
@@ -37,11 +44,11 @@ jobs:
 
           dotnet tool install --global dotnet-ef --version 10.0.8
           export PATH="$PATH:/home/runner/.dotnet/tools"
-          dotnet ef database update -p HoaCommunityEvents/Persistence -s HoaCommunityEvents/API --connection "$SQL_CONNECTION"
+          dotnet ef database update -p HoaCommunityEvents/backend/src/Persistence -s HoaCommunityEvents/backend/src/API --connection "$SQL_CONNECTION"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.APP_NAME }}
           publish-profile: ${{ env.PUBLISH_PROFILE }}
-          package: ${{ github.workspace }}/api-publish
+          package: ${{ github.workspace }}/bff-publish
