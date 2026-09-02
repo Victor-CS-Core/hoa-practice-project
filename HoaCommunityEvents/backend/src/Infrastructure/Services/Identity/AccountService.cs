@@ -38,7 +38,9 @@ public class AccountService(UserManager<AppUser> userManager, SignInManager<AppU
     public async Task<UserDto?> GetCurrentUserAsync(ClaimsPrincipal principal)
     {
         var user = await userManager.GetUserAsync(principal);
-        return user is null ? null : CreateUserDto(user, await userManager.GetRolesAsync(user));
+        if (user is null) return null;
+        await signInManager.RefreshSignInAsync(user);
+        return CreateUserDto(user, await userManager.GetRolesAsync(user));
     }
 
     public async Task<IReadOnlyList<AdminUserDto>> GetAllUsersForAdminAsync(ClaimsPrincipal principal)

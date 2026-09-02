@@ -66,6 +66,37 @@ public class AccountIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task CurrentUser_RefreshesCookieClaimsAfterAnotherAdminPromotesTheUser()
+    {
+        using var productionIntervalFactory = new ApiTestFactory(TimeSpan.FromMinutes(30));
+        await productionIntervalFactory.EnsureRolesAsync();
+        var adminEmail = UniqueEmail("promoter");
+        const string adminPassword = "Passw0rd!";
+        await productionIntervalFactory.CreateAdminUserAsync(adminEmail, UniqueUserName("promoter"), adminPassword, "Promoting Admin");
+
+        using var admin = productionIntervalFactory.CreateCookieClient();
+        var adminLogin = await admin.SendAsync(await productionIntervalFactory.WithCsrfAsync(admin, HttpMethod.Post, "/api/account/login", new { email = adminEmail, password = adminPassword }));
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+
+        using var resident = productionIntervalFactory.CreateCookieClient();
+        var residentPayload = NewRegistration("promoted");
+        var residentRegister = await resident.SendAsync(await productionIntervalFactory.WithCsrfAsync(resident, HttpMethod.Post, "/api/account/register", residentPayload));
+        Assert.Equal(HttpStatusCode.Created, residentRegister.StatusCode);
+
+        var promote = await admin.SendAsync(await productionIntervalFactory.WithCsrfAsync(admin, HttpMethod.Post, "/api/account/promote-admin", new { residentPayload.email }));
+        Assert.Equal(HttpStatusCode.OK, promote.StatusCode);
+
+        var current = await resident.GetAsync("/api/account/current");
+        Assert.Equal(HttpStatusCode.OK, current.StatusCode);
+        using (var currentJson = await ReadJsonAsync(current))
+        {
+            Assert.Equal("hoa_admin", GetString(currentJson, "role"));
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await resident.GetAsync("/api/account/users")).StatusCode);
+    }
+
+    [Fact]
     public async Task TamperedAuthenticationCookie_IsRejected()
     {
         await factory.EnsureRolesAsync();

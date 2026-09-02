@@ -16,6 +16,16 @@ namespace HoaCommunityEvents.API.Tests;
 public class ApiTestFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"HoaCommunityEvents_Test_{Guid.NewGuid():N}";
+    private readonly TimeSpan _securityStampValidationInterval;
+
+    public ApiTestFactory() : this(TimeSpan.Zero)
+    {
+    }
+
+    internal ApiTestFactory(TimeSpan securityStampValidationInterval)
+    {
+        _securityStampValidationInterval = securityStampValidationInterval;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -52,7 +62,7 @@ public class ApiTestFactory : WebApplicationFactory<Program>
             {
                 options.UseInMemoryDatabase(_databaseName);
             });
-            services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
+            services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = _securityStampValidationInterval);
         });
     }
 
