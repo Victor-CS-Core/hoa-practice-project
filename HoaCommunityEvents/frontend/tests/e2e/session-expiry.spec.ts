@@ -7,12 +7,14 @@ test.describe('Session Expiry', () => {
 
     await page.goto('/events');
     await expect(page.getByText(/community calendar/i)).toBeVisible();
+    const joinedButton = page.getByRole('button', { name: /joined/i }).first();
+    await expect(joinedButton).toBeVisible();
     await page.context().clearCookies();
     const expiredAttendanceResponse = page.waitForResponse((response) =>
       response.status() === 401 &&
       /\/api\/attendance\/[^/]+\/leave$/.test(new URL(response.url()).pathname),
     );
-    await page.getByRole('button', { name: /joined/i }).first().click();
+    await joinedButton.click();
     await expiredAttendanceResponse;
     await expect.poll(() =>
       page.evaluate(() => sessionStorage.getItem('sessionExpired')),
