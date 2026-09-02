@@ -49,11 +49,6 @@ public sealed class InMemoryEventUpdateBroker : IEventUpdatePublisher, IEventUpd
         {
             subscriptions.TryRemove(subscriptionId, out _);
             channel.Writer.TryComplete();
-
-            if (subscriptions.IsEmpty)
-            {
-                _subscriptions.TryRemove(new KeyValuePair<Guid, ConcurrentDictionary<Guid, Channel<EventUpdate>>>(eventId, subscriptions));
-            }
         }
     }
 }

@@ -71,6 +71,64 @@ public class InMemoryEventUpdateBrokerTests
     }
 
     [Fact]
+    public async Task SubscribeAsync_ConcurrentCleanupKeepsNewSameEventSubscriberReachable()
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var broker = new InMemoryEventUpdateBroker();
+            var eventId = Guid.NewGuid();
+            using var cancellation = new CancellationTokenSource();
+            var removingSubscriber = broker.SubscribeAsync(eventId, cancellation.Token).GetAsyncEnumerator();
+            var removingRead = removingSubscriber.MoveNextAsync().AsTask();
+
+            Assert.Equal(1, broker.SubscriptionCount);
+
+            var cancellationTask = Task.Run(cancellation.Cancel);
+            var survivingSubscriber = broker.SubscribeAsync(eventId).GetAsyncEnumerator();
+            var survivingRead = survivingSubscriber.MoveNextAsync().AsTask();
+
+            await cancellationTask;
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await removingRead);
+            await removingSubscriber.DisposeAsync();
+
+            var update = new EventUpdate(eventId, "attendance-changed");
+            await broker.PublishAsync(update);
+
+            Assert.True(await survivingRead.WaitAsync(TimeSpan.FromSeconds(1)));
+            Assert.Equal(update, survivingSubscriber.Current);
+            await survivingSubscriber.DisposeAsync();
+            Assert.Equal(0, broker.SubscriptionCount);
+        }
+    }
+
+    [Fact]
+    public async Task SubscribeAsync_NormalDisposalRemovesOnlyDisposedSubscriber()
+    {
+        var broker = new InMemoryEventUpdateBroker();
+        var eventId = Guid.NewGuid();
+        var firstSubscriber = broker.SubscribeAsync(eventId).GetAsyncEnumerator();
+        var secondSubscriber = broker.SubscribeAsync(eventId).GetAsyncEnumerator();
+        var firstRead = firstSubscriber.MoveNextAsync().AsTask();
+        var secondRead = secondSubscriber.MoveNextAsync().AsTask();
+
+        await broker.PublishAsync(new EventUpdate(eventId, "priming"));
+        Assert.True(await firstRead.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.True(await secondRead.WaitAsync(TimeSpan.FromSeconds(1)));
+
+        await firstSubscriber.DisposeAsync();
+        Assert.Equal(1, broker.SubscriptionCount);
+
+        var secondNextRead = secondSubscriber.MoveNextAsync().AsTask();
+        var update = new EventUpdate(eventId, "attendance-changed");
+        await broker.PublishAsync(update);
+
+        Assert.True(await secondNextRead.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.Equal(update, secondSubscriber.Current);
+        await secondSubscriber.DisposeAsync();
+        Assert.Equal(0, broker.SubscriptionCount);
+    }
+
+    [Fact]
     public async Task PublishAsync_DoesNotBlockWithUnreadSubscriberAndKeepsLatestUpdate()
     {
         var broker = new InMemoryEventUpdateBroker();
