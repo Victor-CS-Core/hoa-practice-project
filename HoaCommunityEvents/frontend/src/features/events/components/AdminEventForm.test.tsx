@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Uploads } from "../../../app/api/agent";
 import type { CreateEventFormValues } from "../../../types/event";
 import { AdminEventForm } from "./AdminEventForm";
 
@@ -30,6 +31,29 @@ function renderForm(onSubmit = vi.fn()) {
   );
   return onSubmit;
 }
+
+function mockSuccessfulUpload(imageUrl: string) {
+  vi.spyOn(Uploads, "getCloudinarySignature").mockResolvedValue({
+    cloudName: "test-cloud",
+    apiKey: "test-key",
+    timestamp: 1_700_000_000,
+    folder: "hoa/test",
+    publicId: "test-image",
+    signature: "test-signature",
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ secure_url: imageUrl }),
+    }),
+  );
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("AdminEventForm banner switch", () => {
   it("uses a labeled switch and omits a disabled banner from submission", async () => {
@@ -90,11 +114,11 @@ describe("AdminEventForm banner switch", () => {
     );
 
     await user.click(banner);
+    await user.click(banner);
     expect(
       screen.queryByText(/only jpg, png, and webp/i),
     ).not.toBeInTheDocument();
 
-    await user.click(banner);
     await user.upload(
       screen.getByLabelText("Select event banner image"),
       new File(["image"], "banner.png", { type: "image/png" }),
@@ -104,5 +128,28 @@ describe("AdminEventForm banner switch", () => {
     await user.click(banner);
     await user.click(banner);
     expect(screen.queryByText("Selected: banner.png")).not.toBeInTheDocument();
+  });
+
+  it("clears successful upload feedback before the banner panel remounts", async () => {
+    const user = userEvent.setup();
+    mockSuccessfulUpload(
+      "https://res.cloudinary.com/test/image/upload/event-banner.png",
+    );
+    renderForm();
+    const banner = screen.getByRole("switch", { name: "Use event banner" });
+
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+    await user.upload(
+      screen.getByLabelText("Select event banner image"),
+      new File(["image"], "banner.png", { type: "image/png" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Upload Image" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Image uploaded successfully.",
+    );
+
+    await user.click(banner);
+    await user.click(banner);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });

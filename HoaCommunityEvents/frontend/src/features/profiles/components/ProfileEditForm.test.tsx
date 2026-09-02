@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Uploads } from "../../../app/api/agent";
 import type { UpdateProfileValues } from "../../../types/profile";
 import { ProfileEditForm } from "./ProfileEditForm";
 
@@ -28,6 +29,29 @@ function renderForm(onSubmit = vi.fn()) {
   );
   return onSubmit;
 }
+
+function mockSuccessfulUpload(imageUrl: string) {
+  vi.spyOn(Uploads, "getCloudinarySignature").mockResolvedValue({
+    cloudName: "test-cloud",
+    apiKey: "test-key",
+    timestamp: 1_700_000_000,
+    folder: "hoa/test",
+    publicId: "test-image",
+    signature: "test-signature",
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ secure_url: imageUrl }),
+    }),
+  );
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("ProfileEditForm image switches", () => {
   it("uses labeled switches and omits disabled images from the submitted profile", async () => {
@@ -105,11 +129,11 @@ describe("ProfileEditForm image switches", () => {
     );
 
     await user.click(avatar);
+    await user.click(avatar);
     expect(
       screen.queryByText(/only jpg, png, and webp/i),
     ).not.toBeInTheDocument();
 
-    await user.click(avatar);
     await user.upload(
       screen.getByLabelText("Select avatar image"),
       new File(["image"], "avatar.png", { type: "image/png" }),
@@ -119,5 +143,52 @@ describe("ProfileEditForm image switches", () => {
     await user.click(avatar);
     await user.click(avatar);
     expect(screen.queryByText("Selected: avatar.png")).not.toBeInTheDocument();
+  });
+
+  it("clears profile-banner upload errors, files, and success feedback across remounts", async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    mockSuccessfulUpload(
+      "https://res.cloudinary.com/test/image/upload/profile-banner.png",
+    );
+    renderForm();
+    const banner = screen.getByRole("switch", { name: "Use profile banner" });
+
+    await user.click(screen.getAllByRole("button", { name: "Upload" })[1]);
+    await user.upload(
+      screen.getByLabelText("Select banner image"),
+      new File(["nope"], "banner.txt", { type: "text/plain" }),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /only jpg, png, and webp/i,
+    );
+
+    await user.click(banner);
+    await user.click(banner);
+    expect(
+      screen.queryByText(/only jpg, png, and webp/i),
+    ).not.toBeInTheDocument();
+
+    await user.upload(
+      screen.getByLabelText("Select banner image"),
+      new File(["image"], "banner.png", { type: "image/png" }),
+    );
+    expect(screen.getByText("Selected: banner.png")).toBeVisible();
+
+    await user.click(banner);
+    await user.click(banner);
+    expect(screen.queryByText("Selected: banner.png")).not.toBeInTheDocument();
+
+    await user.upload(
+      screen.getByLabelText("Select banner image"),
+      new File(["image"], "banner.png", { type: "image/png" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Upload Banner" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Banner uploaded successfully.",
+    );
+
+    await user.click(banner);
+    await user.click(banner);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });
