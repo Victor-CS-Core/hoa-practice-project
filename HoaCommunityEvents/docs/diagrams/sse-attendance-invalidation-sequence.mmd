@@ -1,0 +1,43 @@
+sequenceDiagram
+  actor ResidentA as Resident changing attendance
+  participant AxiosA as Axios agent
+  participant API as Attendance controller
+  participant Service as Attendance service
+  participant SQL as Azure SQL
+  participant Broker as In-memory event broker
+  participant Stream as Authenticated SSE endpoint
+  participant EventSource as Other browser EventSource
+  participant Query as TanStack Query
+  participant Page as Event details page
+
+  Page->>Query: useEvent and useAttendees
+  Query->>API: GET current event data
+  API-->>Query: JSON snapshot
+  Query-->>Page: Render cached snapshot
+
+  EventSource->>Stream: GET /api/events/id/stream with cookie
+  Stream->>Broker: SubscribeAsync(eventId, RequestAborted)
+  Note over Broker: One bounded channel per subscriber, capacity one, drop oldest
+
+  ResidentA->>AxiosA: Join or leave event
+  AxiosA->>API: Unsafe request with cookie and CSRF header
+  API->>Service: JoinEventAsync or LeaveEventAsync
+  Service->>SQL: SaveChangesAsync
+  SQL-->>Service: Commit succeeds
+  Service->>Broker: Publish attendance-changed
+  Broker-->>Stream: Fan out update for this event
+  Stream-->>EventSource: event attendance-changed plus JSON data
+  EventSource->>Query: Invalidate event, events, and attendees keys
+  Query->>API: Refetch active queries
+  API-->>Query: Fresh JSON snapshot
+  Query-->>Page: Re-render current data
+
+  alt Browser disconnects or changes event
+    EventSource-xStream: Close connection
+    Stream->>Broker: RequestAborted removes subscription
+  else Network reconnects
+    EventSource->>Stream: Browser reconnects automatically
+    EventSource->>Query: Later open invalidates all three keys
+  end
+
+  Note over Broker,Stream: Broker is process-local, so production must use one API instance until a shared backplane is added

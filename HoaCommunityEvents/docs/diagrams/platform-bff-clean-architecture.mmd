@@ -1,0 +1,38 @@
+flowchart LR
+  subgraph Browser["Browser - React single-page app"]
+    UI["Pages and forms"]
+    TQ["TanStack Query - server-state cache"]
+    AX["Axios - HTTP transport and CSRF header"]
+    ES["EventSource - attendance notices"]
+    UI --> TQ
+    TQ --> AX
+  end
+
+  subgraph APP["Azure App Service - one ASP.NET Core BFF"]
+    STATIC["Static-file host - Vite dist"]
+    PIPE["Middleware - errors, HTTPS, CORS, rate limits, auth"]
+    API["API - controllers and SSE endpoint"]
+    APPLICATION["Application - DTOs, validators, interfaces"]
+    INFRA["Infrastructure - Identity and use-case services"]
+    PERSIST["Persistence - EF Core DbContext and migrations"]
+    DOMAIN["Domain - users, events, attendance, roles"]
+    BROKER["In-memory SSE broker - one process"]
+
+    STATIC -->|"loads app"| UI
+    PIPE --> API
+    API --> APPLICATION
+    API --> INFRA
+    INFRA --> APPLICATION
+    INFRA --> PERSIST
+    APPLICATION --> DOMAIN
+    PERSIST --> DOMAIN
+    API --> BROKER
+    INFRA --> BROKER
+  end
+
+  AX -->|"same-origin /api and encrypted cookie"| PIPE
+  ES -->|"GET /api/events/id/stream"| PIPE
+  PERSIST -->|"LINQ translated to SQL"| SQL[("Azure SQL - accounts, roles, events, attendance, image URLs and crop values")]
+  API -->|"signed upload parameters"| UI
+  UI -->|"image bytes uploaded directly"| CLOUD[("Cloudinary - image files and delivery")]
+  INFRA -->|"delete replaced owned images"| CLOUD

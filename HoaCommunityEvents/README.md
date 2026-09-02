@@ -1,302 +1,183 @@
 # HOA Community Events
 
-A full-stack community platform for HOA residents and admins to manage events, attendance, and profiles.
+HOA Community Events is a resident and administrator portal for publishing community events, managing attendance, and maintaining member profiles. The production design is one ASP.NET Core **Backend for Frontend (BFF)**: it serves the React application and the `/api` routes from the same origin.
 
-This repository uses a Clean Architecture backend with a React SPA frontend.
+For a professor-style walkthrough, start with [The HOA Codebase Guide](docs/HOA-CODEBASE-GUIDE.md). For a meeting, use the [Presenter Cheat Sheet](docs/PRESENTER-CHEAT-SHEET.md).
 
-## At a Glance
+## What the platform does
 
-- Domain: HOA event management
-- Primary users:
-  - Residents: browse events, view details, join/leave attendance, manage profile
-  - HOA Admins: create/edit/publish/unpublish/cancel/delete events, manage attendees and users
-- Realtime: attendee refetch notifications via authenticated SSE
-- Security: ASP.NET Identity + JWT, role policies, lockout, rate limiting
+- Residents sign in, browse events, join or leave an event, and edit their profile.
+- HOA administrators create, edit, publish, cancel, and delete events; inspect attendees; and manage users.
+- Attendance changes produce an authenticated server-sent event (SSE) notice so open event pages refetch current data.
+- Event, attendance, account, role, profile, image-URL, and crop-position records live in SQL Server or Azure SQL.
+- Image files live in Cloudinary. The database stores their URLs and presentation metadata, not their bytes.
 
-## Tech Stack
+## Technology at a glance
 
-### Backend
+| Area | Technology | Responsibility |
+| --- | --- | --- |
+| Browser UI | React 19, TypeScript 6, React Router, MobX | Pages, navigation, and current-session UI state |
+| Server-state | TanStack Query | Fetch lifecycle, cache, loading/error state, and invalidation |
+| HTTP transport | Axios | Relative URLs, JSON requests/responses, cookies, errors, and the CSRF header |
+| Build | Vite 8 | Development server and optimized production assets |
+| Web host/BFF | ASP.NET Core on .NET 10 | Static SPA hosting, API, cookies, CSRF, policies, middleware, and SSE |
+| Data access | EF Core 10 | LINQ queries, change tracking, SQL commands, and migrations |
+| Structured storage | SQL Server locally; Azure SQL in Azure | Identity tables, roles, events, attendance, profiles, image URLs, and crop values |
+| Media storage | Cloudinary | Uploaded avatar, profile-banner, and event-banner image files |
+| Tests | xUnit, WebApplicationFactory, Vitest, Playwright | Backend integration, frontend unit/component, and browser-flow checks |
 
-- ASP.NET Core Web API (net10.0)
-- Clean Architecture layering:
-  - API
-  - Application
-  - Domain
-  - Infrastructure
-  - Persistence
-- EF Core + SQL Server
-- ASP.NET Identity + JWT Bearer auth
-- FluentValidation
-- Native server-sent events (SSE)
-- Swagger/OpenAPI (Development)
-
-### Frontend
-
-- React 19 + TypeScript + Vite
-- React Router
-- TanStack Query
-- MobX
-- Axios
-- React Hook Form
-- Tailwind CSS v4
-
-## Solution Structure
+## Repository structure
 
 ```text
 HoaCommunityEvents/
   backend/
+    HoaCommunityEvents.slnx
     src/
-      API/              Web host, controllers, middleware, startup wiring
-      Application/      Use-cases, DTOs, interfaces, options, validators
-      Domain/           Entities and domain constants
-      Infrastructure/   Cross-cutting services (token service, hubs)
-      Persistence/      AppDbContext, migrations, seeding
+      API/              HTTP host, controllers, middleware, endpoint mapping
+      Application/      DTOs, validators, service contracts, realtime contracts
+      Domain/           Business entities and role constants
+      Infrastructure/   Identity, event, attendance, profile, Cloudinary, SSE implementations
+      Persistence/      EF Core DbContext, migrations, and seed logic
     tests/
-      API.Tests/        Backend integration tests
-  frontend/         React SPA
+      API.Tests/        In-process integration and broker tests
+  frontend/
+    src/app/            Startup, router, Axios client, MobX store, QueryClient
+    src/features/       Product pages and feature components
+    src/hooks/          TanStack Query and SSE hooks
+    src/components/     Design-system and shared UI components
+    src/types/          Browser-side API shapes
+    tests/e2e/          Playwright browser flows and API mock
+  docs/
+    HOA-CODEBASE-GUIDE.md
+    PRESENTER-CHEAT-SHEET.md
+    diagrams/           Mermaid architecture and sequence sources
 ```
 
-## Architecture Overview
+This is pragmatic Clean Architecture. `Application` defines the contracts; `Infrastructure` implements them; `Persistence` owns EF Core; `API` wires and exposes everything; and `Domain` holds the core data model. `AppUser` inherits ASP.NET Core Identity's `IdentityUser`, so the Domain project deliberately references the ASP.NET Core shared framework.
 
-```mermaid
-flowchart LR
-  U[Browser / SPA] -->|HTTPS + JWT| API[ASP.NET Core API]
-  API --> APP[Application Layer]
-  APP --> DOM[Domain Layer]
-  APP --> INF[Infrastructure Layer]
-  APP --> PER[Persistence Layer]
-  PER --> DB[(SQL Server)]
-  API <--> HUB[SignalR Hub]
-  HUB <--> U
+## Request shape
+
+```text
+React page
+  -> TanStack Query hook
+  -> Axios agent
+  -> ASP.NET Core middleware and controller
+  -> Infrastructure service
+  -> EF Core
+  -> Azure SQL
 ```
 
-## Layer Responsibilities
+Axios and TanStack Query are not duplicate request libraries here. Axios is the transport layer; TanStack Query manages the lifecycle and cache of data that came from the server. Replacing Axios with a new `fetch` wrapper during this migration would add churn without removing TanStack Query, so both remain intentionally.
 
-### API
+## Security model
 
-- Hosts HTTP endpoints and middleware pipeline
-- Applies authentication, authorization, CORS, and rate limiting
-- Maps requests/responses and returns standardized API error envelopes
+- ASP.NET Core Identity issues the encrypted `HoaCommunityEvents.Auth` cookie after registration or login.
+- The cookie is `HttpOnly`, `SameSite=Lax`, secure outside Development, and has an eight-hour sliding lifetime.
+- JavaScript never reads or stores the authentication credential. The browser sends the cookie automatically.
+- `GET /api/account/current` reconstructs the UI session from server-validated identity data.
+- Unsafe controller requests require a matching antiforgery cookie and `X-CSRF-TOKEN` header.
+- `AdminOnly` and `ResidentOrAdmin` policies are evaluated by ASP.NET Core authorization before protected actions run.
+- Failed sign-ins lock an account for 15 minutes after five attempts. Global, authentication, and upload-signature rate limits are also configured.
 
-### Application
+The exact implementation is in:
 
-- Contains orchestration and use-case logic
-- Defines DTOs and service interfaces
-- Holds validation rules and application options
+- `backend/src/API/Extensions/IdentityServiceExtensions.cs`
+- `backend/src/API/Extensions/ApplicationServiceExtensions.cs`
+- `backend/src/API/Controllers/AccountController.cs`
+- `backend/src/API/Controllers/SecurityController.cs`
+- `frontend/src/app/api/agent.ts`
+- `frontend/src/app/stores/authStore.ts`
 
-### Domain
+## Realtime attendance
 
-- Contains core business entities and role constants
-- No framework-specific infrastructure concerns
+`GET /api/events/{eventId}/stream` is an authenticated SSE stream. After a successful attendance database commit, `AttendanceService` publishes an `attendance-changed` notice to the in-memory broker. The browser's native `EventSource` receives the notice and `useEventStream.ts` invalidates the event, event-list, and attendee query keys. TanStack Query then refetches the authoritative JSON.
 
-### Infrastructure
+The broker is process-local. Production must remain at one API instance until a shared backplane or managed realtime service is introduced. Raw WebSockets, SignalR, or polling are credible alternatives; the detailed trade-offs are in the codebase guide.
 
-- Implements cross-cutting services (for example, token generation)
-- Contains real-time hub integration support
+## Image controls and storage
 
-### Persistence
+The profile avatar, profile banner, and event banner use the reusable accessible switch in `frontend/src/components/design-system/ui/switch.tsx`. Turning a switch off clears its URL, resets crop values, clears pending upload feedback, and omits the image fields from the browser submission. The API therefore saves no image URL and removes a replaced owned Cloudinary asset when appropriate.
 
-- Owns EF Core DbContext and migrations
-- Handles database access and startup seed operations
+There is no Azure Blob Storage integration in this repository. Azure SQL stores structured data and Cloudinary stores user-uploaded image bytes. Published Vite files are packaged with the App Service application; they are application assets, not user media.
 
-## Core Functional Areas
+## Local development
 
-### Authentication and Authorization
+Prerequisites: .NET 10 SDK, Node.js 22+, npm, and SQL Server/LocalDB.
 
-- Register, login, and current-user flows
-- JWT validation includes issuer and audience
-- Lockout policy enabled for repeated failed login attempts
-- Role-based policies:
-  - Admin-only
-  - Resident-or-admin
-
-### Events
-
-- Public read endpoints for listing and details
-- Admin mutation endpoints:
-  - create
-  - edit
-  - publish / unpublish
-  - cancel
-  - delete
-- Paged list contract: items, totalCount, page, pageSize, totalPages
-
-### Attendance
-
-- Join/leave attendance workflows
-- SSE notifications that prompt attendee data refetches
-
-### Profiles
-
-- Profile read and update flows
-- Ownership and access checks
-
-### File Uploads
-
-- Cloudinary-backed upload support
-- Upload signature endpoint rate-limited
-
-## Security Model
-
-- JWT Bearer authentication for protected endpoints
-- Identity lockout enabled:
-  - Max failed attempts: 5
-  - Default lockout: 15 minutes
-- Rate limiting:
-  - Global limiter for all requests
-  - Tight limiter for auth login/register endpoints
-  - Upload-signature specific policy
-- Startup safety validation blocks unsafe production config
-
-## API Runtime Pipeline
-
-Current runtime sequence (from startup wiring):
-
-1. Exception middleware
-2. HTTPS redirection
-3. CORS policy (Frontend)
-4. Rate limiter
-5. Authentication
-6. Authorization
-7. Controllers + authenticated SSE endpoint mapping
-
-Health endpoint: /health
-
-## Frontend Architecture Summary
-
-- App shell and routing in app-level modules
-- Feature-first pages under frontend/src/features
-- API calls centralized in app/api/agent.ts
-- Server-state caching and mutations via TanStack Query hooks
-- Route protection via ProtectedRoute
-
-Important routing behavior:
-
-- /events is the event feed page
-- Admin management is centralized under /admin/events
-- /events/create and /events/:id/edit currently redirect rather than serving standalone forms
-
-## Configuration and Environment
-
-### Required Backend Settings
-
-- ConnectionStrings:DefaultConnection
-- TokenKey
-- Jwt options (issuer/audience)
-- Cloudinary settings (if uploads enabled)
-- Cors:AllowedOrigins
-- Seed toggles:
-  - Seed:EnableBootstrap
-  - Seed:EnableDemoData
-
-### Seed Safety Rules
-
-- Production must not run with demo data enabled
-- Startup validation fails fast if production safety constraints are violated
-
-## Local Development
-
-### 1) Backend setup
+From `HoaCommunityEvents/`, configure the local database connection:
 
 ```bash
-cd HoaCommunityEvents/backend/src/API
-dotnet user-secrets init
-dotnet user-secrets set "TokenKey" "replace-with-long-random-dev-key-at-least-64-characters"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<development SQL Server connection>" --project backend/src/API
+dotnet ef database update --project backend/src/Persistence --startup-project backend/src/API
 ```
 
-Set a development SQL Server connection in appsettings.Development.json.
+Cloudinary is optional for browsing and event management. To test uploads, also set `Cloudinary:CloudName`, `Cloudinary:ApiKey`, and `Cloudinary:ApiSecret` as user secrets.
 
-### 2) Apply migrations
+Run the API with its HTTPS profile:
 
 ```bash
-cd ../..
-dotnet ef database update -p src/Persistence -s src/API
+dotnet run --project backend/src/API --launch-profile https
 ```
 
-### 3) Frontend setup
+In a second terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
+npm run dev
 ```
 
-No frontend API URL is required. Vite proxies `/api` and `/health` to the local ASP.NET Core host so authentication cookies remain same-origin in the browser.
+Open the Vite URL printed in the terminal. `frontend/vite.config.ts` proxies `/api` and `/health` to `https://localhost:7011`, so browser cookies still appear same-origin during development.
 
-### 4) Run the app
+Useful local endpoints:
 
-Backend (solution root):
+- API health: `https://localhost:7011/health`
+- Swagger in Development: `https://localhost:7011/swagger`
+- CSRF bootstrap: `https://localhost:7011/api/security/csrf`
+
+## Build and test
+
+Backend:
 
 ```bash
-dotnet run --project backend/src/API
+dotnet restore backend/HoaCommunityEvents.slnx
+dotnet build backend/HoaCommunityEvents.slnx --no-restore
+dotnet test backend/HoaCommunityEvents.slnx --no-build
 ```
 
 Frontend:
 
 ```bash
 cd frontend
-npm run dev
-```
-
-### 5) Verify
-
-- API health: http://localhost:5284/health
-- Swagger (Development): http://localhost:5284/swagger
-
-## Testing and Quality Checks
-
-From solution root:
-
-```bash
-dotnet build backend/HoaCommunityEvents.slnx
-dotnet test backend/HoaCommunityEvents.slnx
-```
-
-From frontend:
-
-```bash
+npm ci
 npm run lint
-npm run test
+npm run test:run
 npm run build
-```
-
-E2E tests (frontend):
-
-```bash
 npm run test:e2e
 ```
 
-## Deployment Overview
+Combined production artifact:
 
-### Combined application
+```bash
+dotnet publish backend/src/API/HoaCommunityEvents.API.csproj -c Release -o ./publish
+```
 
-- Target: Azure App Service
-- Deployment workflow migration is pending Task 12. The current `.github/workflows/deploy-api-azure.yml` still targets the former backend path and cannot publish this combined artifact yet.
-- `dotnet publish backend/src/API/HoaCommunityEvents.API.csproj -c Release` runs a clean frontend install/build and places the Vite output in the published app's `wwwroot`.
-- ASP.NET Core serves the SPA and API from one origin. Unknown `/api/**` paths stay JSON 404 responses, while non-API deep links return `index.html` for React Router.
-- Optional EF migration step runs when SQL connection secret is configured
-- Attendance SSE notifications use an in-memory broker, so deploy this API as a single instance; notifications are not shared across instances.
+The publish target runs a clean frontend install and build, then copies `frontend/dist/**` into the published app's `wwwroot`. ASP.NET Core serves static assets and returns `index.html` for non-API deep links. Unknown `/api/**` routes remain JSON 404 responses.
 
-The former Static Web Apps workflow remains in the repository only until a later, explicitly verified Azure cutover. Do not enable both deployment paths for the same client-facing URL.
+## Deployment status and cutover gate
 
-### CI
+- `.github/workflows/ci.yml` builds/tests both applications and verifies the combined publish contains `wwwroot/index.html`.
+- `.github/workflows/deploy-api-azure.yml` is a manual workflow for the combined Azure App Service artifact and optional EF migration.
+- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` is the historical frontend-only deployment and still exists during transition.
 
-- Workflow: .github/workflows/ci.yml
-- Includes backend build/tests and frontend lint/build validation
+The hard gate is: deploy the combined BFF, verify login/current/logout, roles, CSRF writes, static deep links, Cloudinary signatures, database access, and SSE on the target App Service, then switch the client-facing domain. Only after those checks pass should the former Static Web Apps workflow be disabled. Source preparation does not itself perform that Azure cutover.
 
-## Troubleshooting Quick Hits
+## Architecture diagrams
 
-- Login/register CORS failures:
-  - Verify frontend origin is present in API CORS config and restart API
-- SPA deep-link 404:
-  - Confirm the combined publish artifact contains `wwwroot/index.html`
-- Frontend calls wrong host during development:
-  - Start the ASP.NET Core API on `https://localhost:7011`; Vite proxies `/api` and `/health` to that address
+- [Combined BFF, Clean Architecture, and storage](docs/diagrams/platform-bff-clean-architecture.mmd)
+- [Cookie login/current/logout and CSRF sequence](docs/diagrams/cookie-auth-csrf-sequence.mmd)
+- [SSE attendance invalidation sequence](docs/diagrams/sse-attendance-invalidation-sequence.mmd)
 
-## Naming Conventions
+## Historical terminology
 
-- Backend projects and namespaces follow HoaCommunityEvents.\*
-- Frontend folder remains lowercase frontend to align with Node ecosystem conventions
-
-## Current Product Direction
-
-The app is structured to keep resident-facing browsing simple while concentrating admin workflows in a dedicated dashboard. This keeps core user flows clear and supports incremental feature growth without collapsing boundaries between UI, API, and data concerns.
+JWT stored by browser JavaScript, a SignalR event hub, and a separately hosted Static Web Apps frontend describe the former architecture only. They are not the current source design. Historical implementation plans under `docs/superpowers/` retain those words solely to record the migration.
