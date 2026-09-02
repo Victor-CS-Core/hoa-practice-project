@@ -20,7 +20,7 @@ import {
   useLeaveEvent,
 } from "../../hooks/useAttendance";
 import { useStore } from "../../app/stores/store";
-import { useSignalR } from "../../hooks/useSignalR";
+import { useEventStream } from "../../hooks/useEventStream";
 import { getApiErrorMessage } from "../../lib/getApiErrorMessage";
 import { toApiError, type ApiErrorEnvelope } from "../auth/authApiError";
 import { AttendanceActionCard } from "./components/AttendanceActionCard";
@@ -44,7 +44,7 @@ export function EventDetailsPage() {
   const [editError, setEditError] = useState<ApiErrorEnvelope | null>(null);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
-  useSignalR(id);
+  useEventStream(id);
 
   if (isLoading) {
     return <LoadingState label="Loading event..." />;

@@ -4,6 +4,11 @@ import type { ApiRouteContext, EventItem } from './types';
 export async function handleEventRoute(context: ApiRouteContext): Promise<boolean> {
   const { path, method, query, route, currentUser, state, now } = context;
 
+  if (/^\/events\/[^/]+\/stream$/.test(path) && method === 'GET') {
+    await route.fulfill({ status: 204, body: '' });
+    return true;
+  }
+
   if (path === '/events' && method === 'GET') {
     const status = query.get('status');
     const category = query.get('category');

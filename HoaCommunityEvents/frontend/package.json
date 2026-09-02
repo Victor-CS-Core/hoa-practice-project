@@ -17,7 +17,6 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
-    "@microsoft/signalr": "^10.0.0",
     "@milkdown/core": "^7.21.2",
     "@milkdown/crepe": "^7.21.2",
     "@milkdown/kit": "^7.21.2",
