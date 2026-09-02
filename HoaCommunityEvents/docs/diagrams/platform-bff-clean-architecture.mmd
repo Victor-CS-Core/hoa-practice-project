@@ -1,11 +1,11 @@
-flowchart TB
-  USER["Resident, manager,<br/>or administrator"]
+flowchart LR
+  USER["resident<br/>or hoa_admin"]
 
   subgraph Browser["Browser - React single-page app"]
     direction TB
-    UI["Pages<br/>and forms"]
+    UI["React pages<br/>and forms"]
     TQ["TanStack Query<br/>server-state cache"]
-    AX["Axios<br/>HTTP transport and CSRF header"]
+    AX["Axios<br/>HTTP and CSRF"]
     ES["EventSource<br/>attendance notices"]
     UI --> TQ
     TQ --> AX
@@ -14,16 +14,18 @@ flowchart TB
 
   subgraph APP["Azure App Service - one ASP.NET Core BFF"]
     direction TB
+    HOST["ASP.NET Core BFF"]
     STATIC["Static-file host<br/>Vite dist"]
     PIPE["Middleware<br/>errors, HTTPS, CORS,<br/>rate limits, auth"]
-    API["API<br/>controllers and SSE endpoint"]
+    API["API controllers and SSE<br/>returns signed upload parameters"]
     APPLICATION["Application<br/>DTOs, validators, interfaces"]
     INFRA["Infrastructure<br/>Identity and use-case services"]
     PERSIST["Persistence<br/>EF Core DbContext and migrations"]
     DOMAIN["Domain<br/>users, events, attendance, roles"]
     BROKER["In-memory SSE broker<br/>one process"]
 
-    STATIC --> PIPE
+    HOST --> STATIC
+    HOST --> PIPE
     PIPE --> API
     API --> APPLICATION
     API --> INFRA
@@ -42,10 +44,9 @@ flowchart TB
   end
 
   USER --> UI
-  STATIC -->|"loads app"| UI
-  AX -->|"same-origin /api<br/>and encrypted cookie"| PIPE
+  UI -->|"GET Vite assets"| STATIC
+  AX -->|"same-origin /api<br/>cookie and CSRF<br/>includes upload signature"| PIPE
   ES -->|"GET /api/events/id/stream"| PIPE
   PERSIST -->|"LINQ translated to SQL"| SQL
-  API -->|"signed upload parameters"| UI
   UI -->|"image bytes<br/>uploaded directly"| CLOUD
   INFRA -->|"delete replaced<br/>owned images"| CLOUD

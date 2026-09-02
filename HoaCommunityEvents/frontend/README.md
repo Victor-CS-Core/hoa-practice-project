@@ -118,7 +118,7 @@ dotnet publish backend/src/API/HoaCommunityEvents.API.csproj -c Release
 
 The API project runs `npm ci` and `npm run build`, includes `dist/**` under the publish artifact's `wwwroot`, and serves it from the same origin as `/api`. ASP.NET Core's SPA fallback returns `index.html` for React Router deep links without swallowing unknown API paths.
 
-The old Azure Static Web Apps workflow is a temporary cutover artifact, not the target architecture. Do not disable it until the combined App Service deployment and client-facing domain have passed the documented smoke tests.
+The old Azure Static Web Apps workflow is a temporary cutover artifact, not the target architecture. It still runs automatically on every `main` push, uploads this frontend, and declares no API location. Because this client now calls same-origin `/api`, an unattended merge could publish it to an origin where cookie login, CSRF, data, and SSE routes do not exist. Do not merge the migration as a routine `main` update: obtain release authority and coordinate BFF staging, smoke tests, an SWA workflow freeze, the client-facing domain switch, and final retirement.
 
 ## Troubleshooting
 

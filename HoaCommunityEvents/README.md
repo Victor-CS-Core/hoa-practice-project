@@ -41,7 +41,8 @@ HoaCommunityEvents/
     tests/
       API.Tests/        In-process integration and broker tests
   frontend/
-    src/app/            Startup, router, Axios client, MobX store, QueryClient
+    src/main.tsx        Browser entry point and top-level providers
+    src/app/            Router, layout, Axios client, MobX store, QueryClient
     src/features/       Product pages and feature components
     src/hooks/          TanStack Query and SSE hooks
     src/components/     Design-system and shared UI components
@@ -77,7 +78,7 @@ Axios and TanStack Query are not duplicate request libraries here. Axios is the 
 - `GET /api/account/current` reconstructs the UI session from server-validated identity data.
 - Unsafe controller requests require a matching antiforgery cookie and `X-CSRF-TOKEN` header.
 - `AdminOnly` and `ResidentOrAdmin` policies are evaluated by ASP.NET Core authorization before protected actions run.
-- Failed sign-ins lock an account for 15 minutes after five attempts. Global, authentication, and upload-signature rate limits are also configured.
+- Failed sign-ins lock an account for 15 minutes after five attempts. Global, authentication, and upload-signature rate limits are also configured. Because rate limiting currently runs before cookie authentication, the upload-signature limiter's effective partition is the remote IP.
 
 The exact implementation is in:
 
@@ -168,9 +169,9 @@ The publish target runs a clean frontend install and build, then copies `fronten
 
 - `.github/workflows/ci.yml` builds/tests both applications and verifies the combined publish contains `wwwroot/index.html`.
 - `.github/workflows/deploy-api-azure.yml` is a manual workflow for the combined Azure App Service artifact and optional EF migration.
-- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` is the historical frontend-only deployment and still exists during transition.
+- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` is the historical frontend-only deployment. It still runs automatically on every `main` push and declares no API location.
 
-The hard gate is: deploy the combined BFF, verify login/current/logout, roles, CSRF writes, static deep links, Cloudinary signatures, database access, and SSE on the target App Service, then switch the client-facing domain. Only after those checks pass should the former Static Web Apps workflow be disabled. Source preparation does not itself perform that Azure cutover.
+The migrated frontend calls same-origin `/api`; the legacy Static Web Apps origin does not deploy that API. Therefore **do not merge this migration as an unattended `main` update**: that merge could automatically publish an API-dependent frontend to the old origin before BFF cutover. Obtain release authority and coordinate a staging/BFF deployment, login/current/logout, roles, CSRF, deep-link, Cloudinary, database, and SSE smoke tests, a freeze of the automatic SWA workflow, and the client-facing domain switch. Merge and retire SWA only inside that coordinated release. Source preparation does not itself perform the Azure cutover.
 
 ## Architecture diagrams
 

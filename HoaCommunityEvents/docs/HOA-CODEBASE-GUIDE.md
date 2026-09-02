@@ -15,7 +15,7 @@ Use the companion [Presenter Cheat Sheet](PRESENTER-CHEAT-SHEET.md) for a meetin
 - **Cookie authentication and CSRF sequence:** [Mermaid source](diagrams/cookie-auth-csrf-sequence.mmd) · [rendered SVG](diagrams/cookie-auth-csrf-sequence.svg) · [rendered PNG](diagrams/cookie-auth-csrf-sequence.png)
 - **SSE attendance invalidation sequence:** [Mermaid source](diagrams/sse-attendance-invalidation-sequence.mmd) · [rendered SVG](diagrams/sse-attendance-invalidation-sequence.svg) · [rendered PNG](diagrams/sse-attendance-invalidation-sequence.png)
 
-![HOA platform BFF, Clean Architecture, and storage overview](diagrams/platform-bff-clean-architecture.svg)
+Open the platform's [full-size rendered SVG](diagrams/platform-bff-clean-architecture.svg) when studying the overview; keeping it out of the normal-width page prevents its edge labels from shrinking into an unreadable thumbnail.
 
 ---
 
@@ -147,7 +147,8 @@ One deliberate practical exception is `AppUser : IdentityUser`. The Domain proje
 
 | Folder | Responsibility | Representative files |
 | --- | --- | --- |
-| `frontend/src/app/` | App-wide plumbing | `main.tsx`, router, layout, `agent.ts`, MobX store, QueryClient |
+| `frontend/src/main.tsx` | Browser entry point that creates the React root and installs top-level providers | `main.tsx` |
+| `frontend/src/app/` | App-wide plumbing after startup | router, layout, `agent.ts`, MobX store, QueryClient |
 | `frontend/src/features/` | Product screens grouped by feature | `auth/`, `events/`, `profiles/`, `home/` |
 | `frontend/src/hooks/` | TanStack Query adapters and realtime hook | `useEvents.ts`, `useAttendance.ts`, `useEventStream.ts`, `useProfile.ts` |
 | `frontend/src/components/design-system/` | Reusable visual and accessible primitives | buttons, inputs, switch, dialogs, design-system reference page |
@@ -213,7 +214,9 @@ Middleware order is code, not decoration. The source order in `Program.cs` is:
 
 - Global: 120 requests per minute per remote IP.
 - Login/register: 8 requests per minute per remote IP.
-- Upload signature: 10 requests per minute per authenticated name, falling back to remote IP.
+- Upload signature: 10 requests per minute per remote IP **in the current middleware order**.
+
+The upload policy's callback is written as “authenticated name, otherwise remote IP,” but `Program.cs` calls `UseRateLimiter()` before `UseAuthentication()`. At the moment the limiter chooses its partition, `HttpContext.User` has not been reconstructed from the cookie, so the effective key is the remote IP. Authentication and the `ResidentOrAdmin` policy still run later before `UploadsController` can issue a signature. Moving authentication before rate limiting would activate per-user partitions, but that is not the current implementation.
 
 No queue is allowed, so excess requests receive 429 instead of consuming server memory while waiting.
 
@@ -702,6 +705,8 @@ Publishing only after the SQL commit matters. A browser should never be told to 
 
 TanStack Query refetches active matches. The JSON API, not the SSE payload, remains authoritative.
 
+Those keys map to two controller paths: `['event', eventId]` and any active `['events', ...]` list refetch through `EventsController` at `GET /api/events/{id}` or `GET /api/events`; the admin-only `['attendees', eventId]` query refetches through `AttendanceController` at `GET /api/attendance/{eventId}`.
+
 ### Reconnect and cleanup
 
 The native EventSource reconnects automatically after a dropped connection. The first `open` means the initial stream connected and causes no refetch. A later `open` means a reconnect, so the hook invalidates all three keys to recover anything missed while offline.
@@ -917,8 +922,14 @@ Browser
 ### Current workflow state
 
 - `.github/workflows/deploy-api-azure.yml` is manually triggered. It sets up .NET and Node, publishes the combined artifact, optionally applies migrations when the production SQL secret is present, and deploys to App Service.
-- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` still deploys the historical frontend-only Static Web Apps site on `main` changes.
+- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` still runs automatically on every push to `main`. It uploads `HoaCommunityEvents/frontend` with an empty `api_location`, so that legacy origin has no matching API deployment.
 - The repository is prepared for the BFF deployment, but source changes alone do not prove the production App Service, secrets, DNS, or client-facing URL have been cut over.
+
+### Do not treat this as an ordinary merge
+
+The migrated browser uses same-origin `/api` for cookie login, CSRF, data, and SSE. An unattended merge to `main` would trigger the legacy Static Web Apps workflow and could publish this new frontend on an origin where those `/api` routes do not exist.
+
+**Hard gate: do not merge this migration as an unattended `main` update.** First obtain release authority and coordinate the staging/BFF deployment, the smoke tests below, the client-facing domain switch, and the freeze or retirement of the automatic Static Web Apps workflow. Freezing the workflow stops new frontend-only uploads; it does not remove the already deployed legacy site.
 
 ### Required gate before disabling the old deployment
 
@@ -930,10 +941,12 @@ Browser
 6. Verify Cloudinary signature and direct upload.
 7. Verify the SSE content type and attendance invalidation.
 8. Keep the API at one instance while the broker is in memory.
-9. Switch the client-facing custom domain or URL.
-10. Only then disable the former Static Web Apps workflow.
+9. With the release owner, freeze the automatic Static Web Apps workflow before the coordinated merge can publish a frontend-only build.
+10. Switch the client-facing custom domain or URL to the verified App Service.
+11. Merge and deploy only as part of that coordinated release, then confirm the running BFF matches the released commit.
+12. Retire the former Static Web Apps workflow after the cutover is confirmed.
 
-That is a hard gate because disabling the old frontend before the new origin is proven could create downtime. Running both as if both were authoritative could publish stale frontend code.
+That is a hard gate because disabling the old frontend before the new origin is proven could create downtime, while merging first can automatically publish an API-dependent frontend to the API-less legacy origin.
 
 ---
 
@@ -1039,7 +1052,7 @@ GET /events/123
 
 ### Minute 4–5: delivery and quality
 
-“Vite provides fast frontend development and creates optimized production assets. The .NET publish target builds those assets into one App Service artifact and preserves React deep links without hiding API 404s. Backend behavior is covered through WebApplicationFactory integration tests, frontend behavior through Vitest, and user flows through Playwright. The remaining release gate is operational: deploy the combined artifact, smoke-test it with real Azure resources, switch the client-facing URL, and only then retire the old Static Web Apps workflow.”
+“Vite provides fast frontend development and creates optimized production assets. The .NET publish target builds those assets into one App Service artifact and preserves React deep links without hiding API 404s. Backend behavior is covered through WebApplicationFactory integration tests, frontend behavior through Vitest, and user flows through Playwright. The remaining release gate is operational: a normal merge to `main` would still auto-deploy the frontend to the API-less legacy Static Web Apps origin, so the release owner must coordinate BFF staging, smoke tests, workflow freeze, domain switch, and the final merge rather than treating this as an unattended update.”
 
 ---
 

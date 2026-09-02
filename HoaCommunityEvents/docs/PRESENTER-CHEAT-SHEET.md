@@ -44,7 +44,7 @@ Diagram: [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [render
 
 ### 4:00–5:00 — Build, tests, delivery
 
-“Vite gives us the development server and optimized browser build. During `dotnet publish`, the API project runs the Vite build and puts it in `wwwroot`, producing one App Service artifact and origin. WebApplicationFactory tests real backend middleware and cookies, Vitest covers browser logic/components, and Playwright covers user journeys. The source is ready for combined deployment; the production cutover still requires App Service smoke tests and domain switching before the old Static Web Apps workflow is disabled.”
+“Vite gives us the development server and optimized browser build. During `dotnet publish`, the API project runs the Vite build and puts it in `wwwroot`, producing one App Service artifact and origin. WebApplicationFactory tests real backend middleware and cookies, Vitest covers browser logic/components, and Playwright covers user journeys. A normal `main` merge still auto-deploys the frontend to the API-less legacy Static Web Apps origin, so release authority, BFF staging, smoke tests, workflow freeze, and domain switching must be coordinated before the merge.”
 
 ## Know these folders
 
@@ -56,6 +56,7 @@ Diagram: [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [render
 | `backend/src/Infrastructure` | “Concrete Identity, event, profile, attendance, Cloudinary, and SSE logic.” |
 | `backend/src/Persistence` | “EF Core DbContext, database relationships, migrations, and seed logic.” |
 | `backend/tests/API.Tests` | “In-process integration and broker tests.” |
+| `frontend/src/main.tsx` | “Browser entry point: creates the React root and installs top-level providers.” |
 | `frontend/src/app` | “Router, layout, Axios, MobX session UI state, and QueryClient.” |
 | `frontend/src/hooks` | “TanStack Query operations and EventSource invalidation.” |
 | `frontend/src/features` | “Pages and components organized by product feature.” |
@@ -119,6 +120,8 @@ Development Swagger/OpenAPI
 
 Best explanation: “Middleware is an ordered chain of gates. Authentication establishes who the caller is; authorization then decides whether that identity can enter the selected endpoint.”
 
+The ordering changes the upload limiter's behavior: although its partition callback tries the authenticated name first, rate limiting runs before cookie authentication reconstructs the user. The effective upload-signature partition is therefore the remote IP; endpoint authentication still runs before a signature can be returned.
+
 ## Axios versus TanStack Query
 
 | Axios | TanStack Query |
@@ -160,7 +163,8 @@ Join/leave commits in SQL
 -> broker fans out by event ID
 -> EventSource listener receives notice
 -> invalidates event, events, attendees query keys
--> TanStack Query refetches JSON
+-> event detail/list refetch through EventsController
+-> enabled admin attendee-list refetch through AttendanceController
 ```
 
 Important details:
@@ -229,7 +233,7 @@ Point to:
 
 ## Deployment status answer
 
-“The repository and manual App Service workflow are prepared for a combined BFF artifact. That does not mean live cutover is complete. The old Static Web Apps workflow remains until the App Service passes real login, roles, CSRF, Azure SQL, Cloudinary, deep-route, and SSE smoke tests and the client-facing domain is switched. Only then should the old workflow be disabled.”
+“The repository and manual App Service workflow are prepared for a combined BFF artifact. That does not mean live cutover is complete. Every `main` push still triggers the frontend-only Static Web Apps workflow with no API, while the migrated frontend calls same-origin `/api`. Do not merge this as an unattended update. A release owner must coordinate BFF staging, real login/roles/CSRF/Azure SQL/Cloudinary/deep-route/SSE smoke tests, a freeze of the automatic SWA deployment, the client-facing domain switch, and the final merge/retirement.”
 
 ## Historical words to correct immediately
 
