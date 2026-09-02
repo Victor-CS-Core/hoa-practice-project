@@ -20,8 +20,10 @@ test.describe('Admin Event Image Editing', () => {
 
     await expect(page.getByRole('heading', { name: /edit event/i })).toBeVisible();
 
-    await page.getByRole('button', { name: /^disabled$/i }).click();
-    await expect(page.getByRole('button', { name: /^enabled$/i })).toBeVisible();
+    const bannerSwitch = page.getByRole('switch', { name: /use event banner/i });
+    await expect(bannerSwitch).toHaveAttribute('aria-checked', 'false');
+    await bannerSwitch.click();
+    await expect(bannerSwitch).toHaveAttribute('aria-checked', 'true');
 
     await page.getByRole('button', { name: /^upload$/i }).click();
 

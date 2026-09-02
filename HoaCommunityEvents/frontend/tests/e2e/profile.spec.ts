@@ -10,6 +10,13 @@ test.describe('Profile Management', () => {
     await page.getByRole('button', { name: /edit profile/i }).click();
 
     await expect(
+      page.getByRole('switch', { name: /use avatar image/i }),
+    ).toHaveAttribute('aria-checked', 'true');
+    await expect(
+      page.getByRole('switch', { name: /use profile banner/i }),
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await expect(
       page.getByText(/the current uploaded image link is hidden\./i).first(),
     ).toBeVisible();
 
