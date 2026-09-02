@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using System.Net;
-using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace HoaCommunityEvents.API.Tests;
@@ -39,9 +39,10 @@ public sealed class SpaHostingIntegrationTests : IDisposable
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-        var error = await response.Content.ReadFromJsonAsync<ApiErrorContract>();
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(IndexMarker, body, StringComparison.Ordinal);
+        var error = JsonSerializer.Deserialize<ApiErrorContract>(body, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.Equal("not_found", error?.Code);
-        Assert.DoesNotContain(IndexMarker, await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 
     public void Dispose()

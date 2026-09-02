@@ -270,7 +270,7 @@ npm run test:e2e
 ### Combined application
 
 - Target: Azure App Service
-- Deployment workflow: .github/workflows/deploy-api-azure.yml
+- Deployment workflow migration is pending Task 12. The current `.github/workflows/deploy-api-azure.yml` still targets the former backend path and cannot publish this combined artifact yet.
 - `dotnet publish backend/src/API/HoaCommunityEvents.API.csproj -c Release` runs a clean frontend install/build and places the Vite output in the published app's `wwwroot`.
 - ASP.NET Core serves the SPA and API from one origin. Unknown `/api/**` paths stay JSON 404 responses, while non-API deep links return `index.html` for React Router.
 - Optional EF migration step runs when SQL connection secret is configured
@@ -289,8 +289,6 @@ The former Static Web Apps workflow remains in the repository only until a later
   - Verify frontend origin is present in API CORS config and restart API
 - SPA deep-link 404:
   - Confirm the combined publish artifact contains `wwwroot/index.html`
-- TokenKey startup failure:
-  - Ensure TokenKey is configured for the environment
 - Frontend calls wrong host during development:
   - Start the ASP.NET Core API on `https://localhost:7011`; Vite proxies `/api` and `/health` to that address
 
