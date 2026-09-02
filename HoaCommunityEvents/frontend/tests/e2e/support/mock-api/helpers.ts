@@ -22,8 +22,12 @@ function getCookie(cookieHeader: string | undefined, name: string) {
   return cookieHeader?.split(';').map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(`${name}=`))?.slice(name.length + 1);
 }
 
+export function getMockSession(route: Route) {
+  return getCookie(route.request().headers().cookie, 'mock-session');
+}
+
 export function resolveCurrentUser(route: Route, state: State) {
-  const session = getCookie(route.request().headers().cookie, 'mock-session');
+  const session = getMockSession(route);
   return session ? state.sessions.get(session) ?? null : null;
 }
 

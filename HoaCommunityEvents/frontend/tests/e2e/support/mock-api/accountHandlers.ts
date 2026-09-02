@@ -1,4 +1,4 @@
-import { json, setMockSession } from './helpers';
+import { getMockSession, json, setMockSession } from './helpers';
 import type { ApiRouteContext } from './types';
 
 export async function handleAccountRoute(context: ApiRouteContext): Promise<boolean> {
@@ -182,6 +182,8 @@ export async function handleAccountRoute(context: ApiRouteContext): Promise<bool
   }
 
   if (path === '/account/logout' && method === 'POST') {
+    const session = getMockSession(route);
+    if (session) state.sessions.delete(session);
     await setMockSession(context.page);
     await route.fulfill({ status: 204, body: '' });
     return true;

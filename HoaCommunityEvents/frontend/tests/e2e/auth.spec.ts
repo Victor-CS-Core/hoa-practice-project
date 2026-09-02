@@ -28,6 +28,26 @@ test.describe('Auth Flows', () => {
     await expect(page.getByRole('link', { name: /browse events/i })).toBeVisible();
   });
 
+  test('logout revokes the mocked server session', async ({ page }) => {
+    await installMockApi(page, { initialSession: 'resident' });
+
+    await page.goto('/');
+    await page.getByRole('button', { name: /casey resident/i }).click();
+    await page.getByRole('menuitem', { name: /logout/i }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.context().addCookies([{
+      name: 'mock-session',
+      value: 'resident',
+      url: 'http://127.0.0.1:4173',
+      httpOnly: true,
+      sameSite: 'Lax',
+    }]);
+    await page.goto('/events');
+
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
   test('register creates an account and signs in', async ({ page }) => {
     await installMockApi(page);
 

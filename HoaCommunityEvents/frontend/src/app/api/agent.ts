@@ -11,8 +11,10 @@ export const agent = axios.create({
 
 let csrfToken: string | null = null;
 let csrfTokenRequest: Promise<string> | null = null;
+let csrfGeneration = 0;
 
 export function resetCsrfTokenCache() {
+    csrfGeneration += 1;
     csrfToken = null;
     csrfTokenRequest = null;
 }
@@ -20,13 +22,19 @@ export function resetCsrfTokenCache() {
 async function getCsrfToken() {
     if (csrfToken) return csrfToken;
 
+    const requestGeneration = csrfGeneration;
     csrfTokenRequest ??= agent.get<{ requestToken: string }>('/security/csrf')
         .then((response) => {
-            csrfToken = response.data.requestToken;
-            return csrfToken;
+            const requestToken = response.data.requestToken;
+            if (csrfGeneration === requestGeneration) {
+                csrfToken = requestToken;
+            }
+            return requestToken;
         })
         .finally(() => {
-            csrfTokenRequest = null;
+            if (csrfGeneration === requestGeneration) {
+                csrfTokenRequest = null;
+            }
         });
 
     return csrfTokenRequest;

@@ -50,6 +50,33 @@ describe("BFF API client", () => {
     )).toBe(true);
   });
 
+  it("does not cache a stale in-flight antiforgery response after invalidation", async () => {
+    let resolveStaleToken!: (token: string) => void;
+    const staleToken = new Promise<string>((resolve) => { resolveStaleToken = resolve; });
+    let csrfRequests = 0;
+
+    agent.defaults.adapter = async (config) => {
+      requests.push(config);
+      if (config.url === "/security/csrf") {
+        csrfRequests += 1;
+        const requestToken = csrfRequests === 1 ? await staleToken : "csrf-current";
+        return { data: { requestToken }, status: 200, statusText: "OK", headers: {}, config };
+      }
+      return { data: {}, status: 200, statusText: "OK", headers: {}, config };
+    };
+
+    const oldRequest = Events.cancel("event-1");
+    await Promise.resolve();
+    resetCsrfTokenCache();
+    await Events.publish("event-2");
+    resolveStaleToken("csrf-stale");
+    await oldRequest;
+    await Events.unpublish("event-3");
+
+    expect(csrfRequests).toBe(2);
+    expect(requests.at(-1)?.headers?.["X-CSRF-TOKEN"]).toBe("csrf-current");
+  });
+
   it("refreshes the antiforgery token after each successful identity transition", async () => {
     await Account.login({ email: "resident@example.com", password: "Password123!" });
     await Events.cancel("event-1");
