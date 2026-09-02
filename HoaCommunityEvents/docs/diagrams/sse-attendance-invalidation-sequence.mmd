@@ -17,7 +17,7 @@ sequenceDiagram
 
   EventSource->>Stream: GET /api/events/id/stream with cookie
   Stream->>Broker: SubscribeAsync(eventId, RequestAborted)
-  Note over Broker: One bounded channel per subscriber, capacity one, drop oldest
+  Note over SQL,Stream: One bounded channel per browser; capacity 1, drop oldest
 
   ResidentA->>AxiosA: Join or leave event
   AxiosA->>API: Unsafe request with cookie and CSRF header
@@ -40,4 +40,4 @@ sequenceDiagram
     EventSource->>Query: Later open invalidates all three keys
   end
 
-  Note over Broker,Stream: Scale limit: use one API instance until a shared backplane is added
+  Note over Broker,EventSource: Scale limit: one API instance until a shared backplane
