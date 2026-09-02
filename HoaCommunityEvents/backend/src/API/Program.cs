@@ -1,6 +1,6 @@
 using HoaCommunityEvents.API.Extensions;
+using HoaCommunityEvents.API.Endpoints;
 using HoaCommunityEvents.API.Middleware;
-using HoaCommunityEvents.Infrastructure.Hubs;
 using HoaCommunityEvents.Persistence.Data;
 using Microsoft.Extensions.Configuration;
 
@@ -28,7 +28,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHub<EventHub>("/hubs/events");
+app.MapEventStreamEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 

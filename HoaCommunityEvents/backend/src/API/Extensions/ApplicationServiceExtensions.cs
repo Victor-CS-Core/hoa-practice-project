@@ -74,7 +74,6 @@ public static class ApplicationServiceExtensions
 
             options.OperationFilter<AntiforgeryOperationFilter>();
         });
-        services.AddSignalR();
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

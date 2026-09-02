@@ -1,14 +1,13 @@
 using HoaCommunityEvents.Application.Common.Interfaces;
+using HoaCommunityEvents.Application.Common.Realtime;
 using HoaCommunityEvents.Application.DTOs;
-using HoaCommunityEvents.Infrastructure.Hubs;
 using HoaCommunityEvents.Domain.Entities;
 using HoaCommunityEvents.Persistence.Data;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HoaCommunityEvents.Infrastructure.Services;
 
-public class AttendanceService(AppDbContext dbContext, IHubContext<EventHub> hubContext) : IAttendanceService
+public class AttendanceService(AppDbContext dbContext, IEventUpdatePublisher eventUpdatePublisher) : IAttendanceService
 {
     public async Task<(bool Success, int StatusCode, string? Error, int AttendeeCount)> JoinEventAsync(Guid eventId, string userId)
     {
@@ -56,7 +55,7 @@ public class AttendanceService(AppDbContext dbContext, IHubContext<EventHub> hub
         await dbContext.SaveChangesAsync();
 
         var attendeeCount = await dbContext.EventAttendances.CountAsync(a => a.EventId == eventId);
-        await hubContext.Clients.Group(EventHub.GroupName(eventId.ToString())).SendAsync("ReceiveAttendeeCount", eventId, attendeeCount);
+        await eventUpdatePublisher.PublishAsync(new EventUpdate(eventId, "attendance-changed"));
 
         return (true, 200, null, attendeeCount);
     }
@@ -76,7 +75,7 @@ public class AttendanceService(AppDbContext dbContext, IHubContext<EventHub> hub
         await dbContext.SaveChangesAsync();
 
         var attendeeCount = await dbContext.EventAttendances.CountAsync(a => a.EventId == eventId);
-        await hubContext.Clients.Group(EventHub.GroupName(eventId.ToString())).SendAsync("ReceiveAttendeeCount", eventId, attendeeCount);
+        await eventUpdatePublisher.PublishAsync(new EventUpdate(eventId, "attendance-changed"));
 
         return (true, 200, null, attendeeCount);
     }

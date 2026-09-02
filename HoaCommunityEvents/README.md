@@ -10,7 +10,7 @@ This repository uses a Clean Architecture backend with a React SPA frontend.
 - Primary users:
   - Residents: browse events, view details, join/leave attendance, manage profile
   - HOA Admins: create/edit/publish/unpublish/cancel/delete events, manage attendees and users
-- Realtime: attendee updates via SignalR
+- Realtime: attendee refetch notifications via authenticated SSE
 - Security: ASP.NET Identity + JWT, role policies, lockout, rate limiting
 
 ## Tech Stack
@@ -27,7 +27,7 @@ This repository uses a Clean Architecture backend with a React SPA frontend.
 - EF Core + SQL Server
 - ASP.NET Identity + JWT Bearer auth
 - FluentValidation
-- SignalR
+- Native server-sent events (SSE)
 - Swagger/OpenAPI (Development)
 
 ### Frontend
@@ -124,7 +124,7 @@ flowchart LR
 ### Attendance
 
 - Join/leave attendance workflows
-- Realtime attendee count updates through SignalR
+- SSE notifications that prompt attendee data refetches
 
 ### Profiles
 
@@ -158,7 +158,7 @@ Current runtime sequence (from startup wiring):
 4. Rate limiter
 5. Authentication
 6. Authorization
-7. Controllers + SignalR hub mapping
+7. Controllers + authenticated SSE endpoint mapping
 
 Health endpoint: /health
 
@@ -276,6 +276,7 @@ npm run test:e2e
 - Target: Azure App Service
 - Deployment workflow: .github/workflows/deploy-api-azure.yml
 - Optional EF migration step runs when SQL connection secret is configured
+- Attendance SSE notifications use an in-memory broker, so deploy this API as a single instance; notifications are not shared across instances.
 
 ### Frontend
 
