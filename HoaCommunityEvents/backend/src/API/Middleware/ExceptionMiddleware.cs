@@ -12,9 +12,18 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         {
             await next(context);
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The client disconnected; there is no response left to replace.
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unhandled exception while processing request.");
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
