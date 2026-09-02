@@ -9,11 +9,13 @@ The mission is simple: be able to answer two questions for every part of the pla
 1. **What job does it do?**
 2. **How does this code make it happen?**
 
-Use the companion [Presenter Cheat Sheet](PRESENTER-CHEAT-SHEET.md) for a meeting-length summary. The diagram sources are:
+Use the companion [Presenter Cheat Sheet](PRESENTER-CHEAT-SHEET.md) for a meeting-length summary. Each diagram is available as editable Mermaid source and as a rendered image:
 
-- [Combined BFF, Clean Architecture, and storage](diagrams/platform-bff-clean-architecture.mmd)
-- [Cookie authentication and CSRF sequence](diagrams/cookie-auth-csrf-sequence.mmd)
-- [SSE attendance invalidation sequence](diagrams/sse-attendance-invalidation-sequence.mmd)
+- **Combined BFF, Clean Architecture, and storage:** [Mermaid source](diagrams/platform-bff-clean-architecture.mmd) · [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [rendered PNG](diagrams/platform-bff-clean-architecture.png)
+- **Cookie authentication and CSRF sequence:** [Mermaid source](diagrams/cookie-auth-csrf-sequence.mmd) · [rendered SVG](diagrams/cookie-auth-csrf-sequence.svg) · [rendered PNG](diagrams/cookie-auth-csrf-sequence.png)
+- **SSE attendance invalidation sequence:** [Mermaid source](diagrams/sse-attendance-invalidation-sequence.mmd) · [rendered SVG](diagrams/sse-attendance-invalidation-sequence.svg) · [rendered PNG](diagrams/sse-attendance-invalidation-sequence.png)
+
+![HOA platform BFF, Clean Architecture, and storage overview](diagrams/platform-bff-clean-architecture.svg)
 
 ---
 
@@ -358,7 +360,7 @@ This is the main security benefit: a script injection has a harder time stealing
 
 ### The exact login sequence
 
-The full source diagram is [cookie-auth-csrf-sequence.mmd](diagrams/cookie-auth-csrf-sequence.mmd).
+Open the full [rendered SVG sequence](diagrams/cookie-auth-csrf-sequence.svg), its [rendered PNG](diagrams/cookie-auth-csrf-sequence.png), or the editable [Mermaid source](diagrams/cookie-auth-csrf-sequence.mmd).
 
 1. `LoginPage.tsx` gives the form values to `authStore.login`.
 2. `AuthStore.login` calls `Account.login` in `agent.ts`.

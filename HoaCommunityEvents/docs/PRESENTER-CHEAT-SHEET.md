@@ -22,7 +22,7 @@ Browser -> Cloudinary directly for signed image uploads
 ASP.NET Core -> browser through SSE for attendance-change notices
 ```
 
-Diagram: [platform-bff-clean-architecture.mmd](diagrams/platform-bff-clean-architecture.mmd)
+Diagram: [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [rendered PNG](diagrams/platform-bff-clean-architecture.png) · [Mermaid source](diagrams/platform-bff-clean-architecture.mmd)
 
 ## Five-minute talk track
 
@@ -98,7 +98,7 @@ Point to:
 - `frontend/src/app/api/agent.ts`
 - `frontend/src/app/stores/authStore.ts`
 
-Diagram: [cookie-auth-csrf-sequence.mmd](diagrams/cookie-auth-csrf-sequence.mmd)
+Diagram: [rendered SVG](diagrams/cookie-auth-csrf-sequence.svg) · [rendered PNG](diagrams/cookie-auth-csrf-sequence.png) · [Mermaid source](diagrams/cookie-auth-csrf-sequence.mmd)
 
 ## Middleware order
 
@@ -174,7 +174,7 @@ Important details:
 
 Alternatives: polling for maximum simplicity, raw WebSockets for custom two-way traffic, SignalR for higher-level .NET hubs, or Azure Web PubSub/managed SignalR for distributed connections.
 
-Diagram: [sse-attendance-invalidation-sequence.mmd](diagrams/sse-attendance-invalidation-sequence.mmd)
+Diagram: [rendered SVG](diagrams/sse-attendance-invalidation-sequence.svg) · [rendered PNG](diagrams/sse-attendance-invalidation-sequence.png) · [Mermaid source](diagrams/sse-attendance-invalidation-sequence.mmd)
 
 ## Storage answer
 

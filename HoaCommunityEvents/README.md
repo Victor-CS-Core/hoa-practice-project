@@ -50,7 +50,7 @@ HoaCommunityEvents/
   docs/
     HOA-CODEBASE-GUIDE.md
     PRESENTER-CHEAT-SHEET.md
-    diagrams/           Mermaid architecture and sequence sources
+    diagrams/           Mermaid sources plus rendered SVG and PNG diagrams
 ```
 
 This is pragmatic Clean Architecture. `Application` defines the contracts; `Infrastructure` implements them; `Persistence` owns EF Core; `API` wires and exposes everything; and `Domain` holds the core data model. `AppUser` inherits ASP.NET Core Identity's `IdentityUser`, so the Domain project deliberately references the ASP.NET Core shared framework.
@@ -174,9 +174,9 @@ The hard gate is: deploy the combined BFF, verify login/current/logout, roles, C
 
 ## Architecture diagrams
 
-- [Combined BFF, Clean Architecture, and storage](docs/diagrams/platform-bff-clean-architecture.mmd)
-- [Cookie login/current/logout and CSRF sequence](docs/diagrams/cookie-auth-csrf-sequence.mmd)
-- [SSE attendance invalidation sequence](docs/diagrams/sse-attendance-invalidation-sequence.mmd)
+- **Combined BFF, Clean Architecture, and storage:** [rendered SVG](docs/diagrams/platform-bff-clean-architecture.svg) · [rendered PNG](docs/diagrams/platform-bff-clean-architecture.png) · [Mermaid source](docs/diagrams/platform-bff-clean-architecture.mmd)
+- **Cookie login/current/logout and CSRF sequence:** [rendered SVG](docs/diagrams/cookie-auth-csrf-sequence.svg) · [rendered PNG](docs/diagrams/cookie-auth-csrf-sequence.png) · [Mermaid source](docs/diagrams/cookie-auth-csrf-sequence.mmd)
+- **SSE attendance invalidation sequence:** [rendered SVG](docs/diagrams/sse-attendance-invalidation-sequence.svg) · [rendered PNG](docs/diagrams/sse-attendance-invalidation-sequence.png) · [Mermaid source](docs/diagrams/sse-attendance-invalidation-sequence.mmd)
 
 ## Historical terminology
 
