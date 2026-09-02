@@ -17,7 +17,7 @@ sequenceDiagram
 
   EventSource->>Stream: GET /api/events/id/stream with cookie
   Stream->>Broker: SubscribeAsync(eventId, RequestAborted)
-  Note over SQL,Stream: One bounded channel per browser; capacity 1, drop oldest
+  Note over SQL,Stream: One bounded channel per browser - capacity 1 - drop oldest
 
   ResidentA->>AxiosA: Join or leave event
   AxiosA->>API: Unsafe request with cookie and CSRF header
