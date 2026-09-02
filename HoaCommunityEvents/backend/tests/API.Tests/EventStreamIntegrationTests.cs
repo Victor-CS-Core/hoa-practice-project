@@ -31,28 +31,66 @@ public class EventStreamIntegrationTests(ApiTestFactory factory) : IClassFixture
 
         var eventId = Guid.NewGuid();
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/events/{eventId}/stream");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/events/{eventId}/stream");
         var broker = factory.Services.GetRequiredService<InMemoryEventUpdateBroker>();
+        var subscriptionBaseline = broker.SubscriptionCount;
         var streamResponse = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation.Token);
-        await WaitUntilAsync(() => broker.SubscriptionCount == 1, cancellation.Token);
-        await broker.PublishAsync(new EventUpdate(eventId, "attendance-changed"));
+        HttpResponseMessage? response = null;
+        Stream? stream = null;
+        StreamReader? reader = null;
 
-        using var response = await streamResponse;
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("text/event-stream", response.Content.Headers.ContentType?.MediaType);
+        try
+        {
+            await WaitUntilAsync(() => broker.SubscriptionCount == subscriptionBaseline + 1, cancellation.Token);
+            await broker.PublishAsync(new EventUpdate(eventId, "attendance-changed"));
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellation.Token);
-        using var reader = new StreamReader(stream);
-        var eventLine = await reader.ReadLineAsync(cancellation.Token);
-        var dataLine = await reader.ReadLineAsync(cancellation.Token);
+            response = await streamResponse;
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("text/event-stream", response.Content.Headers.ContentType?.MediaType);
 
-        Assert.Equal("event: attendance-changed", eventLine);
-        Assert.NotNull(dataLine);
-        Assert.StartsWith("data: ", dataLine, StringComparison.Ordinal);
+            stream = await response.Content.ReadAsStreamAsync(cancellation.Token);
+            reader = new StreamReader(stream, leaveOpen: true);
+            var eventLine = await reader.ReadLineAsync(cancellation.Token);
+            var dataLine = await reader.ReadLineAsync(cancellation.Token);
 
-        using var json = JsonDocument.Parse(dataLine["data: ".Length..]);
-        Assert.Equal(eventId, json.RootElement.GetProperty("eventId").GetGuid());
-        Assert.Equal("attendance-changed", json.RootElement.GetProperty("eventName").GetString());
+            Assert.Equal("event: attendance-changed", eventLine);
+            Assert.NotNull(dataLine);
+            Assert.StartsWith("data: ", dataLine, StringComparison.Ordinal);
+
+            using var json = JsonDocument.Parse(dataLine["data: ".Length..]);
+            Assert.Equal(eventId, json.RootElement.GetProperty("eventId").GetGuid());
+            Assert.Equal("attendance-changed", json.RootElement.GetProperty("eventName").GetString());
+        }
+        finally
+        {
+            cancellation.Cancel();
+
+            if (response is null)
+            {
+                try
+                {
+                    response = await streamResponse.WaitAsync(TimeSpan.FromSeconds(1));
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (TimeoutException)
+                {
+                }
+            }
+
+            reader?.Dispose();
+            if (stream is not null)
+            {
+                await stream.DisposeAsync();
+            }
+            response?.Dispose();
+            request.Dispose();
+
+            using var cleanupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            await WaitUntilAsync(() => broker.SubscriptionCount == subscriptionBaseline, cleanupTimeout.Token);
+            Assert.Equal(subscriptionBaseline, broker.SubscriptionCount);
+        }
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, CancellationToken cancellationToken)
