@@ -45,7 +45,7 @@ function jobHeader(block) {
 function namedStep(block, name) {
   if (!block) return null;
   return new RegExp(
-    `^      - name: ${escapeRegExp(name)}\\s*\\n([\\s\\S]*?)(?=^      - name:|(?![\\s\\S]))`,
+    `^      - name: ${escapeRegExp(name)}\\s*\\n([\\s\\S]*?)(?=^      -(?:\\s|$)|(?![\\s\\S]))`,
     'm',
   ).exec(block);
 }
@@ -494,6 +494,14 @@ function swapNamedSteps(workflow, jobName, firstName, secondName, fixtureName) {
   return workflow.replace(block, mutatedBlock);
 }
 
+function insertUnnamedStepAfter(workflow, jobName, stepName, fixtureName) {
+  const block = jobBlock(workflow, jobName);
+  const step = namedStep(block, stepName);
+  if (!step) throw new Error(`Negative fixture ${fixtureName} could not find step ${stepName}`);
+  const unnamedStep = '      - run: echo "Unexpected intervening work"\n';
+  return workflow.replace(block, block.replace(step[0], `${step[0]}${unnamedStep}`));
+}
+
 function expectInvalid(name, { deploy = deployWorkflow, ci = ciWorkflow, action = freshnessAction }, expected) {
   const errors = validateProductionWorkflow(deploy, ci, action, { checkLegacy: false });
   if (!errors.some((error) => error.includes(expected))) {
@@ -625,6 +633,18 @@ expectInvalid(
   { deploy: swapNamedSteps(deployWorkflow, 'deploy', 'Reconfirm release freshness before staging deployment', 'Deploy exact artifact to Azure staging slot', 'Azure deploy before final freshness check') },
   'directly before staging deployment',
 );
+
+const unnamedAdjacencyFixtures = [
+  ['unnamed step after preflight checkout', 'staging_preflight', 'Checkout exact release for staging preflight', 'staging_preflight must revalidate immediately after checkout'],
+  ['unnamed step after database checkout', 'database_gate', 'Checkout exact release for migration', 'database_gate must revalidate immediately after checkout'],
+  ['unnamed step after deploy checkout', 'deploy', 'Checkout exact release for staging deployment', 'deploy must revalidate immediately after checkout'],
+  ['unnamed step before database mutation', 'database_gate', 'Reconfirm release freshness before database mutation', 'database_gate must reconfirm freshness directly before database mutation'],
+  ['unnamed step before staging deployment', 'deploy', 'Reconfirm release freshness before staging deployment', 'deploy must reconfirm freshness directly before staging deployment'],
+];
+
+for (const [name, jobName, stepName, expected] of unnamedAdjacencyFixtures) {
+  expectInvalid(name, { deploy: insertUnnamedStepAfter(deployWorkflow, jobName, stepName, name) }, expected);
+}
 
 expectInvalid('redirect smoke request', { deploy: replaceRequired(deployWorkflow, '--retry 12 --retry-all-errors', '--location\n            --retry 12 --retry-all-errors', 'redirect smoke request') }, 'must not follow redirects');
 expectInvalid('HTML helper status enforcement', { deploy: replaceRequired(deployWorkflow, '[ "$status" != "200" ] || ', '', 'HTML helper status enforcement') }, 'require_html must directly reject non-200 responses');
