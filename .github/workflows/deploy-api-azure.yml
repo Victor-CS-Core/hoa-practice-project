@@ -10,21 +10,16 @@ env:
     types: [completed]
     branches: [main]
 
-permissions:
-  contents: read
-  actions: read
+permissions: {}
 
 concurrency:
   group: hoa-bff-production
-  queue: max
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Deploy Combined BFF
-    environment:
-      name: production
-    # workflow_run is privileged: never deploy code from PRs or forks.
+  prepare:
+    name: Prepare Trusted CI Artifact
+    # workflow_run is privileged: never accept failed, pull-request, non-main, or fork runs.
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_run' &&
@@ -33,39 +28,183 @@ jobs:
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      deploy_sha: ${{ steps.release.outputs.deploy_sha }}
+      ci_run_id: ${{ steps.release.outputs.ci_run_id }}
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-      SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
-      MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}
 
     steps:
-      - name: Verify tested main commit
+      - name: Resolve trusted CI run
         id: release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          set -euo pipefail
           current_main=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
           if [ "$DEPLOY_SHA" != "$current_main" ]; then
-            echo "::error::This run is stale. Deploy the current main commit after its CI succeeds."
+            echo "::error::This run is stale. Stage the current main commit after its CI succeeds."
             exit 1
           fi
 
-          successful_runs=$(gh api --method GET "repos/$GH_REPO/actions/workflows/ci.yml/runs" \
-            -f head_sha="$DEPLOY_SHA" -f branch=main -f event=push -f status=success --jq '.total_count')
-          if ! [[ "$successful_runs" =~ ^[0-9]+$ ]] || [ "$successful_runs" -lt 1 ]; then
-            echo "::error::The selected main commit must pass CI before deployment, including manual runs."
+          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+            ci_run_id="$TRIGGER_RUN_ID"
+          else
+            runs_file="$RUNNER_TEMP/ci-runs.json"
+            gh api --method GET "repos/$GH_REPO/actions/workflows/ci.yml/runs" \
+              -f head_sha="$DEPLOY_SHA" \
+              -f branch=main \
+              -f event=push \
+              -f status=success \
+              -f per_page=100 > "$runs_file"
+            ci_run_id=$(jq -r --arg repo "$GH_REPO" --arg sha "$DEPLOY_SHA" '
+              [.workflow_runs[] |
+                select(.head_sha == $sha and
+                       .head_branch == "main" and
+                       .event == "push" and
+                       .conclusion == "success" and
+                       .head_repository.full_name == $repo)] |
+              sort_by(.run_number) | last | .id // empty
+            ' "$runs_file")
+          fi
+
+          if ! [[ "$ci_run_id" =~ ^[0-9]+$ ]]; then
+            echo "::error::The selected main commit has no exact successful push-triggered CI run."
             exit 1
           fi
 
-      - name: Validate deployment configuration
+          run_file="$RUNNER_TEMP/ci-run.json"
+          gh api "repos/$GH_REPO/actions/runs/$ci_run_id" > "$run_file"
+          if ! jq -e --arg repo "$GH_REPO" --arg sha "$DEPLOY_SHA" '
+            .name == "CI" and
+            .path == ".github/workflows/ci.yml" and
+            .head_sha == $sha and
+            .head_branch == "main" and
+            .event == "push" and
+            .status == "completed" and
+            .conclusion == "success" and
+            .head_repository.full_name == $repo and
+            .repository.full_name == $repo
+          ' "$run_file" > /dev/null; then
+            echo "::error::The selected run is not the exact successful trusted CI run for current main."
+            exit 1
+          fi
+
+          echo "deploy_sha=$DEPLOY_SHA" >> "$GITHUB_OUTPUT"
+          echo "ci_run_id=$ci_run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download exact CI artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: hoa-bff-${{ steps.release.outputs.deploy_sha }}
+          path: ${{ runner.temp }}/hoa-bff-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.release.outputs.ci_run_id }}
+
+      - name: Verify exact CI artifact
+        shell: bash
+        env:
+          ARTIFACT_SHA: ${{ steps.release.outputs.deploy_sha }}
+        run: |
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/hoa-bff-artifact"
+          archive_name="hoa-bff-${ARTIFACT_SHA}.tar.gz"
+          test -f "$artifact_dir/$archive_name"
+          test -f "$artifact_dir/$archive_name.sha256"
+          (
+            cd "$artifact_dir"
+            sha256sum --check --strict "$archive_name.sha256"
+          )
+          publish_dir="$RUNNER_TEMP/hoa-bff-publish"
+          mkdir -p "$publish_dir"
+          tar -xzf "$artifact_dir/$archive_name" -C "$publish_dir"
+          test -f "$publish_dir/HoaCommunityEvents.API.dll"
+          test -f "$publish_dir/wwwroot/index.html"
+
+  database_gate:
+    name: Approve and Gate Production Database
+    needs: prepare
+    environment:
+      name: production-database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}
+
+    steps:
+      - name: Validate migration mode
+        shell: bash
+        run: |
+          if [ "$MIGRATION_MODE" != "workflow" ] && [ "$MIGRATION_MODE" != "external" ]; then
+            echo "::error::PRODUCTION_MIGRATION_MODE must be either workflow or external."
+            exit 1
+          fi
+
+      - name: Checkout exact release for migration
+        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.prepare.outputs.deploy_sha }}
+          persist-credentials: false
+
+      - name: Setup .NET for migration
+        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Apply production database migrations
+        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}
+        shell: bash
+        env:
+          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SQL_CONNECTION" ]; then
+            echo "::error::The production SQL connection secret is required in workflow migration mode."
+            exit 1
+          fi
+          dotnet tool install --global dotnet-ef --version 10.0.8
+          export PATH="$PATH:/home/runner/.dotnet/tools"
+          dotnet ef database update \
+            -p HoaCommunityEvents/backend/src/Persistence \
+            -s HoaCommunityEvents/backend/src/API \
+            --connection "$SQL_CONNECTION"
+
+      - name: Record external migration release gate
+        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'external' }}
+        run: echo "Database migration is an approved external release gate." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy Exact Combined BFF to Staging
+    needs: [prepare, database_gate]
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+    env:
+      DEPLOY_SHA: ${{ needs.prepare.outputs.deploy_sha }}
+      CI_RUN_ID: ${{ needs.prepare.outputs.ci_run_id }}
+      SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
+
+    steps:
+      - name: Validate staging deployment configuration
         shell: bash
         env:
           APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
           PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}
         run: |
           if [ -z "$APP_NAME" ] || [ -z "$PUBLISH_PROFILE" ]; then
             echo "::error::Configure AZURE_WEBAPP_NAME_PRODUCTION and AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION."
@@ -86,68 +225,38 @@ jobs:
 
           printf 'SLOT_NAME_CANONICAL=%s\n' "$slot_name_canonical" >> "$GITHUB_ENV"
 
-          if [ "$MIGRATION_MODE" != "workflow" ] && [ "$MIGRATION_MODE" != "external" ]; then
-            echo "::error::PRODUCTION_MIGRATION_MODE must be either workflow or external."
-            exit 1
-          fi
-
-          if [ "$MIGRATION_MODE" = "workflow" ] && [ -z "$SQL_CONNECTION" ]; then
-            echo "::error::AZURE_SQL_CONNECTION_STRING_PRODUCTION is required when PRODUCTION_MIGRATION_MODE is workflow."
-            exit 1
-          fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download exact CI artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-          persist-credentials: false
+          name: hoa-bff-${{ needs.prepare.outputs.deploy_sha }}
+          path: ${{ runner.temp }}/hoa-bff-artifact
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.prepare.outputs.ci_run_id }}
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
-
-      - name: Publish combined BFF
-        run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj -c Release -o "$RUNNER_TEMP/hoa-bff-publish"
-
-      - name: Verify combined package
-        shell: bash
-        run: |
-          test -f "$RUNNER_TEMP/hoa-bff-publish/HoaCommunityEvents.API.dll"
-          test -f "$RUNNER_TEMP/hoa-bff-publish/wwwroot/index.html"
-
-      - name: Optionally apply database migrations
-        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}
+      - name: Verify exact CI artifact
         shell: bash
         env:
-          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}
+          ARTIFACT_SHA: ${{ needs.prepare.outputs.deploy_sha }}
         run: |
-          dotnet tool install --global dotnet-ef --version 10.0.8
-          export PATH="$PATH:/home/runner/.dotnet/tools"
-          dotnet ef database update -p HoaCommunityEvents/backend/src/Persistence -s HoaCommunityEvents/backend/src/API --connection "$SQL_CONNECTION"
+          set -euo pipefail
+          artifact_dir="$RUNNER_TEMP/hoa-bff-artifact"
+          archive_name="hoa-bff-${ARTIFACT_SHA}.tar.gz"
+          test -f "$artifact_dir/$archive_name"
+          test -f "$artifact_dir/$archive_name.sha256"
+          (
+            cd "$artifact_dir"
+            sha256sum --check --strict "$archive_name.sha256"
+          )
+          publish_dir="$RUNNER_TEMP/hoa-bff-publish"
+          mkdir -p "$publish_dir"
+          tar -xzf "$artifact_dir/$archive_name" -C "$publish_dir"
+          test -f "$publish_dir/HoaCommunityEvents.API.dll"
+          test -f "$publish_dir/wwwroot/index.html"
 
-      - name: Record external migration responsibility
-        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'external' }}
-        run: echo "Database migration is an approved external release gate." >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Preserve combined release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hoa-bff-${{ env.DEPLOY_SHA }}
-          path: ${{ runner.temp }}/hoa-bff-publish
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Deploy to Azure staging slot
+      - name: Deploy exact artifact to Azure staging slot
         id: deploy
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
           slot-name: ${{ env.SLOT_NAME_CANONICAL }}

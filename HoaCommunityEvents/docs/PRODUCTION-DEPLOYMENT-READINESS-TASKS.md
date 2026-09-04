@@ -1,7 +1,7 @@
 # HOA Community Events — Production Deployment Readiness Tasks
 
-**Audit date:** 2026-09-04  
-**Repository:** `Victor-CS-Core/hoa-practice-project`  
+**Audit date:** 2026-09-04
+**Repository:** `Victor-CS-Core/hoa-practice-project`
 **Decision:** **NOT READY TO DEPLOY TO PRODUCTION**
 
 The combined frontend/backend application is implemented locally, but the reviewed release hardening is on branch `release-combined-bff-readiness` and has not reached GitHub. Live Azure resources still run the former split deployment. Complete the P0 tasks below before merging the combined-BFF changes to `main`.
@@ -13,8 +13,9 @@ The combined frontend/backend application is implemented locally, but the review
 - One ASP.NET Core process serves static frontend content, API routes, `/health`, and the SPA fallback from one origin.
 - The frontend uses relative `/api` URLs and cookie credentials; cookie authentication, CSRF protection, and `/api/security/csrf` are implemented locally.
 - SSE replaces SignalR for the current notification requirement.
-- CI verifies both applications, publishes the combined artifact, and checks `wwwroot/index.html`.
-- The hardened deployment job is configured to use GitHub Environment `production` once the external Environment and required-reviewer setup is completed; it then deploys only to a staging slot, retains the exact combined artifact for 30 days, and runs unauthenticated, non-mutating smoke checks on that slot.
+- CI verifies both applications, runs the release-contract validator and a checksum-pinned actionlint v1.7.12, performs the only release publish, and checks `HoaCommunityEvents.API.dll` plus `wwwroot/index.html`.
+- CI packages `hoa-bff-<commit SHA>.tar.gz` with a SHA-256 manifest and retains the exact SHA-addressed artifact for 30 days before any database job can run. Every third-party `uses:` action in the release workflows is pinned to a reviewed full commit SHA.
+- The hardened release workflow prepares and verifies that exact successful-CI artifact, requires separate `production-database` approval for database responsibility, and then requires `production` approval before deploying only to a staging slot. It verifies the digest and required files again before deployment and runs unauthenticated, non-mutating smoke checks on that slot.
 - The legacy Azure Static Web Apps workflow is deleted locally.
 
 Relevant local commits include `060f876` (trusted-main combined deployment), `f2737d7` (combined publish), `798069e` and `00c53b8` (serve/package SPA), `7ecf94d`, `99dd8f3`, and `811fb87` (cookie/CSRF BFF authentication), and `4ac4d2a` (project consolidation). The reviewed hardening branch is `release-combined-bff-readiness`.
@@ -25,8 +26,8 @@ Relevant local commits include `060f876` (trusted-main combined deployment), `f2
 |---|---|---|
 | Local Git | The prior audit found local `main` at `060f876`, 32 commits ahead of `origin/main`. The reviewed release hardening is on `release-combined-bff-readiness`. | Blocker: code and hardening must be reviewed and merged through GitHub. |
 | GitHub `main` | The prior remote `main` was `6e8d301` from 2026-06-19 and still had old paths, API-only deployment, and a Static Web Apps workflow. | Blocker: remote CI/CD must represent the combined architecture. |
-| GitHub release controls | Configure Environment `production` with a required reviewer; provide required variables `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` and `PRODUCTION_MIGRATION_MODE`. | Required before staging. |
-| GitHub secrets | App Service name and publish-profile secret names existed in the audit; values are not inspectable. `AZURE_SQL_CONNECTION_STRING_PRODUCTION` is required only for workflow migration mode. | Validate configuration without exposing values. |
+| GitHub release controls | Configure Environments `production-database` and `production` with separate required reviewers. Put `PRODUCTION_MIGRATION_MODE` on the database Environment and `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` on the staging Environment. | Required before staging. |
+| GitHub secrets | App Service name and slot-scoped publish-profile secret names existed in the audit; values are not inspectable. Keep `AZURE_SQL_CONNECTION_STRING_PRODUCTION` only in `production-database`; it is required only for workflow migration mode and injected only into the actual migration step. | Validate configuration without exposing values. |
 | Live App Service | `/health` answered, while `/`, SPA routes, and `/api/security/csrf` returned 404 during the audit. | Blocker: live app is API-only. |
 | Live Static Web App | The legacy frontend served browser JavaScript pointing to the separate API. | Blocker: production remains split. |
 | Azure access | The current CLI identity could not see the HOA App Service, Static Web App, or SQL resources. | Blocker: resource and rollback controls are unverified. |
@@ -39,7 +40,7 @@ Audited public endpoints were the legacy frontend `https://blue-moss-0d503960f.7
 
 Do not push a local `main` directly to remote `main`. Push the reviewed release branch, open a pull request, and require clean CI on the exact SHA. While the pull request is open, recover Azure access and prepare the App Service, database, backups, protected release settings, and slot.
 
-The release workflow stages the combined artifact to a non-production App Service slot only. It uses GitHub Environment `production`, which must require reviewer approval. It never swaps the slot. After the staged smoke checks pass and the database gate is complete, a separately authorized human performs the production slot swap and the full authenticated smoke matrix. DNS cutover, database migration, slot swap, and legacy-resource deletion each remain explicit approval boundaries.
+The release workflow promotes the immutable artifact produced by the exact successful trusted `main` CI run; deployment never republishes it. An unprotected preparation job confirms current `main`, validates the exact CI run and artifact digest, and then a `production-database` Environment separately approves either workflow migration or an external migration release gate. Only after that job succeeds can the `production` Environment approve staging deployment. The workflow stages to a non-production App Service slot only and never swaps the slot. A separately authorized human performs production promotion and the full authenticated smoke matrix. DNS cutover, database migration, slot swap, and legacy-resource deletion each remain explicit approval boundaries.
 
 This ordering matters: the old Static Web App expects the former API/authentication behavior, while the new backend requires same-origin cookies and CSRF. Replacing only one side can interrupt login and authenticated actions.
 
@@ -50,14 +51,16 @@ This ordering matters: the old Static Web App expects the former API/authenticat
 **Owner:** Repository administrator
 
 - Push `release-combined-bff-readiness` (or its reviewed successor) to a release branch, not directly to `main`, and require `CI` to pass on the exact SHA.
-- Create GitHub Environment `production` with a required reviewer; the deployment job must use it.
-- Configure `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` as a required Environment variable naming a non-production staging slot. The workflow rejects it when empty or `production` (case-insensitive).
-- Configure `PRODUCTION_MIGRATION_MODE` as a required Environment variable with only `workflow` or `external` allowed.
-- Configure secrets `AZURE_WEBAPP_NAME_PRODUCTION` and `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION`; the publish profile must be scoped to the staging slot.
-- When migration mode is `workflow`, provide `AZURE_SQL_CONNECTION_STRING_PRODUCTION`. When it is `external`, record the reviewed database migration as a separate release gate before promotion.
+- Create GitHub Environment `production-database` with a required database reviewer; the database gate job must use it.
+- On `production-database`, configure `PRODUCTION_MIGRATION_MODE` with only `workflow` or `external` allowed. In `workflow` mode, configure `AZURE_SQL_CONNECTION_STRING_PRODUCTION` there; only the conditional migration step receives it and checks it for emptiness without printing its value. In `external` mode, the approved database job records the reviewed external migration as the release gate before staging.
+- Create a distinct GitHub Environment `production` with a required staging reviewer; only the staging deployment job must use it.
+- On `production`, configure `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` as a required variable naming a non-production staging slot. The workflow rejects it when empty or `production` (case-insensitive) and deploys only the canonical validated value.
+- On `production`, configure secrets `AZURE_WEBAPP_NAME_PRODUCTION` and `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION`; the publish profile must be scoped to the staging slot.
+- Confirm CI preserves `hoa-bff-<commit SHA>` with its SHA-256 manifest for 30 days and the deployment workflow selects the exact successful trusted run for current `main`.
+- Review every full-SHA action pin and the fixed actionlint release version/checksum when dependency updates are proposed.
 - Confirm branch protection requires pull requests and CI on `main`, and confirm the deleted Static Web Apps workflow is included in the pull request.
 
-**Acceptance:** The pull request is reviewable; exact-SHA CI passes; staging deployment requires `production` Environment approval; and no configuration can silently target production or silently skip a required migration decision.
+**Acceptance:** The pull request is reviewable; exact-SHA CI passes and preserves the artifact; database responsibility requires `production-database` approval; staging deployment separately requires `production` approval; and no configuration can silently target production or silently skip a required migration decision.
 
 ### P0.2 — Recover and verify Azure ownership
 
@@ -95,7 +98,7 @@ Verify nonempty App Service values: `ConnectionStrings__DefaultConnection`, `Clo
 
 - Confirm the production Azure SQL database; take and verify a recoverable backup/restore point.
 - Compare `__EFMigrationsHistory` with `backend/src/Persistence`; generate and review an idempotent SQL script or EF migration bundle from the exact release SHA; test it against a production-like restored database.
-- Choose and record one execution path: `workflow` uses the protected SQL secret once; `external` uses a reviewed script/bundle run by a controlled identity before slot promotion.
+- Choose and record one execution path in the separately approved `production-database` job: `workflow` supplies the protected SQL secret only to the actual migration step; `external` records a reviewed script/bundle run by a controlled identity as the release gate before staging.
 - Do not give normal application runtime credentials permanent schema-owner access merely for migrations.
 
 **Acceptance:** Backup is verified, migration output is reviewed/tested, execution ownership is recorded, and the target reaches the expected migration without data loss.
@@ -105,11 +108,11 @@ Verify nonempty App Service values: `ConnectionStrings__DefaultConnection`, `Clo
 **Owner:** DevOps engineer
 
 - Use the required non-production value of `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` and a publish profile scoped to that slot.
-- Preserve the exact combined publish artifact for 30 days, deploy it to staging, and retain the prior production slot until the observation window closes.
+- Preserve the exact combined publish artifact and SHA-256 manifest in CI for 30 days before database authorization. Download it from the selected successful CI run, verify the digest plus `HoaCommunityEvents.API.dll` and `wwwroot/index.html`, deploy it without republishing, and retain the prior production slot until the observation window closes.
 - The workflow's unauthenticated checks must pass at the staging slot: `GET /health` returns 200; `GET /` returns application HTML; `/events/release-readiness-check` returns SPA fallback HTML; and `GET /api/security/csrf` returns 200. These checks must not redirect, sign in, or mutate data.
 - Do not swap slots from the workflow. Slot swap and every production-changing action require explicit approval.
 
-Fallback when slots are unavailable: schedule a maintenance window, confirm a known-good artifact and database recovery plan, deploy only under explicit approval, run the smoke matrix, and switch the browser URL/domain only after the combined frontend and backend are live.
+This automation has no in-place fallback: if a non-production App Service slot is unavailable, stop and revise the reviewed release procedure under separate authorization. Do not point this workflow at production.
 
 **Acceptance:** The release has a rehearsed, approval-gated promotion step and executable rollback before staging deployment begins.
 
@@ -148,8 +151,8 @@ Run the automated unauthenticated rows first against staging, then run the full 
 ### Cutover
 
 1. Freeze unrelated production changes.
-2. Confirm release SHA, exact-SHA CI, backup, migration decision, slot settings, and Environment reviewer approval.
-3. Deploy to staging and complete the automated staging checks plus approved staged verification.
+2. Confirm release SHA, exact successful CI run, preserved artifact digest, backup, migration decision, slot settings, and separate `production-database` and `production` reviewer approvals.
+3. Complete the approved database gate, deploy the unchanged CI artifact to staging, and complete the automated staging checks plus approved staged verification.
 4. Obtain separate explicit approval, then have the authorized human promote/swap the slot.
 5. Run the full production smoke matrix and monitor health, HTTP errors, authentication, database, Cloudinary, and SSE through the observation window.
 
@@ -171,7 +174,7 @@ Run the automated unauthenticated rows first against staging, then run the full 
 
 ## 8. Definition of ready
 
-Production is ready only when the combined BFF is in a reviewed pull request with exact-SHA CI; GitHub has protected Environment `production`; the slot, scoped publish profile, migration decision, resources, runtime, app settings, HTTPS, health, and SSE one-instance constraint are verified; backup and reviewed migration are complete; the slot promotion and rollback procedure is approval-gated; one-origin URL is ready; the smoke matrix passes before and after promotion; and prior artifact/database recovery remains available through observation.
+Production is ready only when the combined BFF is in a reviewed pull request with exact-SHA CI; CI preserves a digest-verified SHA-addressed artifact; all action pins and the actionlint checksum are reviewed; GitHub has distinct protected Environments `production-database` and `production`; the slot, scoped publish profile, migration decision, resources, runtime, app settings, HTTPS, health, and SSE one-instance constraint are verified; backup and reviewed migration are complete; the slot promotion and rollback procedure is approval-gated; one-origin URL is ready; the smoke matrix passes before and after promotion; and prior artifact/database recovery remains available through observation.
 
 ## References
 

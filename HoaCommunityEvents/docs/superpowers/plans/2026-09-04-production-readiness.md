@@ -1,277 +1,148 @@
 # HOA Combined BFF Production Readiness Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. All paths are repository-relative.
 
-**Goal:** Make the HOA combined ASP.NET Core BFF release safe to stage from GitHub Actions, explicit about database migration ownership, protected by a production approval environment, and documented for the eventual Azure cutover.
+**Goal:** Make the combined ASP.NET Core and Vite BFF safe to stage from GitHub Actions by promoting the exact successful-CI artifact, separating database authorization from staging authorization, and preserving explicit human control over production promotion.
 
-**Architecture:** GitHub CI validates the application and the release-workflow contract. A successful trusted `main` CI run may prepare a combined publish artifact, but the deploy workflow targets a required non-production App Service slot and is protected by the GitHub `production` Environment. Production promotion, database execution authority, DNS cutover, and legacy resource deletion remain explicit external gates.
+**Architecture:** CI performs the only release publish, verifies the API DLL and SPA entry point, packages a commit-SHA-addressed archive with a SHA-256 manifest, and retains it for 30 days. The deployment workflow verifies current `main` and the exact successful trusted CI run, verifies that run's artifact, passes through the separately protected `production-database` gate, then downloads and verifies the same artifact again before deploying it to the `production`-protected staging slot. No workflow swaps or promotes the slot.
 
-**Tech Stack:** GitHub Actions YAML, Node.js 22 validation script, ASP.NET Core/.NET 10, React/Vite, Azure App Service deployment slots, EF Core migrations.
+**Tech stack:** GitHub Actions YAML, Node.js release-contract validation, actionlint v1.7.12, ASP.NET Core/.NET 10, React/Vite, Azure App Service deployment slots, and EF Core migrations.
 
-**Spec:** `D:\dev\TigerTeam\Projects\HoaCommunityEvents\docs\PRODUCTION-DEPLOYMENT-READINESS-TASKS.md`
+**Spec:** `HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md`
 
-## Global Constraints
+## Global constraints
 
-- Work only on branch `release-combined-bff-readiness` in the isolated worktree.
-- Do not push, merge, deploy, apply a database migration, change DNS, swap an Azure slot, or delete the legacy Static Web App without explicit user approval at that boundary.
-- One `dotnet publish` remains the source of the combined API plus `wwwroot` frontend artifact.
-- The deployment workflow must reject a missing or production-valued slot name; the automated deployment target is a staging slot.
-- Database migration ownership must be explicitly `workflow` or `external`; it must never silently skip because a secret is missing.
-- The deploy job must use a GitHub Environment named exactly `production`.
-- Keep production at one App Service instance while the SSE broker is process-local.
-- Never write secret values, publish-profile contents, connection strings, test credentials, or Azure access tokens to source, logs, reports, or documentation.
-- Frontend baseline evidence is lint pass, 12 test files and 49 tests pass, and production build pass. Backend restore is currently blocked locally by the Windows TLS credential provider, so exact-SHA GitHub CI is the authoritative backend gate.
+- Work only on branch `release-combined-bff-readiness` in its isolated worktree.
+- Do not push, merge, deploy, execute a database migration, change DNS, swap a slot, promote to production, or mutate Azure resources while implementing this plan.
+- Preserve the combined ASP.NET Core plus Vite BFF architecture.
+- CI performs one release `dotnet publish`; deployment must never republish.
+- CI must preserve the SHA-addressed artifact and digest before database authorization can run.
+- Database authorization uses GitHub Environment `production-database`; staging authorization uses the distinct Environment `production`.
+- `PRODUCTION_MIGRATION_MODE` is mandatory and exactly `workflow` or `external`.
+- Only the conditional migration step may receive `AZURE_SQL_CONNECTION_STRING_PRODUCTION`, and it must check for an empty value without printing the value.
+- `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` is mandatory. Validation exports one canonical non-production value and deployment must use `${{ env.SLOT_NAME_CANONICAL }}`.
+- Keep production at one App Service instance while the SSE broker remains process-local.
+- Never write secret values, publish-profile contents, connection strings, test credentials, or Azure tokens to source, logs, reports, or documentation.
 
----
-
-### Task 1: Make the staging deployment workflow safe by contract
+## Task 1: Make CI the immutable artifact producer
 
 **Files:**
-- Create: `scripts/validate-production-workflow.mjs`
-- Modify: `.github/workflows/deploy-api-azure.yml`
-- Modify: `.github/workflows/ci.yml`
 
-**Interfaces:**
-- Consumes: GitHub Environment `production`; environment variables `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` and `PRODUCTION_MIGRATION_MODE`; secrets `AZURE_WEBAPP_NAME_PRODUCTION`, `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION`, and conditionally `AZURE_SQL_CONNECTION_STRING_PRODUCTION`.
-- Produces: a deployment workflow that uploads the exact combined artifact, targets a required staging slot, uses an explicit migration mode, and performs unauthenticated combined-app smoke checks; a dependency-free Node contract validator invoked by CI.
+- `.github/workflows/ci.yml`
+- `scripts/validate-production-workflow.mjs`
 
-- [ ] **Step 1: Create the failing workflow-contract validator**
+1. Add explicit workflow permission `contents: read`.
+2. Pin every `uses:` action to a reviewed full 40-character commit SHA.
+3. Run `node scripts/validate-production-workflow.mjs` before restore.
+4. Download the fixed actionlint v1.7.12 Linux archive, verify its published SHA-256, and lint both release workflow files.
+5. Build and test normally, then perform the only combined-BFF release publish.
+6. Verify both `HoaCommunityEvents.API.dll` and `wwwroot/index.html`.
+7. Package `hoa-bff-${{ github.sha }}.tar.gz` and produce its `.sha256` manifest.
+8. Upload artifact `hoa-bff-${{ github.sha }}` with `if-no-files-found: error` and `retention-days: 30`.
 
-Create `scripts/validate-production-workflow.mjs` with this content:
+Acceptance: a successful CI run contains the exact artifact later eligible for staging, and no database work can precede artifact preservation.
 
-```js
-import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+## Task 2: Split trusted preparation, database authorization, and staging deployment
 
-const repositoryRoot = new URL('../', import.meta.url);
-const read = (relativePath) =>
-  readFileSync(fileURLToPath(new URL(relativePath, repositoryRoot)), 'utf8');
+**File:** `.github/workflows/deploy-api-azure.yml`
 
-const deployWorkflow = read('.github/workflows/deploy-api-azure.yml');
-const ciWorkflow = read('.github/workflows/ci.yml');
-const legacyStaticWorkflow = fileURLToPath(
-  new URL('.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml', repositoryRoot),
-);
+### Prepare job
 
-const requiredDeploymentFragments = [
-  'environment:\n      name: production',
-  'SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}',
-  'MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}',
-  "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}",
-  'slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}',
-  'uses: actions/upload-artifact@v4',
-  'steps.deploy.outputs.webapp-url',
-  '/api/security/csrf',
-  'wwwroot/index.html',
-];
+1. Keep the `workflow_run` guard restricted to a successful push to `main` from the same repository; keep manual dispatch restricted to `main`.
+2. Grant only `actions: read` and `contents: read`.
+3. Reject a `DEPLOY_SHA` that is not current `main`.
+4. For a `workflow_run` event, use the exact triggering run ID. For manual dispatch, locate a successful push-triggered `CI` run for the exact current-main SHA.
+5. Read back the selected run and verify workflow path, SHA, branch, event, completed/success state, head repository, and repository.
+6. Download artifact `hoa-bff-<DEPLOY_SHA>` from that exact run.
+7. Verify the SHA-256 manifest, extract the archive, and verify the API DLL and SPA entry point.
+8. Expose only the verified SHA and CI run ID as job outputs.
 
-const missing = requiredDeploymentFragments.filter(
-  (fragment) => !deployWorkflow.includes(fragment),
-);
+### Database gate job
 
-if (missing.length > 0) {
-  throw new Error(`Deployment workflow is missing required release controls:\n- ${missing.join('\n- ')}`);
-}
+1. Depend on `prepare` and use Environment `production-database`.
+2. Grant only `contents: read`.
+3. Reject any migration mode other than `workflow` or `external`.
+4. In `workflow` mode, check out the exact verified release SHA and set up .NET. Supply `AZURE_SQL_CONNECTION_STRING_PRODUCTION` only to the actual migration step, check it for emptiness there, and execute the reviewed EF migration.
+5. In `external` mode, record in the job summary that the approved external migration is the release gate.
 
-if (existsSync(legacyStaticWorkflow)) {
-  throw new Error('Legacy Azure Static Web Apps workflow must remain deleted.');
-}
+### Staging deploy job
 
-if (!ciWorkflow.includes('node scripts/validate-production-workflow.mjs')) {
-  throw new Error('CI must run the production workflow contract validator.');
-}
+1. Depend on both `prepare` and `database_gate` and use Environment `production`.
+2. Grant only `actions: read`.
+3. Validate the App Service name, slot-scoped publish profile, and required non-production slot.
+4. Export the validated canonical slot once and pass exactly this value to Azure:
 
-console.log('Production workflow contract is valid.');
-```
+   ```yaml
+   slot-name: ${{ env.SLOT_NAME_CANONICAL }}
+   ```
 
-- [ ] **Step 2: Run the validator and confirm that the current workflow fails the new contract**
+5. Download `hoa-bff-<DEPLOY_SHA>` from the verified CI run, verify the digest and required files again, and deploy the extracted directory without `dotnet publish`.
+6. Run only unauthenticated, non-mutating checks for `/health`, `/`, the SPA deep route, and `/api/security/csrf`; reject redirects and non-200 responses.
+7. Do not add slot swap, production promotion, DNS, database, or Azure resource mutation steps.
+
+Acceptance: the three jobs form `prepare -> database_gate -> deploy`, with distinct approvals and an unchanged, digest-verified CI artifact reaching staging.
+
+## Task 3: Enforce the trust chain with dependency-free validation
+
+**File:** `scripts/validate-production-workflow.mjs`
+
+The validator must enforce:
+
+- the trusted `workflow_run` main/success/push/repository guard;
+- least-privilege permissions;
+- current-main and exact successful-CI run verification;
+- exact SHA artifact naming and exact run ID download;
+- SHA-256 manifest generation and verification;
+- API DLL and `wwwroot/index.html` checks;
+- upload missing-file failure and 30-day retention;
+- `prepare -> database_gate -> deploy` dependencies;
+- distinct `production-database` and `production` Environments;
+- SQL secret occurrence only on the conditional migration step;
+- canonical staging slot usage;
+- no deployment republish, upload, slot swap, or promotion;
+- reviewed 40-character action pins; and
+- actionlint validation of both workflow files.
+
+Add mutation fixtures for each high-risk control and require every fixture to fail validation for the intended reason.
+
+Acceptance: the real workflows pass, while mutations covering trust, permissions, artifact identity/digest/retention, job ordering/environments, secret scope, republishing, action pins, schema checking, redirects, and HTML checks are rejected.
+
+## Task 4: Align documentation and verify
+
+**Files:**
+
+- `HoaCommunityEvents/README.md`
+- `HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md`
+- `HoaCommunityEvents/docs/superpowers/plans/2026-09-04-production-readiness.md`
+
+Document immutable artifact promotion, both approval Environments, SQL secret scope, action pins, checksum-pinned actionlint, staging-only automation, one-instance SSE, and separately authorized human production promotion.
 
 Run from the repository root:
 
 ```powershell
 node scripts/validate-production-workflow.mjs
+node --check scripts/validate-production-workflow.mjs
+$actionlintVersion = '1.7.12'
+$actionlintSha256 = '6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9'
+$actionlintDir = Join-Path ([System.IO.Path]::GetTempPath()) ('hoa-actionlint-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $actionlintDir | Out-Null
+gh release download "v$actionlintVersion" --repo rhysd/actionlint --pattern "actionlint_${actionlintVersion}_windows_amd64.zip" --dir $actionlintDir
+$actionlintArchive = Join-Path $actionlintDir "actionlint_${actionlintVersion}_windows_amd64.zip"
+if ((Get-FileHash -Algorithm SHA256 $actionlintArchive).Hash.ToLowerInvariant() -ne $actionlintSha256) { throw 'actionlint checksum mismatch' }
+Expand-Archive $actionlintArchive (Join-Path $actionlintDir 'bin')
+& (Join-Path $actionlintDir 'bin/actionlint.exe') .github/workflows/ci.yml .github/workflows/deploy-api-azure.yml
+git diff --check 060f8766f6b7291d1267fef48ca65afe81c85dbf..HEAD
 ```
 
-Expected: nonzero exit with missing `environment`, staging-slot, explicit migration-mode, artifact-upload, and smoke-test fragments.
+Do not rerun frontend tests unless frontend code changes. Backend compilation remains governed by exact-SHA Linux CI if the documented Windows NuGet TLS credential-provider failure persists.
 
-- [ ] **Step 3: Protect the deploy job and validate its release configuration**
+Before committing, inspect the complete diff for accidental application changes, secret exposure, mutable action refs, deployment publishing, slot promotion, and Environment-name drift. After committing, rerun the validator, syntax check, terminology scans, and branch-range `git diff --check`.
 
-In `.github/workflows/deploy-api-azure.yml`, add this directly under `deploy:`:
+## External checkpoints
 
-```yaml
-    environment:
-      name: production
-```
-
-Extend the job `env` block to include:
-
-```yaml
-      SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
-      MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}
-```
-
-Replace the deployment-configuration validation step with a shell check that:
-
-1. Requires the App Service name and publish profile.
-2. Requires `SLOT_NAME` and rejects `production` case-insensitively.
-3. Accepts only `workflow` or `external` for `MIGRATION_MODE`.
-4. Requires `AZURE_SQL_CONNECTION_STRING_PRODUCTION` when the mode is `workflow`.
-5. Writes no secret values.
-
-Use this condition for the migration step:
-
-```yaml
-        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}
-```
-
-Add a separate summary step for external migrations:
-
-```yaml
-      - name: Record external migration responsibility
-        if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'external' }}
-        run: echo "Database migration is an approved external release gate." >> "$GITHUB_STEP_SUMMARY"
-```
-
-- [ ] **Step 4: Preserve a rollback artifact and deploy only to the staging slot**
-
-Before the Azure deploy action, upload the combined publish directory:
-
-```yaml
-      - name: Preserve combined release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: hoa-bff-${{ env.DEPLOY_SHA }}
-          path: ${{ runner.temp }}/hoa-bff-publish
-          if-no-files-found: error
-          retention-days: 30
-```
-
-Give the deploy step the ID `deploy` and add the required slot input:
-
-```yaml
-      - name: Deploy to Azure staging slot
-        id: deploy
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
-          slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-          package: ${{ runner.temp }}/hoa-bff-publish
-```
-
-- [ ] **Step 5: Add automated combined-app smoke checks for the staged URL**
-
-After deployment, use `steps.deploy.outputs.webapp-url` and `curl` to retry the slot during warm-up, then require:
-
-- `/health` returns HTTP 200.
-- `/` returns HTML containing `<!doctype html`.
-- `/events/release-readiness-check` returns the SPA HTML fallback.
-- `/api/security/csrf` returns HTTP 200.
-
-The step must fail when the action output URL is empty and must not perform login or mutate application data.
-
-- [ ] **Step 6: Make CI run the dependency-free contract validator**
-
-In the `backend` job of `.github/workflows/ci.yml`, after Node setup and before .NET restore, add:
-
-```yaml
-      - name: Validate production workflow contract
-        run: node scripts/validate-production-workflow.mjs
-```
-
-- [ ] **Step 7: Run local contract and frontend verification**
-
-Run:
-
-```powershell
-node scripts/validate-production-workflow.mjs
-npm run lint --prefix HoaCommunityEvents/frontend
-npm run test:run --prefix HoaCommunityEvents/frontend
-npm run build --prefix HoaCommunityEvents/frontend
-git diff --check
-```
-
-Expected: validator passes, lint passes, 12 Vitest files and 49 tests pass, Vite builds successfully, and `git diff --check` reports nothing.
-
-- [ ] **Step 8: Commit Task 1**
-
-```powershell
-git add .github/workflows/deploy-api-azure.yml .github/workflows/ci.yml scripts/validate-production-workflow.mjs
-git commit -m "ci: stage combined BFF behind release gates"
-```
-
----
-
-### Task 2: Align release documentation with the hardened workflow
-
-**Files:**
-- Create: `HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md`
-- Create: `HoaCommunityEvents/docs/superpowers/plans/2026-09-04-production-readiness.md`
-- Modify: `HoaCommunityEvents/README.md`
-
-**Interfaces:**
-- Consumes: Task 1's exact GitHub Environment name, variable names, secret names, staging-only deployment behavior, migration modes, artifact retention, and smoke-test behavior.
-- Produces: operator-facing setup instructions and the repository copy of the audited release tasking.
-
-- [ ] **Step 1: Add the audited readiness tasking to the release branch**
-
-Read `D:\dev\TigerTeam\Projects\HoaCommunityEvents\docs\PRODUCTION-DEPLOYMENT-READINESS-TASKS.md` and create `HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md` with the same audited evidence, P0/P1 tasks, smoke matrix, cutover steps, and rollback steps. Preserve secret names but never include secret values.
-
-- [ ] **Step 2: Update the tasking to describe the new local safety controls**
-
-In the repository copy, update the local-state and P0.1/P0.6 sections so they state:
-
-- Branch `release-combined-bff-readiness` contains the release hardening.
-- The deployment job uses GitHub Environment `production`.
-- `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` is mandatory and must identify a non-production slot.
-- `PRODUCTION_MIGRATION_MODE` is mandatory and must be `workflow` or `external`.
-- Workflow mode requires `AZURE_SQL_CONNECTION_STRING_PRODUCTION`; external mode records the database migration as a separate release gate.
-- The combined publish artifact is retained for 30 days.
-- The workflow performs unauthenticated health, root, SPA-fallback, and CSRF smoke checks against the staging slot.
-- Slot swap and every production-changing action still require explicit approval.
-
-- [ ] **Step 3: Update the README deployment contract**
-
-In `HoaCommunityEvents/README.md`, retain the existing architecture explanation but change the deployment section to explain:
-
-- Successful trusted `main` CI stages the artifact; it does not automatically swap the slot into production.
-- Configure GitHub Environment `production` with a required reviewer.
-- Environment variable `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` must name the staging slot.
-- Environment variable `PRODUCTION_MIGRATION_MODE` must be `workflow` or `external`.
-- Workflow mode requires the SQL secret; external mode requires a separately verified migration before slot promotion.
-- The publish profile must be scoped to the staging slot.
-- The workflow retains the artifact for 30 days and runs only non-mutating smoke checks.
-- A human-authorized slot swap and full authenticated smoke matrix complete the cutover.
-
-- [ ] **Step 4: Verify terminology and repository cleanliness**
-
-Run:
-
-```powershell
-rg -n "AZURE_WEBAPP_SLOT_NAME_PRODUCTION|PRODUCTION_MIGRATION_MODE|environment.*production|30 days|staging slot" HoaCommunityEvents/README.md HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md
-git diff --check
-git status --short
-```
-
-Expected: both documents use the exact names, no whitespace errors are reported, and only Task 2 documentation is uncommitted.
-
-- [ ] **Step 5: Commit Task 2**
-
-```powershell
-git add HoaCommunityEvents/README.md HoaCommunityEvents/docs/PRODUCTION-DEPLOYMENT-READINESS-TASKS.md HoaCommunityEvents/docs/superpowers/plans/2026-09-04-production-readiness.md
-git commit -m "docs: define combined BFF production release gate"
-```
-
----
-
-## External checkpoints after local implementation
-
-These are not implementation tasks and must not be executed by an implementer subagent:
-
-1. Ask for approval before pushing `release-combined-bff-readiness` to GitHub or opening a pull request.
-2. After approval, push only the release branch and open a pull request; do not merge it.
-3. Require exact-SHA CI to pass. This is also the authoritative backend verification because local NuGet restore is blocked by the Windows credential provider.
-4. Configure the GitHub `production` Environment, variables, secrets, required reviewer, and branch protection through a repository administrator.
-5. Recover Azure access and verify the actual App Service slot, runtime settings, health checks, one-instance SSE constraint, SQL database, backup, migration method, domain, and rollback operator.
-6. Ask for separate explicit approval before staging deployment if it may touch a shared Azure slot or production database.
-7. Ask again before a database migration, slot swap, DNS cutover, or legacy Static Web App deletion.
+1. Ask before pushing the release branch or opening a pull request; do not merge it.
+2. Require exact-SHA GitHub CI to pass.
+3. Have a repository administrator configure `production-database` and `production` with separate reviewers and correctly scoped variables/secrets.
+4. Recover Azure access and verify the actual staging slot, runtime settings, health checks, one-instance constraint, database, backup, domain, and rollback operator.
+5. Ask separately before any staging deployment or database execution.
+6. Ask again before slot swap, production promotion, DNS cutover, or legacy-resource deletion.
