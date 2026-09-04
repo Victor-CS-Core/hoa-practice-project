@@ -72,16 +72,19 @@ jobs:
             exit 1
           fi
 
-          if [ -z "$SLOT_NAME" ]; then
+          slot_name_canonical="${SLOT_NAME//[[:space:]]/}"
+          if [ -z "$slot_name_canonical" ]; then
             echo "::error::Configure AZURE_WEBAPP_SLOT_NAME_PRODUCTION with a non-production staging slot."
             exit 1
           fi
 
-          slot_name_normalized="${SLOT_NAME,,}"
-          if [ "${slot_name_normalized//[[:space:]]/}" = "production" ]; then
+          slot_name_canonical_lower="${slot_name_canonical,,}"
+          if [ "$slot_name_canonical_lower" = "production" ]; then
             echo "::error::AZURE_WEBAPP_SLOT_NAME_PRODUCTION must name a non-production staging slot."
             exit 1
           fi
+
+          printf 'SLOT_NAME_CANONICAL=%s\n' "$slot_name_canonical" >> "$GITHUB_ENV"
 
           if [ "$MIGRATION_MODE" != "workflow" ] && [ "$MIGRATION_MODE" != "external" ]; then
             echo "::error::PRODUCTION_MIGRATION_MODE must be either workflow or external."
@@ -147,7 +150,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
-          slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
+          slot-name: ${{ env.SLOT_NAME_CANONICAL }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
           package: ${{ runner.temp }}/hoa-bff-publish
 
@@ -162,7 +165,7 @@ jobs:
           fi
 
           base_url="${WEBAPP_URL%/}"
-          health_status=$(curl --fail-with-body --silent --show-error --location \
+          health_status=$(curl --fail-with-body --silent --show-error \
             --retry 12 --retry-all-errors --retry-delay 5 \
             --output /dev/null --write-out '%{http_code}' "$base_url/health")
           if [ "$health_status" != "200" ]; then
@@ -170,12 +173,26 @@ jobs:
             exit 1
           fi
 
-          curl --fail-with-body --silent --show-error --location \
-            --retry 3 --retry-all-errors --retry-delay 3 "$base_url/" | grep -qi '<!doctype html'
-          curl --fail-with-body --silent --show-error --location \
-            --retry 3 --retry-all-errors --retry-delay 3 "$base_url/events/release-readiness-check" | grep -qi '<!doctype html'
+          require_html() {
+            local endpoint="$1"
+            local response_file
+            local status
+            response_file=$(mktemp)
+            status=$(curl --fail-with-body --silent --show-error \
+              --retry 3 --retry-all-errors --retry-delay 3 \
+              --output "$response_file" --write-out '%{http_code}' "$base_url$endpoint")
+            if [ "$status" != "200" ] || ! grep -qi '<!doctype html' "$response_file"; then
+              rm -f "$response_file"
+              echo "::error::Staged $endpoint endpoint did not return HTTP 200 HTML."
+              exit 1
+            fi
+            rm -f "$response_file"
+          }
 
-          csrf_status=$(curl --fail-with-body --silent --show-error --location \
+          require_html "/"
+          require_html "/events/release-readiness-check"
+
+          csrf_status=$(curl --fail-with-body --silent --show-error \
             --retry 3 --retry-all-errors --retry-delay 3 \
             --output /dev/null --write-out '%{http_code}' "$base_url/api/security/csrf")
           if [ "$csrf_status" != "200" ]; then
