@@ -7,6 +7,9 @@ const read = (relativePath) =>
 const legacyStaticWorkflow = fileURLToPath(
   new URL('.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml', repositoryRoot),
 );
+const freshnessActionPath = fileURLToPath(
+  new URL('.github/actions/verify-release-freshness/action.yml', repositoryRoot),
+);
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const withoutCommentLines = (text) =>
   text.split('\n').filter((line) => !line.trimStart().startsWith('#')).join('\n');
@@ -69,6 +72,90 @@ function requireOrdered(items, description, errors) {
   if (indexes.some((index, position) => position > 0 && index <= indexes[position - 1])) {
     errors.push(description);
   }
+}
+
+function requireAdjacent(first, second, description, errors) {
+  if (!first || !second) return;
+  if (first.index + first[0].length !== second.index) errors.push(description);
+}
+
+function requireJobPermissions(header, owner, expected, errors) {
+  const match = /^    permissions:\n((?:      [A-Za-z0-9_-]+: (?:read|write|none)\n?)*)/m.exec(header);
+  const actual = match?.[1].trim().split('\n').map((line) => line.trim()) ?? [];
+  if (actual.length !== expected.length || expected.some((entry, index) => actual[index] !== entry)) {
+    errors.push(`${owner} must grant only ${expected.map((entry) => entry.replace(': ', ' ')).join(' and ')}`);
+  }
+}
+
+function requireFreshnessAction(step, owner, errors) {
+  for (const [value, description] of [
+    ['uses: ./.github/actions/verify-release-freshness', `${owner} must use the local freshness action`],
+    ['deploy-sha: ${{ needs.prepare.outputs.deploy_sha }}', `${owner} freshness check must use the verified release SHA`],
+    ['ci-run-id: ${{ needs.prepare.outputs.ci_run_id }}', `${owner} freshness check must use the exact successful CI run id`],
+    ['repository: ${{ github.repository }}', `${owner} freshness check must use the current repository`],
+    ['token: ${{ github.token }}', `${owner} freshness check must use the scoped GitHub token`],
+  ]) requireText(step, value, description, errors);
+}
+
+function requireExactReleaseCheckout(step, owner, errors) {
+  for (const [value, description] of [
+    ['uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262', `${owner} checkout must use the reviewed action pin`],
+    ['ref: ${{ needs.prepare.outputs.deploy_sha }}', `${owner} checkout must use the verified release SHA`],
+    ['persist-credentials: false', `${owner} checkout must disable persisted credentials`],
+  ]) requireText(step, value, description, errors);
+}
+
+function requireStagingConfiguration(step, owner, errors, { requireExport = false } = {}) {
+  for (const [value, description] of [
+    ['APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}', `${owner} must require the App Service name`],
+    ['PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', `${owner} must require the slot-scoped publish profile`],
+    ['SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}', `${owner} must source the staging slot from the production Environment`],
+    ['slot_name_canonical="${SLOT_NAME//[[:space:]]/}"', `${owner} must canonicalize SLOT_NAME once`],
+    ['if [ -z "$slot_name_canonical" ]; then', `${owner} must reject whitespace-only SLOT_NAME values`],
+    ['slot_name_canonical_lower="${slot_name_canonical,,}"', `${owner} must compare the canonical slot case-insensitively`],
+    ['if [ "$slot_name_canonical_lower" = "production" ]; then', `${owner} must reject the production slot`],
+  ]) requireText(step, value, description, errors);
+  if (requireExport) {
+    requireText(step, 'SLOT_NAME_CANONICAL=%s\\n', `${owner} must export the validated canonical slot`, errors);
+  }
+  rejectText(step, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', `${owner} must not receive the SQL secret`, errors);
+}
+
+function validateFreshnessAction(action, errors) {
+  if (!action) {
+    errors.push('repository must define the local verify-release-freshness action');
+    return;
+  }
+
+  for (const input of ['deploy-sha', 'ci-run-id', 'repository', 'token']) {
+    const inputBlock = new RegExp(`^  ${escapeRegExp(input)}:\\s*\\n(?:    .+\\n)*?    required: true$`, 'm');
+    if (!inputBlock.test(action)) errors.push(`freshness action input ${input} must be required`);
+  }
+  for (const [value, description] of [
+    ['using: composite', 'freshness action must be a composite action'],
+    ['shell: bash', 'freshness action must run with Bash'],
+    ['set -euo pipefail', 'freshness action must enable strict Bash handling'],
+    ['GH_TOKEN: ${{ inputs.token }}', 'freshness action token must be bound only through GH_TOKEN'],
+    ['if [ -z "$DEPLOY_SHA" ] || [ -z "$CI_RUN_ID" ] || [ -z "$REPOSITORY" ] || [ -z "$GH_TOKEN" ]; then', 'freshness action must reject every missing input without printing values'],
+    ['current_main=$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq \'.object.sha\')', 'freshness action must read the current main SHA'],
+    ['if [ "$DEPLOY_SHA" != "$current_main" ]; then', 'freshness action must reject a stale release SHA'],
+    ['gh api "repos/$REPOSITORY/actions/runs/$CI_RUN_ID" > "$run_file"', 'freshness action must fetch the exact selected CI run'],
+    ['.head_sha == $sha and', 'freshness action must verify the selected run commit SHA'],
+    ['.head_branch == "main" and', 'freshness action must verify the selected run branch'],
+    ['.event == "push" and', 'freshness action must verify the selected run event'],
+    ['.conclusion == "success" and', 'freshness action must verify the selected run conclusion'],
+    ['.head_repository.full_name == $repo and', 'freshness action must verify the selected run repository'],
+    ['(.path | startswith(".github/workflows/ci.yml"))', 'freshness action must verify the selected run workflow path'],
+    ['echo "Release freshness verified for $DEPLOY_SHA."', 'freshness action must emit only the verified non-secret commit SHA on success'],
+  ]) requireText(action, value, description, errors);
+
+  const tokenBindings = action.match(/\$\{\{ inputs\.token \}\}/g)?.length ?? 0;
+  if (tokenBindings !== 1) errors.push('freshness action token input must appear only in the GH_TOKEN binding');
+  if (/\b(?:echo|printf)\b[^\n]*(?:GH_TOKEN|inputs\.token)/.test(action)) {
+    errors.push('freshness action must never print the token');
+  }
+  rejectText(action, 'azure/', 'freshness action must not call Azure', errors);
+  rejectText(action, 'actions/download-artifact', 'freshness action must not download artifacts', errors);
 }
 
 function validateActionPins(workflow, workflowName, errors) {
@@ -192,7 +279,7 @@ function validateSmokeStep(smoke, errors) {
   }
 }
 
-function validateDeploymentWorkflow(deploy, errors) {
+function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   const header = workflowHeader(deploy);
   for (const [value, description] of [
     ['workflow_dispatch:', 'deployment workflow must allow reviewed manual dispatch'],
@@ -207,14 +294,17 @@ function validateDeploymentWorkflow(deploy, errors) {
   rejectText(deploy, 'actions/upload-artifact@', 'deployment workflow must not replace the CI artifact', errors);
   rejectText(deploy, 'az webapp deployment slot swap', 'deployment workflow must not swap or promote the staging slot', errors);
   validateActionPins(deploy, 'deployment', errors);
+  validateFreshnessAction(freshnessAction, errors);
 
   const prepare = jobBlock(deploy, 'prepare');
+  const stagingPreflight = jobBlock(deploy, 'staging_preflight');
   const databaseGate = jobBlock(deploy, 'database_gate');
   const stagingDeploy = jobBlock(deploy, 'deploy');
   if (!prepare) errors.push('deployment workflow must define the prepare job');
+  if (!stagingPreflight) errors.push('deployment workflow must define the staging_preflight job');
   if (!databaseGate) errors.push('deployment workflow must define the database_gate job');
   if (!stagingDeploy) errors.push('deployment workflow must define the deploy job');
-  if (!prepare || !databaseGate || !stagingDeploy) return;
+  if (!prepare || !stagingPreflight || !databaseGate || !stagingDeploy) return;
 
   const prepareHeader = jobHeader(prepare);
   for (const [value, description] of [
@@ -254,21 +344,51 @@ function validateDeploymentWorkflow(deploy, errors) {
   requireArtifactVerification(prepareVerification, '${{ steps.release.outputs.deploy_sha }}', 'prepare', errors);
   requireOrdered([resolveRun, prepareDownload, prepareVerification], 'prepare must resolve, download, and verify the trusted CI artifact in order', errors);
 
+  const preflightHeader = jobHeader(stagingPreflight);
+  for (const [value, description] of [
+    ['needs: prepare', 'staging_preflight must depend on prepare'],
+    ['name: production', 'staging_preflight must use the production Environment'],
+  ]) requireText(preflightHeader, value, description, errors);
+  requireJobPermissions(preflightHeader, 'staging_preflight', ['actions: read', 'contents: read'], errors);
+  rejectText(preflightHeader, ': write', 'staging_preflight must not grant write permissions', errors);
+  const preflightCheckout = requireStep(stagingPreflight, 'Checkout exact release for staging preflight', errors);
+  requireExactReleaseCheckout(preflightCheckout, 'staging_preflight', errors);
+  const preflightFreshness = requireStep(stagingPreflight, 'Verify release freshness after staging-preflight approval', errors);
+  requireFreshnessAction(preflightFreshness, 'staging_preflight', errors);
+  const preflightConfiguration = requireStep(stagingPreflight, 'Validate staging deployment configuration', errors);
+  requireStagingConfiguration(preflightConfiguration, 'staging_preflight', errors);
+  requireOrdered(
+    [preflightCheckout, preflightFreshness, preflightConfiguration],
+    'staging_preflight must check out, revalidate, and verify staging configuration in order',
+    errors,
+  );
+  requireAdjacent(preflightCheckout, preflightFreshness, 'staging_preflight must revalidate immediately after checkout', errors);
+  rejectText(stagingPreflight, 'azure/webapps-deploy@', 'staging_preflight must not deploy', errors);
+  rejectText(stagingPreflight, 'dotnet ef database update', 'staging_preflight must not mutate the database', errors);
+
   const databaseHeader = jobHeader(databaseGate);
   for (const [value, description] of [
-    ['needs: prepare', 'database_gate must depend on prepare'],
+    ['needs: [prepare, staging_preflight]', 'database_gate must depend on prepare and staging_preflight'],
     ['name: production-database', 'database_gate must use the production-database Environment'],
-    ['permissions:\n      contents: read', 'database_gate must grant only contents read'],
     ['MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}', 'database_gate must use the explicit migration mode'],
   ]) requireText(databaseHeader, value, description, errors);
+  requireJobPermissions(databaseHeader, 'database_gate', ['actions: read', 'contents: read'], errors);
   rejectText(databaseHeader, 'name: production\n', 'database_gate and staging deploy must use distinct Environments', errors);
   const migrationMode = requireStep(databaseGate, 'Validate migration mode', errors);
   requireText(migrationMode, 'if [ "$MIGRATION_MODE" != "workflow" ] && [ "$MIGRATION_MODE" != "external" ]; then', 'database_gate must allow only workflow or external migration mode', errors);
   const checkout = requireStep(databaseGate, 'Checkout exact release for migration', errors);
-  requireText(checkout, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'migration checkout must run only in workflow mode', errors);
-  requireText(checkout, 'ref: ${{ needs.prepare.outputs.deploy_sha }}', 'migration checkout must use the verified release SHA', errors);
+  requireExactReleaseCheckout(checkout, 'database_gate', errors);
+  rejectText(checkout, 'if:', 'database_gate checkout must run in both migration modes', errors);
+  const databaseApprovalFreshness = requireStep(databaseGate, 'Verify release freshness after database approval', errors);
+  requireFreshnessAction(databaseApprovalFreshness, 'database_gate post-approval check', errors);
   const setupDotnet = requireStep(databaseGate, 'Setup .NET for migration', errors);
   requireText(setupDotnet, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'migration .NET setup must run only in workflow mode', errors);
+  const installEf = requireStep(databaseGate, 'Install EF migration tool', errors);
+  requireText(installEf, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'EF tool setup must run only in workflow mode', errors);
+  requireText(installEf, 'dotnet tool install', 'database_gate must install the EF tool before its final freshness check', errors);
+  const databaseMutationFreshness = requireStep(databaseGate, 'Reconfirm release freshness before database mutation', errors);
+  requireFreshnessAction(databaseMutationFreshness, 'database_gate pre-mutation check', errors);
+  requireText(databaseMutationFreshness, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'database_gate pre-mutation check must run only in workflow mode', errors);
   const migration = requireStep(databaseGate, 'Apply production database migrations', errors);
   for (const [value, description] of [
     ["if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'migration must run only in workflow mode'],
@@ -276,38 +396,42 @@ function validateDeploymentWorkflow(deploy, errors) {
     ['if [ -z "$SQL_CONNECTION" ]; then', 'migration step must reject an empty SQL secret'],
     ['dotnet ef database update', 'workflow migration mode must execute the reviewed EF migration'],
   ]) requireText(migration, value, description, errors);
+  rejectText(migration, 'dotnet tool install', 'migration step must not perform tool setup after the final freshness check', errors);
   const externalMigration = requireStep(databaseGate, 'Record external migration release gate', errors);
   requireText(externalMigration, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'external' }}", 'external migration gate must run only in external mode', errors);
   requireText(externalMigration, 'approved external release gate', 'external mode must record the approved database release gate', errors);
-  requireOrdered([migrationMode, checkout, setupDotnet, migration], 'database_gate must validate its mode before any workflow migration', errors);
+  requireOrdered(
+    [migrationMode, checkout, databaseApprovalFreshness, setupDotnet, installEf, databaseMutationFreshness, migration],
+    'database_gate must validate mode, revalidate the release, finish setup, reconfirm freshness, and only then migrate',
+    errors,
+  );
+  requireAdjacent(checkout, databaseApprovalFreshness, 'database_gate must revalidate immediately after checkout', errors);
+  requireAdjacent(databaseMutationFreshness, migration, 'database_gate must reconfirm freshness directly before database mutation', errors);
 
   const deployHeader = jobHeader(stagingDeploy);
   for (const [value, description] of [
-    ['needs: [prepare, database_gate]', 'deploy must depend on prepare and database_gate'],
+    ['needs: [prepare, staging_preflight, database_gate]', 'deploy must depend on prepare, staging_preflight, and database_gate'],
     ['name: production', 'deploy must use the production Environment'],
-    ['permissions:\n      actions: read', 'deploy must grant only actions read'],
     ['DEPLOY_SHA: ${{ needs.prepare.outputs.deploy_sha }}', 'deploy must use the verified release SHA'],
     ['CI_RUN_ID: ${{ needs.prepare.outputs.ci_run_id }}', 'deploy must use the exact successful CI run id'],
-    ['SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}', 'deploy must source the staging slot from the production Environment'],
   ]) requireText(deployHeader, value, description, errors);
+  requireJobPermissions(deployHeader, 'deploy', ['actions: read', 'contents: read'], errors);
   rejectText(deployHeader, 'production-database', 'deploy and database_gate must use distinct Environments', errors);
 
+  const deployCheckout = requireStep(stagingDeploy, 'Checkout exact release for staging deployment', errors);
+  requireExactReleaseCheckout(deployCheckout, 'deploy', errors);
+  const deployApprovalFreshness = requireStep(stagingDeploy, 'Verify release freshness after staging approval', errors);
+  requireFreshnessAction(deployApprovalFreshness, 'deploy post-approval check', errors);
+
   const configuration = requireStep(stagingDeploy, 'Validate staging deployment configuration', errors);
-  for (const [value, description] of [
-    ['APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}', 'staging configuration must require the App Service name'],
-    ['PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', 'staging configuration must require the publish profile'],
-    ['slot_name_canonical="${SLOT_NAME//[[:space:]]/}"', 'staging configuration must canonicalize SLOT_NAME once'],
-    ['if [ -z "$slot_name_canonical" ]; then', 'staging configuration must reject whitespace-only SLOT_NAME values'],
-    ['slot_name_canonical_lower="${slot_name_canonical,,}"', 'staging configuration must compare the canonical slot case-insensitively'],
-    ['if [ "$slot_name_canonical_lower" = "production" ]; then', 'staging configuration must reject the production slot'],
-    ['SLOT_NAME_CANONICAL=%s\\n', 'staging configuration must export the validated canonical slot'],
-  ]) requireText(configuration, value, description, errors);
-  rejectText(configuration, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', 'staging validation must not receive the SQL secret', errors);
+  requireStagingConfiguration(configuration, 'deploy staging configuration', errors, { requireExport: true });
 
   const deployDownload = requireStep(stagingDeploy, 'Download exact CI artifact', errors);
   requireArtifactDownload(deployDownload, '${{ needs.prepare.outputs.deploy_sha }}', '${{ needs.prepare.outputs.ci_run_id }}', 'deploy', errors);
   const deployVerification = requireStep(stagingDeploy, 'Verify exact CI artifact', errors);
   requireArtifactVerification(deployVerification, '${{ needs.prepare.outputs.deploy_sha }}', 'deploy', errors);
+  const deployMutationFreshness = requireStep(stagingDeploy, 'Reconfirm release freshness before staging deployment', errors);
+  requireFreshnessAction(deployMutationFreshness, 'deploy pre-mutation check', errors);
   const deployStep = requireStep(stagingDeploy, 'Deploy exact artifact to Azure staging slot', errors);
   for (const [value, description] of [
     ['id: deploy', 'Azure staging deploy step must expose the deploy output'],
@@ -317,18 +441,25 @@ function validateDeploymentWorkflow(deploy, errors) {
   ]) requireText(deployStep, value, description, errors);
   const smoke = requireStep(stagingDeploy, 'Smoke test staged combined BFF', errors);
   validateSmokeStep(smoke, errors);
-  requireOrdered([configuration, deployDownload, deployVerification, deployStep, smoke], 'deploy must validate, download, verify, stage, and smoke-test the exact CI artifact in order', errors);
+  requireOrdered(
+    [deployCheckout, deployApprovalFreshness, configuration, deployDownload, deployVerification, deployMutationFreshness, deployStep, smoke],
+    'deploy must check out, revalidate, validate, download, verify, reconfirm, stage, and smoke-test in order',
+    errors,
+  );
+  requireAdjacent(deployCheckout, deployApprovalFreshness, 'deploy must revalidate immediately after checkout', errors);
+  requireAdjacent(deployMutationFreshness, deployStep, 'deploy must reconfirm freshness directly before staging deployment', errors);
 
   const sqlSecretOccurrences = deploy.match(/AZURE_SQL_CONNECTION_STRING_PRODUCTION/g)?.length ?? 0;
   if (sqlSecretOccurrences !== 1) errors.push('production SQL secret must appear exactly once, on the conditional migration step');
 }
 
-function validateProductionWorkflow(deployWorkflow, ciWorkflow, { checkLegacy = true } = {}) {
+function validateProductionWorkflow(deployWorkflow, ciWorkflow, freshnessActionWorkflow, { checkLegacy = true } = {}) {
   const errors = [];
   const deploy = withoutCommentLines(deployWorkflow);
   const ci = withoutCommentLines(ciWorkflow);
+  const freshnessAction = freshnessActionWorkflow ? withoutCommentLines(freshnessActionWorkflow) : '';
   validateCiWorkflow(ci, errors);
-  validateDeploymentWorkflow(deploy, errors);
+  validateDeploymentWorkflow(deploy, freshnessAction, errors);
   if (checkLegacy && existsSync(legacyStaticWorkflow)) errors.push('legacy Azure Static Web Apps workflow must remain deleted');
   return errors;
 }
@@ -338,8 +469,33 @@ function replaceRequired(workflow, search, replacement, fixtureName) {
   return workflow.replace(search, replacement);
 }
 
-function expectInvalid(name, { deploy = deployWorkflow, ci = ciWorkflow }, expected) {
-  const errors = validateProductionWorkflow(deploy, ci, { checkLegacy: false });
+function replaceInJob(workflow, jobName, search, replacement, fixtureName) {
+  const block = jobBlock(workflow, jobName);
+  if (!block) throw new Error(`Negative fixture ${fixtureName} could not find job ${jobName}`);
+  return workflow.replace(block, replaceRequired(block, search, replacement, fixtureName));
+}
+
+function removeNamedStep(workflow, jobName, stepName, fixtureName) {
+  const block = jobBlock(workflow, jobName);
+  const step = namedStep(block, stepName);
+  if (!step) throw new Error(`Negative fixture ${fixtureName} could not find step ${stepName}`);
+  return workflow.replace(block, block.replace(step[0], ''));
+}
+
+function swapNamedSteps(workflow, jobName, firstName, secondName, fixtureName) {
+  const block = jobBlock(workflow, jobName);
+  const first = namedStep(block, firstName);
+  const second = namedStep(block, secondName);
+  if (!first || !second || first.index >= second.index) {
+    throw new Error(`Negative fixture ${fixtureName} could not find ordered steps`);
+  }
+  const placeholder = `__NEGATIVE_FIXTURE_${fixtureName.replace(/[^A-Za-z0-9]/g, '_')}__`;
+  const mutatedBlock = block.replace(first[0], placeholder).replace(second[0], first[0]).replace(placeholder, second[0]);
+  return workflow.replace(block, mutatedBlock);
+}
+
+function expectInvalid(name, { deploy = deployWorkflow, ci = ciWorkflow, action = freshnessAction }, expected) {
+  const errors = validateProductionWorkflow(deploy, ci, action, { checkLegacy: false });
   if (!errors.some((error) => error.includes(expected))) {
     throw new Error(`Negative fixture ${name} unexpectedly passed: ${errors.join('; ')}`);
   }
@@ -347,7 +503,10 @@ function expectInvalid(name, { deploy = deployWorkflow, ci = ciWorkflow }, expec
 
 const deployWorkflow = read('.github/workflows/deploy-api-azure.yml');
 const ciWorkflow = read('.github/workflows/ci.yml');
-const errors = validateProductionWorkflow(deployWorkflow, ciWorkflow);
+const freshnessAction = existsSync(freshnessActionPath)
+  ? read('.github/actions/verify-release-freshness/action.yml')
+  : '';
+const errors = validateProductionWorkflow(deployWorkflow, ciWorkflow, freshnessAction);
 if (errors.length > 0) throw new Error(`Production workflows are missing required release controls:\n- ${errors.join('\n- ')}`);
 
 const fixtures = [
@@ -362,15 +521,15 @@ const fixtures = [
   ['SPA entry verification', 'deploy', '$publish_dir/wwwroot/index.html', '$publish_dir/removed.html', 'verify the SPA entry point'],
   ['missing artifact failure', 'ci', 'if-no-files-found: error', 'if-no-files-found: warn', 'fail when files are missing'],
   ['artifact retention', 'ci', 'retention-days: 30', 'retention-days: 7', 'retained for 30 days'],
-  ['database dependency', 'deploy', 'needs: prepare', 'needs: []', 'database_gate must depend on prepare'],
-  ['deploy dependency', 'deploy', 'needs: [prepare, database_gate]', 'needs: prepare', 'depend on prepare and database_gate'],
+  ['database dependency', 'deploy', 'needs: [prepare, staging_preflight]', 'needs: prepare', 'database_gate must depend on prepare and staging_preflight'],
+  ['deploy dependency', 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: prepare', 'depend on prepare, staging_preflight, and database_gate'],
   ['distinct database environment', 'deploy', 'name: production-database', 'name: production', 'distinct Environments'],
   ['deployment republish', 'deploy', 'run: echo "Database migration is an approved external release gate."', 'run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj', 'must never republish'],
   ['deployment promotion', 'deploy', 'run: echo "Database migration is an approved external release gate."', 'run: az webapp deployment slot swap', 'must not swap or promote'],
   ['migration secret emptiness', 'deploy', 'if [ -z "$SQL_CONNECTION" ]; then', 'if false; then', 'reject an empty SQL secret'],
   ['canonical staging slot', 'deploy', 'slot-name: ${{ env.SLOT_NAME_CANONICAL }}', 'slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}', 'validated canonical slot'],
   ['action pinning', 'ci', 'uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262', 'uses: actions/checkout@v4', 'full 40-character commit SHA'],
-  ['SQL secret scope', 'deploy', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}\n          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}', 'staging validation must not receive the SQL secret'],
+  ['SQL secret scope', 'deploy', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}\n          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}', 'staging_preflight must not receive the SQL secret'],
   ['actionlint schema check', 'ci', '.github/workflows/deploy-api-azure.yml', '.github/workflows/removed.yml', 'deployment workflow syntax'],
 ];
 
@@ -379,6 +538,93 @@ for (const [name, target, search, replacement, expected] of fixtures) {
   const mutated = replaceRequired(workflow, search, replacement, name);
   expectInvalid(name, target === 'deploy' ? { deploy: mutated } : { ci: mutated }, expected);
 }
+
+expectInvalid(
+  'missing staging preflight',
+  { deploy: deployWorkflow.replace(jobBlock(deployWorkflow, 'staging_preflight'), '') },
+  'must define the staging_preflight job',
+);
+expectInvalid(
+  'missing staging preflight environment',
+  { deploy: replaceInJob(deployWorkflow, 'staging_preflight', '    environment:\n      name: production\n', '', 'missing staging preflight environment') },
+  'staging_preflight must use the production Environment',
+);
+expectInvalid(
+  'staging preflight extra permission',
+  { deploy: replaceInJob(deployWorkflow, 'staging_preflight', '      contents: read', '      contents: read\n      issues: read', 'staging preflight extra permission') },
+  'staging_preflight must grant only actions read and contents read',
+);
+expectInvalid(
+  'missing staging preflight configuration validation',
+  { deploy: removeNamedStep(deployWorkflow, 'staging_preflight', 'Validate staging deployment configuration', 'missing staging preflight configuration validation') },
+  'missing named step: Validate staging deployment configuration',
+);
+expectInvalid(
+  'database bypasses staging preflight',
+  { deploy: replaceInJob(deployWorkflow, 'database_gate', 'needs: [prepare, staging_preflight]', 'needs: prepare', 'database bypasses staging preflight') },
+  'database_gate must depend on prepare and staging_preflight',
+);
+expectInvalid(
+  'deploy bypasses staging preflight',
+  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: [prepare, database_gate]', 'deploy bypasses staging preflight') },
+  'deploy must depend on prepare, staging_preflight, and database_gate',
+);
+expectInvalid(
+  'deploy bypasses database gate',
+  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: [prepare, staging_preflight]', 'deploy bypasses database gate') },
+  'deploy must depend on prepare, staging_preflight, and database_gate',
+);
+expectInvalid(
+  'missing preflight post-approval freshness check',
+  { deploy: removeNamedStep(deployWorkflow, 'staging_preflight', 'Verify release freshness after staging-preflight approval', 'missing preflight post-approval freshness check') },
+  'missing named step: Verify release freshness after staging-preflight approval',
+);
+expectInvalid(
+  'missing database post-approval freshness check',
+  { deploy: removeNamedStep(deployWorkflow, 'database_gate', 'Verify release freshness after database approval', 'missing database post-approval freshness check') },
+  'missing named step: Verify release freshness after database approval',
+);
+expectInvalid(
+  'missing deploy post-approval freshness check',
+  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Verify release freshness after staging approval', 'missing deploy post-approval freshness check') },
+  'missing named step: Verify release freshness after staging approval',
+);
+expectInvalid(
+  'missing immediate pre-migration freshness check',
+  { deploy: removeNamedStep(deployWorkflow, 'database_gate', 'Reconfirm release freshness before database mutation', 'missing immediate pre-migration freshness check') },
+  'missing named step: Reconfirm release freshness before database mutation',
+);
+expectInvalid(
+  'missing immediate pre-deploy freshness check',
+  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Reconfirm release freshness before staging deployment', 'missing immediate pre-deploy freshness check') },
+  'missing named step: Reconfirm release freshness before staging deployment',
+);
+
+const actionFixtures = [
+  ['freshness current-main lookup', 'current_main=$(gh api "repos/$REPOSITORY/git/ref/heads/main" --jq \'.object.sha\')', 'current_main="$DEPLOY_SHA"', 'must read the current main SHA'],
+  ['freshness current-main equality', 'if [ "$DEPLOY_SHA" != "$current_main" ]; then', 'if false; then', 'must reject a stale release SHA'],
+  ['freshness run SHA', '.head_sha == $sha and', 'true and', 'selected run commit SHA'],
+  ['freshness run branch', '.head_branch == "main" and', 'true and', 'selected run branch'],
+  ['freshness run event', '.event == "push" and', 'true and', 'selected run event'],
+  ['freshness run conclusion', '.conclusion == "success" and', 'true and', 'selected run conclusion'],
+  ['freshness run repository', '.head_repository.full_name == $repo and', 'true and', 'selected run repository'],
+  ['freshness workflow path', '(.path | startswith(".github/workflows/ci.yml"))', 'true', 'selected run workflow path'],
+];
+
+for (const [name, search, replacement, expected] of actionFixtures) {
+  expectInvalid(name, { action: replaceRequired(freshnessAction, search, replacement, name) }, expected);
+}
+
+expectInvalid(
+  'migration before final freshness check',
+  { deploy: swapNamedSteps(deployWorkflow, 'database_gate', 'Reconfirm release freshness before database mutation', 'Apply production database migrations', 'migration before final freshness check') },
+  'directly before database mutation',
+);
+expectInvalid(
+  'Azure deploy before final freshness check',
+  { deploy: swapNamedSteps(deployWorkflow, 'deploy', 'Reconfirm release freshness before staging deployment', 'Deploy exact artifact to Azure staging slot', 'Azure deploy before final freshness check') },
+  'directly before staging deployment',
+);
 
 expectInvalid('redirect smoke request', { deploy: replaceRequired(deployWorkflow, '--retry 12 --retry-all-errors', '--location\n            --retry 12 --retry-all-errors', 'redirect smoke request') }, 'must not follow redirects');
 expectInvalid('HTML helper status enforcement', { deploy: replaceRequired(deployWorkflow, '[ "$status" != "200" ] || ', '', 'HTML helper status enforcement') }, 'require_html must directly reject non-200 responses');
