@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { SectionShell } from "@/components/design-system/SectionShell";
 import { Input } from "@/components/design-system/ui/input";
 import { Button } from "@/components/design-system/ui/button";
@@ -5,13 +6,18 @@ import { Checkbox } from "@/components/design-system/ui/checkbox";
 import { Radio, RadioGroup } from "@/components/design-system/ui/radio";
 import { Select } from "@/components/design-system/ui/select";
 import { RichTextField } from "@/components/design-system/ui/rich-text-field";
+import { Switch } from "@/components/design-system/ui/switch";
 
-const code = `import { Input } from "@/components/design-system/ui/input";
+const code = `import { useState } from "react";
+import { Input } from "@/components/design-system/ui/input";
 import { Button } from "@/components/design-system/ui/button";
 import { Checkbox } from "@/components/design-system/ui/checkbox";
 import { Radio, RadioGroup } from "@/components/design-system/ui/radio";
 import { Select } from "@/components/design-system/ui/select";
 import { RichTextField } from "@/components/design-system/ui/rich-text-field";
+import { Switch } from "@/components/design-system/ui/switch";
+
+const [bannerEnabled, setBannerEnabled] = useState(true);
 
 <form className="space-y-4">
   {/* Text input */}
@@ -60,6 +66,19 @@ import { RichTextField } from "@/components/design-system/ui/rich-text-field";
     </span>
   </label>
 
+  {/* Switch: an immediate on/off setting */}
+  <div className="flex items-center justify-between gap-3">
+    <div>
+      <p>Use banner image</p>
+      <p className="text-xs text-ink-muted">Off means the image is not saved or displayed.</p>
+    </div>
+    <Switch
+      aria-label="Use banner image"
+      checked={bannerEnabled}
+      onCheckedChange={setBannerEnabled}
+    />
+  </div>
+
   {/* Rich text (milkdown) */}
   <div className="space-y-2">
     <label htmlFor="bio">Bio</label>
@@ -70,6 +89,8 @@ import { RichTextField } from "@/components/design-system/ui/rich-text-field";
 </form>`;
 
 export function FormsSection() {
+  const [bannerEnabled, setBannerEnabled] = useState(true);
+
   return (
     <SectionShell
       id="forms"
@@ -78,6 +99,7 @@ export function FormsSection() {
         <>
           Forms compose <code>&lt;Input&gt;</code>, <code>&lt;Select&gt;</code>,
           <code>&lt;Checkbox&gt;</code>, <code>&lt;Radio&gt;</code>,{" "}
+          <code>&lt;Switch&gt;</code>,{" "}
           <code>&lt;RichTextField&gt;</code> (milkdown), native HTML labels,
           helper text, and <code>&lt;Button&gt;</code>. Vertical spacing between
           fields uses <code>space-y-4</code>; spacing inside a field uses{" "}
@@ -169,6 +191,22 @@ export function FormsSection() {
             </span>
           </label>
 
+          <div className="flex items-center justify-between gap-3 rounded-md border border-hairline p-3">
+            <div>
+              <p className="text-sm font-medium text-ink-display">
+                Use banner image
+              </p>
+              <p className="text-xs text-ink-muted">
+                Off means the image is not saved or displayed.
+              </p>
+            </div>
+            <Switch
+              aria-label="Use banner image"
+              checked={bannerEnabled}
+              onCheckedChange={setBannerEnabled}
+            />
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="ds-form-bio">Bio</label>
             <RichTextField
@@ -200,6 +238,11 @@ export function FormsSection() {
             Radio groups: wrap in <code>&lt;fieldset&gt;</code> +{" "}
             <code>&lt;legend&gt;</code> and share a <code>name</code> across all{" "}
             <code>&lt;Radio&gt;</code> inputs.
+          </li>
+          <li>
+            Switches: use <code>&lt;Switch&gt;</code> for a setting that takes
+            effect as on or off. Use a toggle button with{" "}
+            <code>aria-pressed</code> for selectable toolbar or filter actions.
           </li>
           <li>
             Selects: use a disabled empty <code>&lt;option&gt;</code> as a

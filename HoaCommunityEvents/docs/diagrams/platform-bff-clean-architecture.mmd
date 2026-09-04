@@ -1,0 +1,52 @@
+flowchart LR
+  USER["resident<br/>or hoa_admin"]
+
+  subgraph Browser["Browser - React single-page app"]
+    direction TB
+    UI["React pages<br/>and forms"]
+    TQ["TanStack Query<br/>server-state cache"]
+    AX["Axios<br/>HTTP and CSRF"]
+    ES["EventSource<br/>attendance notices"]
+    UI --> TQ
+    TQ --> AX
+    UI --> ES
+  end
+
+  subgraph APP["Azure App Service - one ASP.NET Core BFF"]
+    direction TB
+    HOST["ASP.NET Core BFF"]
+    STATIC["Static-file host<br/>Vite dist"]
+    PIPE["Middleware<br/>errors, HTTPS, CORS,<br/>rate limits, auth"]
+    API["API controllers and SSE<br/>returns signed upload parameters"]
+    APPLICATION["Application<br/>DTOs, validators, interfaces"]
+    INFRA["Infrastructure<br/>Identity and use-case services"]
+    PERSIST["Persistence<br/>EF Core DbContext and migrations"]
+    DOMAIN["Domain<br/>users, events, attendance, roles"]
+    BROKER["In-memory SSE broker<br/>one process"]
+
+    HOST --> STATIC
+    HOST --> PIPE
+    PIPE --> API
+    API --> APPLICATION
+    API --> INFRA
+    INFRA --> APPLICATION
+    INFRA --> PERSIST
+    APPLICATION --> DOMAIN
+    PERSIST --> DOMAIN
+    API --> BROKER
+    INFRA --> BROKER
+  end
+
+  subgraph Storage["Managed storage"]
+    direction LR
+    SQL[("Azure SQL<br/>accounts, roles, events, attendance,<br/>image URLs and crop values")]
+    CLOUD[("Cloudinary<br/>image files and delivery")]
+  end
+
+  USER --> UI
+  UI -->|"GET Vite assets"| STATIC
+  AX -->|"same-origin /api<br/>cookie and CSRF<br/>includes upload signature"| PIPE
+  ES -->|"GET /api/events/id/stream"| PIPE
+  PERSIST -->|"LINQ translated to SQL"| SQL
+  UI -->|"image bytes<br/>uploaded directly"| CLOUD
+  INFRA -->|"delete replaced<br/>owned images"| CLOUD

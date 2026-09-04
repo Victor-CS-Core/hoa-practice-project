@@ -5,6 +5,7 @@ import { Uploads } from "../../../app/api/agent";
 import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
 import { Button } from "../../../components/design-system/ui/button";
 import { Input } from "../../../components/design-system/ui/input";
+import { Switch } from "../../../components/design-system/ui/switch";
 import { getFieldError, type ApiErrorEnvelope } from "../../auth/authApiError";
 import type { CreateEventFormValues } from "../../../types/event";
 
@@ -336,13 +337,27 @@ export function AdminEventForm({
                   Add a hero image for event cards and details.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant={bannerEnabled ? "primary" : "secondary"}
-                className="min-w-26"
-                onClick={() => {
-                  setBannerEnabled((prev) => {
-                    const next = !prev;
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p
+                    id="event-banner-switch-label"
+                    className="text-sm font-medium text-ink-display"
+                  >
+                    Use event banner
+                  </p>
+                  <p
+                    id="event-banner-switch-description"
+                    className="max-w-48 text-xs text-ink-muted"
+                  >
+                    Off means the banner is not saved or displayed.
+                  </p>
+                </div>
+                <Switch
+                  aria-labelledby="event-banner-switch-label"
+                  aria-describedby="event-banner-switch-description"
+                  checked={bannerEnabled}
+                  onCheckedChange={(next) => {
+                    setBannerEnabled(next);
                     if (!next) {
                       setValue("imageUrl", "", { shouldDirty: true });
                       setValue("imagePositionX", 50, { shouldDirty: true });
@@ -352,12 +367,9 @@ export function AdminEventForm({
                       setUploadSuccess(null);
                       setUploadFile(null);
                     }
-                    return next;
-                  });
-                }}
-              >
-                {bannerEnabled ? "Enabled" : "Disabled"}
-              </Button>
+                  }}
+                />
+              </div>
             </div>
 
             {bannerEnabled && (

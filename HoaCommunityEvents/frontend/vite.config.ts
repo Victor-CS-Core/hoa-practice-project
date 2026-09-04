@@ -6,18 +6,17 @@ import path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  build: {
-    rollupOptions: {
-      onwarn(warning, defaultHandler) {
-        if (
-          warning.code === 'INVALID_ANNOTATION' &&
-          typeof warning.id === 'string' &&
-          warning.id.includes('@microsoft/signalr/dist/esm/Utils.js')
-        ) {
-          return
-        }
-
-        defaultHandler(warning)
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7011',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'https://localhost:7011',
+        changeOrigin: true,
+        secure: false,
       },
     },
   },

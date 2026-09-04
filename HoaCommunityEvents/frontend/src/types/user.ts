@@ -2,7 +2,6 @@ export type User = {
     displayName: string;
     username: string;
     email: string;
-    token: string;
     role: string;
     profileImageUrl?: string | null;
 };

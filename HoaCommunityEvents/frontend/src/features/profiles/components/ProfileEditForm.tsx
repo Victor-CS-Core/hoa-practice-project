@@ -4,6 +4,7 @@ import { Uploads } from "../../../app/api/agent";
 import { ImageCropEditor } from "../../../components/media/ImageCropEditor";
 import { Button } from "../../../components/design-system/ui/button";
 import { Input } from "../../../components/design-system/ui/input";
+import { Switch } from "../../../components/design-system/ui/switch";
 import type { UpdateProfileValues } from "../../../types/profile";
 import type { ApiErrorEnvelope } from "../../auth/authApiError";
 import { getFieldError } from "../../auth/authApiError";
@@ -295,13 +296,27 @@ export function ProfileEditForm({
                 Upload an image or use a direct image URL.
               </p>
             </div>
-            <Button
-              type="button"
-              variant={avatarEnabled ? "primary" : "secondary"}
-              className="min-w-26 shrink-0"
-              onClick={() => {
-                setAvatarEnabled((prev) => {
-                  const next = !prev;
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p
+                  id="profile-avatar-switch-label"
+                  className="text-sm font-medium text-ink-display"
+                >
+                  Use avatar image
+                </p>
+                <p
+                  id="profile-avatar-switch-description"
+                  className="max-w-48 text-xs text-ink-muted"
+                >
+                  Off means the avatar is not saved or displayed.
+                </p>
+              </div>
+              <Switch
+                aria-labelledby="profile-avatar-switch-label"
+                aria-describedby="profile-avatar-switch-description"
+                checked={avatarEnabled}
+                onCheckedChange={(next) => {
+                  setAvatarEnabled(next);
                   if (!next) {
                     setFormValues((current) => ({
                       ...current,
@@ -314,12 +329,9 @@ export function ProfileEditForm({
                     setUploadSuccess(null);
                     setUploadFile(null);
                   }
-                  return next;
-                });
-              }}
-            >
-              {avatarEnabled ? "Enabled" : "Disabled"}
-            </Button>
+                }}
+              />
+            </div>
           </div>
 
           <div className="mx-auto flex w-full flex-col items-center gap-3 rounded-lg border border-hairline bg-page p-4">
@@ -572,13 +584,27 @@ export function ProfileEditForm({
                 Upload a banner image or use a direct image URL.
               </p>
             </div>
-            <Button
-              type="button"
-              variant={bannerEnabled ? "primary" : "secondary"}
-              className="min-w-26 shrink-0"
-              onClick={() => {
-                setBannerEnabled((prev) => {
-                  const next = !prev;
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p
+                  id="profile-banner-switch-label"
+                  className="text-sm font-medium text-ink-display"
+                >
+                  Use profile banner
+                </p>
+                <p
+                  id="profile-banner-switch-description"
+                  className="max-w-48 text-xs text-ink-muted"
+                >
+                  Off means the banner is not saved or displayed.
+                </p>
+              </div>
+              <Switch
+                aria-labelledby="profile-banner-switch-label"
+                aria-describedby="profile-banner-switch-description"
+                checked={bannerEnabled}
+                onCheckedChange={(next) => {
+                  setBannerEnabled(next);
                   if (!next) {
                     setFormValues((current) => ({
                       ...current,
@@ -591,12 +617,9 @@ export function ProfileEditForm({
                     setBannerUploadSuccess(null);
                     setBannerUploadFile(null);
                   }
-                  return next;
-                });
-              }}
-            >
-              {bannerEnabled ? "Enabled" : "Disabled"}
-            </Button>
+                }}
+              />
+            </div>
           </div>
 
           <div className="space-y-2 rounded-lg border border-hairline bg-page p-3">

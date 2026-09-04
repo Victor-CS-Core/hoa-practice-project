@@ -1,21 +1,48 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { CreateEventFormValues, EditEventFormValues, EventFilter, HoaEvent, PagedResult } from '../../types/event';
 import type { Attendee } from '../../types/attendee';
 import type { Profile, UpdateProfileValues } from '../../types/profile';
 import type { AdminUser, DeleteUserValues, LoginFormValues, PromoteUserToAdminValues, RegisterFormValues, User } from '../../types/user';
 
-const fallbackApiUrl = 'https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net/api';
-const baseURL = (import.meta.env.VITE_API_URL as string | undefined) || fallbackApiUrl;
-
 export const agent = axios.create({
-    baseURL,
-    withCredentials: false,
+    baseURL: '/api',
+    withCredentials: true,
 });
 
-agent.interceptors.request.use((config) => {
-    const token = localStorage.getItem('jwt');
-    if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+let csrfToken: string | null = null;
+let csrfTokenRequest: Promise<string> | null = null;
+let csrfGeneration = 0;
+
+export function resetCsrfTokenCache() {
+    csrfGeneration += 1;
+    csrfToken = null;
+    csrfTokenRequest = null;
+}
+
+async function getCsrfToken() {
+    if (csrfToken) return csrfToken;
+
+    const requestGeneration = csrfGeneration;
+    csrfTokenRequest ??= agent.get<{ requestToken: string }>('/security/csrf')
+        .then((response) => {
+            const requestToken = response.data.requestToken;
+            if (csrfGeneration === requestGeneration) {
+                csrfToken = requestToken;
+            }
+            return requestToken;
+        })
+        .finally(() => {
+            if (csrfGeneration === requestGeneration) {
+                csrfTokenRequest = null;
+            }
+        });
+
+    return csrfTokenRequest;
+}
+
+agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+    if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase() ?? '')) {
+        config.headers['X-CSRF-TOKEN'] = await getCsrfToken();
     }
     return config;
 });
@@ -23,9 +50,8 @@ agent.interceptors.request.use((config) => {
 agent.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && error.config?.url !== '/account/current') {
             sessionStorage.setItem('sessionExpired', '1');
-            localStorage.removeItem('jwt');
         }
         return Promise.reject(error);
     }
@@ -69,18 +95,21 @@ type AdminPolicyProbeResult = {
     message?: string;
 };
 
-const getApiRoot = () => {
-    if (!baseURL) {
-        return '';
-    }
-
-    const trimmed = baseURL.replace(/\/$/, '');
-    return trimmed.endsWith('/api') ? trimmed.slice(0, -4) : trimmed;
-};
-
 export const Account = {
-    login: (values: LoginFormValues) => requests.post<User>('/account/login', values),
-    register: (values: RegisterFormValues) => requests.post<User>('/account/register', values),
+    login: async (values: LoginFormValues) => {
+        const user = await requests.post<User>('/account/login', values);
+        resetCsrfTokenCache();
+        return user;
+    },
+    register: async (values: RegisterFormValues) => {
+        const user = await requests.post<User>('/account/register', values);
+        resetCsrfTokenCache();
+        return user;
+    },
+    logout: async () => {
+        await requests.postEmpty<void>('/account/logout');
+        resetCsrfTokenCache();
+    },
     current: () => requests.get<User>('/account/current'),
     listUsers: () => requests.get<AdminUser[]>('/account/users'),
     promoteAdmin: (values: PromoteUserToAdminValues) => requests.post<User>('/account/promote-admin', values),
@@ -118,7 +147,7 @@ export const Uploads = {
 };
 
 export const Diagnostics = {
-    health: () => axios.get<{ status?: string }>(`${getApiRoot()}/health`).then(responseBody),
+    health: () => axios.get<{ status?: string }>('/health').then(responseBody),
     invalidRegister: (values: RegisterFormValues) =>
         agent.post('/account/register', values)
             .then(() => null)

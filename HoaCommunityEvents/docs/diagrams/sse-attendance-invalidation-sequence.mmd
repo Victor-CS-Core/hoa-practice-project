@@ -1,0 +1,54 @@
+sequenceDiagram
+  actor ResidentA as Resident changing attendance
+  participant AxiosA as Axios agent
+  participant EventsAPI as EventsController
+  participant AttendanceAPI as AttendanceController
+  participant Service as Attendance service
+  participant SQL as Azure SQL
+  participant Broker as In-memory event broker
+  participant Stream as Authenticated SSE endpoint
+  participant EventSource as Other browser EventSource
+  participant Query as TanStack Query
+  participant Page as Event details page
+
+  Page->>Query: useEvent and useAttendees
+  par Event detail
+    Query->>EventsAPI: GET /api/events/id
+    EventsAPI-->>Query: Event JSON
+  and Attendee list when admin query is enabled
+    Query->>AttendanceAPI: GET /api/attendance/id
+    AttendanceAPI-->>Query: Attendee JSON
+  end
+  Query-->>Page: Render cached snapshots
+
+  EventSource->>Stream: GET /api/events/id/stream with cookie
+  Stream->>Broker: SubscribeAsync(eventId, RequestAborted)
+  Note over SQL,Stream: One bounded channel per browser - capacity 1 - drop oldest
+
+  ResidentA->>AxiosA: Join or leave event
+  AxiosA->>AttendanceAPI: POST join or DELETE leave with cookie and CSRF
+  AttendanceAPI->>Service: JoinEventAsync or LeaveEventAsync
+  Service->>SQL: SaveChangesAsync
+  SQL-->>Service: Commit succeeds
+  Service->>Broker: Publish attendance-changed
+  Broker-->>Stream: Fan out update for this event
+  Stream-->>EventSource: event attendance-changed plus JSON data
+  EventSource->>Query: Invalidate event, events, and attendees keys
+  par Active event queries
+    Query->>EventsAPI: Refetch GET /api/events and /api/events/id
+    EventsAPI-->>Query: Fresh event JSON
+  and Enabled admin attendee query
+    Query->>AttendanceAPI: Refetch GET /api/attendance/id
+    AttendanceAPI-->>Query: Fresh attendee JSON
+  end
+  Query-->>Page: Re-render current data
+
+  alt Browser disconnects or changes event
+    EventSource-xStream: Close connection
+    Stream->>Broker: RequestAborted removes subscription
+  else Network reconnects
+    EventSource->>Stream: Browser reconnects automatically
+    EventSource->>Query: Later open invalidates all three keys
+  end
+
+  Note over Broker,EventSource: Scale limit: one API instance until a shared backplane
