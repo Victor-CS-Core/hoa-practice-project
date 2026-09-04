@@ -29,6 +29,9 @@ jobs:
           cache: npm
           cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
 
+      - name: Validate production workflow contract
+        run: node scripts/validate-production-workflow.mjs
+
       - name: Restore
         run: dotnet restore HoaCommunityEvents/backend/HoaCommunityEvents.slnx
 
