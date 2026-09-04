@@ -5,19 +5,73 @@ env:
 
 "on":
   workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: hoa-bff-production
+  queue: max
+  cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy Combined BFF
+    # workflow_run is privileged: never deploy code from PRs or forks.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
-      PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-      SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
+      - name: Verify tested main commit
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          current_main=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          if [ "$DEPLOY_SHA" != "$current_main" ]; then
+            echo "::error::This run is stale. Deploy the current main commit after its CI succeeds."
+            exit 1
+          fi
+
+          successful_runs=$(gh api --method GET "repos/$GH_REPO/actions/workflows/ci.yml/runs" \
+            -f head_sha="$DEPLOY_SHA" -f branch=main -f event=push -f status=success --jq '.total_count')
+          if ! [[ "$successful_runs" =~ ^[0-9]+$ ]] || [ "$successful_runs" -lt 1 ]; then
+            echo "::error::The selected main commit must pass CI before deployment, including manual runs."
+            exit 1
+          fi
+
+      - name: Validate deployment configuration
+        shell: bash
+        env:
+          APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
+        run: |
+          if [ -z "$APP_NAME" ] || [ -z "$PUBLISH_PROFILE" ]; then
+            echo "::error::Configure AZURE_WEBAPP_NAME_PRODUCTION and AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -32,10 +86,18 @@ jobs:
           cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
 
       - name: Publish combined BFF
-        run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj -c Release -o ${{ github.workspace }}/bff-publish
+        run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj -c Release -o "$RUNNER_TEMP/hoa-bff-publish"
+
+      - name: Verify combined package
+        shell: bash
+        run: |
+          test -f "$RUNNER_TEMP/hoa-bff-publish/HoaCommunityEvents.API.dll"
+          test -f "$RUNNER_TEMP/hoa-bff-publish/wwwroot/index.html"
 
       - name: Optionally apply database migrations
         shell: bash
+        env:
+          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}
         run: |
           if [ -z "$SQL_CONNECTION" ]; then
             echo "No SQL connection secret configured. Skipping migrations."
@@ -49,6 +111,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.APP_NAME }}
-          publish-profile: ${{ env.PUBLISH_PROFILE }}
-          package: ${{ github.workspace }}/bff-publish
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
+          package: ${{ runner.temp }}/hoa-bff-publish
