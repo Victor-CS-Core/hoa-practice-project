@@ -100,6 +100,13 @@ function validateProductionWorkflow(deployWorkflow, ciWorkflow, { checkLegacy = 
     ['[ "$csrf_status" != "200" ]', 'smoke test must require HTTP 200 from /api/security/csrf'],
   ]) requireText(smoke, text, description, errors);
   if (smoke?.[0].includes('--location')) errors.push('smoke test endpoint assertions must not follow redirects');
+  const htmlHelper = /          require_html\(\) \{\n([\s\S]*?)^          \}/m.exec(smoke?.[0] ?? '');
+  if (!htmlHelper) {
+    errors.push('smoke test must define the require_html helper');
+  } else {
+    requireText(htmlHelper, '[ "$status" != "200" ]', 'require_html must directly reject non-200 responses', errors);
+    requireText(htmlHelper, "grep -qi '<!doctype html' \"$response_file\"", 'require_html must directly require <!doctype html', errors);
+  }
 
   const orderedSteps = [configuration, publish, packageVerification, migration, artifact, deployStep, smoke];
   if (orderedSteps.every(Boolean)) {
@@ -143,6 +150,8 @@ expectInvalid('migration values and SQL enforcement', deployWorkflow.replace('if
 for (const [endpoint, expected] of [['"$base_url/health"', 'check /health'], ['require_html "/"', 'check root HTML'], ['require_html "/events/release-readiness-check"', 'check SPA fallback HTML'], ['"$base_url/api/security/csrf"', 'check /api/security/csrf']]) {
   expectInvalid(`smoke endpoint ${endpoint}`, deployWorkflow.replace(endpoint, '"$base_url/removed"'), expected);
 }
+expectInvalid('HTML helper status enforcement', deployWorkflow.replace('[ "$status" != "200" ] || ', ''), 'require_html must directly reject non-200 responses');
+expectInvalid('HTML helper doctype enforcement', deployWorkflow.replace("! grep -qi '<!doctype html' \"$response_file\"", 'true'), 'require_html must directly require <!doctype html');
 expectInvalid('step ordering', moveStepAfter(deployWorkflow, 'Preserve combined release artifact', 'Smoke test staged combined BFF'), 'release steps must validate, publish, preserve, deploy, then smoke test in order');
 expectInvalid('artifact deploy path equivalence', deployWorkflow.replace('package: ${{ runner.temp }}/hoa-bff-publish', 'package: ${{ runner.temp }}/other-publish'), 'artifact and Azure deploy must use the exact same publish path');
 console.log('Production workflow contract and negative fixtures are valid.');
