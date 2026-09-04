@@ -14,7 +14,7 @@ The combined frontend/backend application is implemented locally, but the review
 - The frontend uses relative `/api` URLs and cookie credentials; cookie authentication, CSRF protection, and `/api/security/csrf` are implemented locally.
 - SSE replaces SignalR for the current notification requirement.
 - CI verifies both applications, publishes the combined artifact, and checks `wwwroot/index.html`.
-- The hardened deployment job is protected by GitHub Environment `production`, deploys only to a staging slot, retains the exact combined artifact for 30 days, and runs unauthenticated, non-mutating smoke checks on that slot.
+- The hardened deployment job is configured to use GitHub Environment `production` once the external Environment and required-reviewer setup is completed; it then deploys only to a staging slot, retains the exact combined artifact for 30 days, and runs unauthenticated, non-mutating smoke checks on that slot.
 - The legacy Azure Static Web Apps workflow is deleted locally.
 
 Relevant local commits include `060f876` (trusted-main combined deployment), `f2737d7` (combined publish), `798069e` and `00c53b8` (serve/package SPA), `7ecf94d`, `99dd8f3`, and `811fb87` (cookie/CSRF BFF authentication), and `4ac4d2a` (project consolidation). The reviewed hardening branch is `release-combined-bff-readiness`.
