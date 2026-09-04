@@ -116,20 +116,13 @@ function requireExactReleaseCheckout(step, owner, errors) {
   ]) requireText(step, value, description, errors);
 }
 
-function requireStagingConfiguration(step, owner, errors, { requireExport = false } = {}) {
+function requireProductionConfiguration(step, owner, errors) {
   for (const [value, description] of [
     ['APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}', `${owner} must require the App Service name`],
-    ['PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', `${owner} must require the slot-scoped publish profile`],
-    ['SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}', `${owner} must source the staging slot from the production Environment`],
-    ['slot_name_canonical="${SLOT_NAME//[[:space:]]/}"', `${owner} must canonicalize SLOT_NAME once`],
-    ['if [ -z "$slot_name_canonical" ]; then', `${owner} must reject whitespace-only SLOT_NAME values`],
-    ['slot_name_canonical_lower="${slot_name_canonical,,}"', `${owner} must compare the canonical slot case-insensitively`],
-    ['if [ "$slot_name_canonical_lower" = "production" ]; then', `${owner} must reject the production slot`],
-    ['SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py', `${owner} must validate that the publish profile belongs to the configured app and staging slot`],
+    ['PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', `${owner} must require the production publish profile`],
+    ['python3 scripts/validate_azure_publish_profile.py', `${owner} must validate that the publish profile belongs to the configured production app`],
   ]) requireText(step, value, description, errors);
-  if (requireExport) {
-    requireText(step, 'SLOT_NAME_CANONICAL=%s\\n', `${owner} must export the validated canonical slot`, errors);
-  }
+
   rejectText(step, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', `${owner} must not receive the SQL secret`, errors);
 }
 
@@ -141,19 +134,16 @@ function validatePublishProfileValidator(script, errors) {
 
   for (const [value, description] of [
     ['if not app_name:', 'publish-profile validator must reject a missing App Service name'],
-    ['if not slot_name:', 'publish-profile validator must reject a missing staging slot'],
+    ['production_matches = len(identity_segments) == 1', 'publish-profile validator must reject slot credentials'],
+    ['test_rejects_slot_profiles', 'publish-profile self-tests must cover slot credentials'],
     ['if not profile_xml:', 'publish-profile validator must reject an empty publish-profile secret'],
     ['ET.fromstring(profile_xml)', 'publish-profile validator must parse XML with ElementTree'],
     ['username.startswith("$")', 'publish-profile validator must strip Azure\'s leading dollar sign'],
     ['identity.upper().split("__")', 'publish-profile validator must uppercase and split the deployment username on double underscores'],
     ['identity_segments[0] == app_name.upper()', 'publish-profile validator must compare username segment zero to the App Service name'],
-    ['identity_segments[1] == slot_name.upper()', 'publish-profile validator must compare username segment one to the staging slot'],
-    ['slot_name.casefold() == "production"', 'publish-profile validator must reject the production slot'],
     ['test_rejects_missing_or_empty_values', 'publish-profile self-tests must cover missing and empty configuration'],
     ['test_rejects_malformed_xml', 'publish-profile self-tests must cover malformed XML'],
     ['test_rejects_profile_for_wrong_app', 'publish-profile self-tests must cover a wrong App Service'],
-    ['test_rejects_profile_for_wrong_slot', 'publish-profile self-tests must cover a wrong staging slot'],
-    ['test_rejects_production_slot_and_production_profile', 'publish-profile self-tests must cover production configuration'],
   ]) requireText(script, value, description, errors);
 
   rejectText(script, 'print(profile_xml', 'publish-profile validator must never print the publish-profile secret', errors);
@@ -351,7 +341,10 @@ function validateSmokeStep(smoke, errors) {
 }
 
 function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
+  rejectText(deploy, 'slot-name:', 'direct deployment must not specify a slot', errors);
+  rejectText(deploy, 'AZURE_WEBAPP_SLOT_NAME', 'direct deployment must not require a slot variable', errors);
   const header = workflowHeader(deploy);
+  requireText(header, 'approve_production:\n        description: Approve direct production release after backup and migration review\n        required: true\n        default: false\n        type: boolean', 'manual production approval must default to false', errors);
   for (const [value, description] of [
     ['workflow_dispatch:', 'deployment workflow must allow reviewed manual dispatch'],
     ['workflow_run:', 'deployment workflow must be triggered from CI completion'],
@@ -363,19 +356,19 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   rejectText(deploy, ': write', 'deployment workflow must not grant write permissions', errors);
   rejectText(deploy, 'dotnet publish', 'deployment workflow must never republish the combined BFF', errors);
   rejectText(deploy, 'actions/upload-artifact@', 'deployment workflow must not replace the CI artifact', errors);
-  rejectText(deploy, 'az webapp deployment slot swap', 'deployment workflow must not swap or promote the staging slot', errors);
+  rejectText(deploy, 'az webapp deployment slot swap', 'deployment workflow must not swap or promote the production slot', errors);
   validateActionPins(deploy, 'deployment', errors);
   validateFreshnessAction(freshnessAction, errors);
 
   const prepare = jobBlock(deploy, 'prepare');
-  const stagingPreflight = jobBlock(deploy, 'staging_preflight');
+  const productionPreflight = jobBlock(deploy, 'production_preflight');
   const databaseGate = jobBlock(deploy, 'database_gate');
-  const stagingDeploy = jobBlock(deploy, 'deploy');
+  const productionDeploy = jobBlock(deploy, 'deploy');
   if (!prepare) errors.push('deployment workflow must define the prepare job');
-  if (!stagingPreflight) errors.push('deployment workflow must define the staging_preflight job');
+  if (!productionPreflight) errors.push('deployment workflow must define the production_preflight job');
   if (!databaseGate) errors.push('deployment workflow must define the database_gate job');
-  if (!stagingDeploy) errors.push('deployment workflow must define the deploy job');
-  if (!prepare || !stagingPreflight || !databaseGate || !stagingDeploy) return;
+  if (!productionDeploy) errors.push('deployment workflow must define the deploy job');
+  if (!prepare || !productionPreflight || !databaseGate || !productionDeploy) return;
 
   const prepareHeader = jobHeader(prepare);
   for (const [value, description] of [
@@ -415,36 +408,37 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   requireArtifactVerification(prepareVerification, '${{ steps.release.outputs.deploy_sha }}', 'prepare', errors);
   requireOrdered([resolveRun, prepareDownload, prepareVerification], 'prepare must resolve, download, and verify the trusted CI artifact in order', errors);
 
-  const preflightHeader = jobHeader(stagingPreflight);
+  const preflightHeader = jobHeader(productionPreflight);
+  requireText(preflightHeader, "if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_production == true }}", 'production release must require explicit manual approval', errors);
   for (const [value, description] of [
-    ['needs: prepare', 'staging_preflight must depend on prepare'],
-    ['name: production', 'staging_preflight must use the production Environment'],
+    ['needs: prepare', 'production_preflight must depend on prepare'],
+    ['name: production', 'production_preflight must use the production Environment'],
   ]) requireText(preflightHeader, value, description, errors);
-  requireJobPermissions(preflightHeader, 'staging_preflight', ['actions: read', 'contents: read'], errors);
-  rejectText(preflightHeader, ': write', 'staging_preflight must not grant write permissions', errors);
-  const preflightCheckout = requireStep(stagingPreflight, 'Checkout exact release for staging preflight', errors);
-  requireExactReleaseCheckout(preflightCheckout, 'staging_preflight', errors);
-  const preflightFreshness = requireStep(stagingPreflight, 'Verify release freshness after staging-preflight approval', errors);
-  requireFreshnessAction(preflightFreshness, 'staging_preflight', errors);
-  const preflightConfiguration = requireStep(stagingPreflight, 'Validate staging deployment configuration', errors);
-  requireStagingConfiguration(preflightConfiguration, 'staging_preflight', errors);
+  requireJobPermissions(preflightHeader, 'production_preflight', ['actions: read', 'contents: read'], errors);
+  rejectText(preflightHeader, ': write', 'production_preflight must not grant write permissions', errors);
+  const preflightCheckout = requireStep(productionPreflight, 'Checkout exact release for production preflight', errors);
+  requireExactReleaseCheckout(preflightCheckout, 'production_preflight', errors);
+  const preflightFreshness = requireStep(productionPreflight, 'Verify release freshness after production-preflight approval', errors);
+  requireFreshnessAction(preflightFreshness, 'production_preflight', errors);
+  const preflightConfiguration = requireStep(productionPreflight, 'Validate production deployment configuration', errors);
+  requireProductionConfiguration(preflightConfiguration, 'production_preflight', errors);
   requireOrdered(
     [preflightCheckout, preflightFreshness, preflightConfiguration],
-    'staging_preflight must check out, revalidate, and verify staging configuration in order',
+    'production_preflight must check out, revalidate, and verify production configuration in order',
     errors,
   );
-  requireAdjacent(preflightCheckout, preflightFreshness, 'staging_preflight must revalidate immediately after checkout', errors);
-  rejectText(stagingPreflight, 'azure/webapps-deploy@', 'staging_preflight must not deploy', errors);
-  rejectText(stagingPreflight, 'dotnet ef database update', 'staging_preflight must not mutate the database', errors);
+  requireAdjacent(preflightCheckout, preflightFreshness, 'production_preflight must revalidate immediately after checkout', errors);
+  rejectText(productionPreflight, 'azure/webapps-deploy@', 'production_preflight must not deploy', errors);
+  rejectText(productionPreflight, 'dotnet ef database update', 'production_preflight must not mutate the database', errors);
 
   const databaseHeader = jobHeader(databaseGate);
   for (const [value, description] of [
-    ['needs: [prepare, staging_preflight]', 'database_gate must depend on prepare and staging_preflight'],
+    ['needs: [prepare, production_preflight]', 'database_gate must depend on prepare and production_preflight'],
     ['name: production-database', 'database_gate must use the production-database Environment'],
     ['MIGRATION_MODE: ${{ vars.PRODUCTION_MIGRATION_MODE }}', 'database_gate must use the explicit migration mode'],
   ]) requireText(databaseHeader, value, description, errors);
   requireJobPermissions(databaseHeader, 'database_gate', ['actions: read', 'contents: read'], errors);
-  rejectText(databaseHeader, 'name: production\n', 'database_gate and staging deploy must use distinct Environments', errors);
+  rejectText(databaseHeader, 'name: production\n', 'database_gate and production deploy must use distinct Environments', errors);
   const migrationMode = requireStep(databaseGate, 'Validate migration mode', errors);
   requireText(migrationMode, 'if [ "$MIGRATION_MODE" != "workflow" ] && [ "$MIGRATION_MODE" != "external" ]; then', 'database_gate must allow only workflow or external migration mode', errors);
   const checkout = requireStep(databaseGate, 'Checkout exact release for migration', errors);
@@ -491,9 +485,9 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   requireAdjacent(checkout, databaseApprovalFreshness, 'database_gate must revalidate immediately after checkout', errors);
   requireAdjacent(databaseMutationFreshness, migration, 'database_gate must reconfirm freshness directly before database mutation', errors);
 
-  const deployHeader = jobHeader(stagingDeploy);
+  const deployHeader = jobHeader(productionDeploy);
   for (const [value, description] of [
-    ['needs: [prepare, staging_preflight, database_gate]', 'deploy must depend on prepare, staging_preflight, and database_gate'],
+    ['needs: [prepare, production_preflight, database_gate]', 'deploy must depend on prepare, production_preflight, and database_gate'],
     ['name: production', 'deploy must use the production Environment'],
     ['DEPLOY_SHA: ${{ needs.prepare.outputs.deploy_sha }}', 'deploy must use the verified release SHA'],
     ['CI_RUN_ID: ${{ needs.prepare.outputs.ci_run_id }}', 'deploy must use the exact successful CI run id'],
@@ -501,28 +495,27 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   requireJobPermissions(deployHeader, 'deploy', ['actions: read', 'contents: read'], errors);
   rejectText(deployHeader, 'production-database', 'deploy and database_gate must use distinct Environments', errors);
 
-  const deployCheckout = requireStep(stagingDeploy, 'Checkout exact release for staging deployment', errors);
+  const deployCheckout = requireStep(productionDeploy, 'Checkout exact release for production deployment', errors);
   requireExactReleaseCheckout(deployCheckout, 'deploy', errors);
-  const deployApprovalFreshness = requireStep(stagingDeploy, 'Verify release freshness after staging approval', errors);
+  const deployApprovalFreshness = requireStep(productionDeploy, 'Verify release freshness after production approval', errors);
   requireFreshnessAction(deployApprovalFreshness, 'deploy post-approval check', errors);
 
-  const configuration = requireStep(stagingDeploy, 'Validate staging deployment configuration', errors);
-  requireStagingConfiguration(configuration, 'deploy staging configuration', errors, { requireExport: true });
+  const configuration = requireStep(productionDeploy, 'Validate production deployment configuration', errors);
+  requireProductionConfiguration(configuration, 'deploy production configuration', errors);
 
-  const deployDownload = requireStep(stagingDeploy, 'Download exact CI artifact', errors);
+  const deployDownload = requireStep(productionDeploy, 'Download exact CI artifact', errors);
   requireArtifactDownload(deployDownload, '${{ needs.prepare.outputs.deploy_sha }}', '${{ needs.prepare.outputs.ci_run_id }}', 'deploy', errors);
-  const deployVerification = requireStep(stagingDeploy, 'Verify exact CI artifact', errors);
+  const deployVerification = requireStep(productionDeploy, 'Verify exact CI artifact', errors);
   requireArtifactVerification(deployVerification, '${{ needs.prepare.outputs.deploy_sha }}', 'deploy', errors);
-  const deployMutationFreshness = requireStep(stagingDeploy, 'Reconfirm release freshness before staging deployment', errors);
+  const deployMutationFreshness = requireStep(productionDeploy, 'Reconfirm release freshness before production deployment', errors);
   requireFreshnessAction(deployMutationFreshness, 'deploy pre-mutation check', errors);
-  const deployStep = requireStep(stagingDeploy, 'Deploy exact artifact to Azure staging slot', errors);
+  const deployStep = requireStep(productionDeploy, 'Deploy exact artifact to Azure production app', errors);
   for (const [value, description] of [
-    ['id: deploy', 'Azure staging deploy step must expose the deploy output'],
-    ['uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383', 'Azure staging deploy must use the reviewed action pin'],
-    ['slot-name: ${{ env.SLOT_NAME_CANONICAL }}', 'Azure staging deploy must use the validated canonical slot'],
-    ['package: ${{ runner.temp }}/hoa-bff-publish', 'Azure staging deploy must use the verified CI artifact directory'],
+    ['id: deploy', 'Azure production deploy step must expose the deploy output'],
+    ['uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383', 'Azure production deploy must use the reviewed action pin'],
+    ['package: ${{ runner.temp }}/hoa-bff-publish', 'Azure production deploy must use the verified CI artifact directory'],
   ]) requireText(deployStep, value, description, errors);
-  const smoke = requireStep(stagingDeploy, 'Smoke test staged combined BFF', errors);
+  const smoke = requireStep(productionDeploy, 'Smoke test deployed combined BFF', errors);
   validateSmokeStep(smoke, errors);
   requireOrdered(
     [deployCheckout, deployApprovalFreshness, configuration, deployDownload, deployVerification, deployMutationFreshness, deployStep, smoke],
@@ -530,7 +523,7 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
     errors,
   );
   requireAdjacent(deployCheckout, deployApprovalFreshness, 'deploy must revalidate immediately after checkout', errors);
-  requireAdjacent(deployMutationFreshness, deployStep, 'deploy must reconfirm freshness directly before staging deployment', errors);
+  requireAdjacent(deployMutationFreshness, deployStep, 'deploy must reconfirm freshness directly before production deployment', errors);
 
   const sqlSecretOccurrences = deploy.match(/AZURE_SQL_CONNECTION_STRING_PRODUCTION/g)?.length ?? 0;
   if (sqlSecretOccurrences !== 1) errors.push('production SQL secret must appear exactly once, on the conditional migration step');
@@ -639,6 +632,9 @@ const errors = validateProductionWorkflow(
 if (errors.length > 0) throw new Error(`Production workflows are missing required release controls:\n- ${errors.join('\n- ')}`);
 
 const fixtures = [
+  ['approval defaults safe', 'deploy', 'default: false', 'default: true', 'manual production approval must default to false'],
+  ['explicit production approval', 'deploy', "if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_production == true }}", 'if: ${{ true }}', 'must require explicit manual approval'],
+  ['reject slot target', 'deploy', '          app-name:', '          slot-name: staging\n          app-name:', 'must not specify a slot'],
   ['trusted repository guard', 'deploy', 'github.event.workflow_run.head_repository.full_name == github.repository', 'true', 'reject workflow_run events from forks'],
   ['least privilege', 'deploy', 'actions: read\n      contents: read', 'actions: write\n      contents: read', 'must not grant write permissions'],
   ['current main verification', 'deploy', 'if [ "$DEPLOY_SHA" != "$current_main" ]; then', 'if false; then', 'reject stale release SHAs'],
@@ -650,15 +646,14 @@ const fixtures = [
   ['SPA entry verification', 'deploy', '$publish_dir/wwwroot/index.html', '$publish_dir/removed.html', 'verify the SPA entry point'],
   ['missing artifact failure', 'ci', 'if-no-files-found: error', 'if-no-files-found: warn', 'fail when files are missing'],
   ['artifact retention', 'ci', 'retention-days: 30', 'retention-days: 7', 'retained for 30 days'],
-  ['database dependency', 'deploy', 'needs: [prepare, staging_preflight]', 'needs: prepare', 'database_gate must depend on prepare and staging_preflight'],
-  ['deploy dependency', 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: prepare', 'depend on prepare, staging_preflight, and database_gate'],
+  ['database dependency', 'deploy', 'needs: [prepare, production_preflight]', 'needs: prepare', 'database_gate must depend on prepare and production_preflight'],
+  ['deploy dependency', 'deploy', 'needs: [prepare, production_preflight, database_gate]', 'needs: prepare', 'depend on prepare, production_preflight, and database_gate'],
   ['distinct database environment', 'deploy', 'name: production-database', 'name: production', 'distinct Environments'],
   ['deployment republish', 'deploy', 'run: echo "Database migration is an approved external release gate."', 'run: dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj', 'must never republish'],
   ['deployment promotion', 'deploy', 'run: echo "Database migration is an approved external release gate."', 'run: az webapp deployment slot swap', 'must not swap or promote'],
   ['migration secret emptiness', 'deploy', 'if [ -z "$SQL_CONNECTION" ]; then', 'if false; then', 'reject an empty SQL secret'],
-  ['canonical staging slot', 'deploy', 'slot-name: ${{ env.SLOT_NAME_CANONICAL }}', 'slot-name: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}', 'validated canonical slot'],
   ['action pinning', 'ci', 'uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262', 'uses: actions/checkout@v4', 'full 40-character commit SHA'],
-  ['SQL secret scope', 'deploy', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}\n          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}', 'staging_preflight must not receive the SQL secret'],
+  ['SQL secret scope', 'deploy', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}', 'PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}\n          SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}', 'production_preflight must not receive the SQL secret'],
   ['actionlint schema check', 'ci', '.github/workflows/deploy-api-azure.yml', '.github/workflows/removed.yml', 'deployment workflow syntax'],
 ];
 
@@ -703,13 +698,11 @@ for (const [name, jobName, stepName] of requiredCiSteps) {
 }
 
 const profileValidatorFixtures = [
+  ['reject slot credentials', 'production_matches = len(identity_segments) == 1', 'production_matches = True', 'must reject slot credentials'],
+  ['slot credential self-test', 'test_rejects_slot_profiles', 'removed_slot_test', 'self-tests must cover slot credentials'],
   ['publish-profile empty-secret guard', 'if not profile_xml:', 'if False:', 'must reject an empty publish-profile secret'],
   ['publish-profile app comparison', 'identity_segments[0] == app_name.upper()', 'identity_segments[0] != app_name.upper()', 'must compare username segment zero'],
-  ['publish-profile slot comparison', 'identity_segments[1] == slot_name.upper()', 'identity_segments[1] != slot_name.upper()', 'must compare username segment one'],
-  ['publish-profile production rejection', 'slot_name.casefold() == "production"', 'False', 'must reject the production slot'],
   ['publish-profile wrong-app self-test', 'test_rejects_profile_for_wrong_app', 'removed_wrong_app_test', 'self-tests must cover a wrong App Service'],
-  ['publish-profile wrong-slot self-test', 'test_rejects_profile_for_wrong_slot', 'removed_wrong_slot_test', 'self-tests must cover a wrong staging slot'],
-  ['publish-profile production self-test', 'test_rejects_production_slot_and_production_profile', 'removed_production_test', 'self-tests must cover production configuration'],
 ];
 
 for (const [name, search, replacement, expected] of profileValidatorFixtures) {
@@ -721,38 +714,38 @@ for (const [name, search, replacement, expected] of profileValidatorFixtures) {
 }
 
 expectInvalid(
-  'missing staging preflight',
-  { deploy: deployWorkflow.replace(jobBlock(deployWorkflow, 'staging_preflight'), '') },
-  'must define the staging_preflight job',
+  'missing production preflight',
+  { deploy: deployWorkflow.replace(jobBlock(deployWorkflow, 'production_preflight'), '') },
+  'must define the production_preflight job',
 );
 expectInvalid(
-  'missing staging preflight environment',
-  { deploy: replaceInJob(deployWorkflow, 'staging_preflight', '    environment:\n      name: production\n', '', 'missing staging preflight environment') },
-  'staging_preflight must use the production Environment',
+  'missing production preflight environment',
+  { deploy: replaceInJob(deployWorkflow, 'production_preflight', '    environment:\n      name: production\n', '', 'missing production preflight environment') },
+  'production_preflight must use the production Environment',
 );
 expectInvalid(
-  'staging preflight extra permission',
-  { deploy: replaceInJob(deployWorkflow, 'staging_preflight', '      contents: read', '      contents: read\n      issues: read', 'staging preflight extra permission') },
-  'staging_preflight must grant only actions read and contents read',
+  'production preflight extra permission',
+  { deploy: replaceInJob(deployWorkflow, 'production_preflight', '      contents: read', '      contents: read\n      issues: read', 'production preflight extra permission') },
+  'production_preflight must grant only actions read and contents read',
 );
 expectInvalid(
-  'missing staging preflight configuration validation',
-  { deploy: removeNamedStep(deployWorkflow, 'staging_preflight', 'Validate staging deployment configuration', 'missing staging preflight configuration validation') },
-  'missing named step: Validate staging deployment configuration',
+  'missing production preflight configuration validation',
+  { deploy: removeNamedStep(deployWorkflow, 'production_preflight', 'Validate production deployment configuration', 'missing production preflight configuration validation') },
+  'missing named step: Validate production deployment configuration',
 );
 expectInvalid(
   'preflight skips publish-profile identity validation',
   {
     deploy: replaceInNamedStep(
       deployWorkflow,
-      'staging_preflight',
-      'Validate staging deployment configuration',
-      'SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py',
+      'production_preflight',
+      'Validate production deployment configuration',
+      'python3 scripts/validate_azure_publish_profile.py',
       'echo "Configuration present."',
       'preflight skips publish-profile identity validation',
     ),
   },
-  'staging_preflight must validate that the publish profile belongs to the configured app and staging slot',
+  'production_preflight must validate that the publish profile belongs to the configured production app',
 );
 expectInvalid(
   'deploy skips publish-profile identity validation',
@@ -760,33 +753,33 @@ expectInvalid(
     deploy: replaceInNamedStep(
       deployWorkflow,
       'deploy',
-      'Validate staging deployment configuration',
-      'SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py',
+      'Validate production deployment configuration',
+      'python3 scripts/validate_azure_publish_profile.py',
       'echo "Configuration present."',
       'deploy skips publish-profile identity validation',
     ),
   },
-  'deploy staging configuration must validate that the publish profile belongs to the configured app and staging slot',
+  'deploy production configuration must validate that the publish profile belongs to the configured production app',
 );
 expectInvalid(
-  'database bypasses staging preflight',
-  { deploy: replaceInJob(deployWorkflow, 'database_gate', 'needs: [prepare, staging_preflight]', 'needs: prepare', 'database bypasses staging preflight') },
-  'database_gate must depend on prepare and staging_preflight',
+  'database bypasses production preflight',
+  { deploy: replaceInJob(deployWorkflow, 'database_gate', 'needs: [prepare, production_preflight]', 'needs: prepare', 'database bypasses production preflight') },
+  'database_gate must depend on prepare and production_preflight',
 );
 expectInvalid(
-  'deploy bypasses staging preflight',
-  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: [prepare, database_gate]', 'deploy bypasses staging preflight') },
-  'deploy must depend on prepare, staging_preflight, and database_gate',
+  'deploy bypasses production preflight',
+  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, production_preflight, database_gate]', 'needs: [prepare, database_gate]', 'deploy bypasses production preflight') },
+  'deploy must depend on prepare, production_preflight, and database_gate',
 );
 expectInvalid(
   'deploy bypasses database gate',
-  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, staging_preflight, database_gate]', 'needs: [prepare, staging_preflight]', 'deploy bypasses database gate') },
-  'deploy must depend on prepare, staging_preflight, and database_gate',
+  { deploy: replaceInJob(deployWorkflow, 'deploy', 'needs: [prepare, production_preflight, database_gate]', 'needs: [prepare, production_preflight]', 'deploy bypasses database gate') },
+  'deploy must depend on prepare, production_preflight, and database_gate',
 );
 expectInvalid(
   'missing preflight post-approval freshness check',
-  { deploy: removeNamedStep(deployWorkflow, 'staging_preflight', 'Verify release freshness after staging-preflight approval', 'missing preflight post-approval freshness check') },
-  'missing named step: Verify release freshness after staging-preflight approval',
+  { deploy: removeNamedStep(deployWorkflow, 'production_preflight', 'Verify release freshness after production-preflight approval', 'missing preflight post-approval freshness check') },
+  'missing named step: Verify release freshness after production-preflight approval',
 );
 expectInvalid(
   'missing database post-approval freshness check',
@@ -795,8 +788,8 @@ expectInvalid(
 );
 expectInvalid(
   'missing deploy post-approval freshness check',
-  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Verify release freshness after staging approval', 'missing deploy post-approval freshness check') },
-  'missing named step: Verify release freshness after staging approval',
+  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Verify release freshness after production approval', 'missing deploy post-approval freshness check') },
+  'missing named step: Verify release freshness after production approval',
 );
 expectInvalid(
   'missing immediate pre-migration freshness check',
@@ -830,8 +823,8 @@ expectInvalid(
 );
 expectInvalid(
   'missing immediate pre-deploy freshness check',
-  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Reconfirm release freshness before staging deployment', 'missing immediate pre-deploy freshness check') },
-  'missing named step: Reconfirm release freshness before staging deployment',
+  { deploy: removeNamedStep(deployWorkflow, 'deploy', 'Reconfirm release freshness before production deployment', 'missing immediate pre-deploy freshness check') },
+  'missing named step: Reconfirm release freshness before production deployment',
 );
 
 const actionFixtures = [
@@ -856,16 +849,16 @@ expectInvalid(
 );
 expectInvalid(
   'Azure deploy before final freshness check',
-  { deploy: swapNamedSteps(deployWorkflow, 'deploy', 'Reconfirm release freshness before staging deployment', 'Deploy exact artifact to Azure staging slot', 'Azure deploy before final freshness check') },
-  'directly before staging deployment',
+  { deploy: swapNamedSteps(deployWorkflow, 'deploy', 'Reconfirm release freshness before production deployment', 'Deploy exact artifact to Azure production app', 'Azure deploy before final freshness check') },
+  'directly before production deployment',
 );
 
 const unnamedAdjacencyFixtures = [
-  ['unnamed step after preflight checkout', 'staging_preflight', 'Checkout exact release for staging preflight', 'staging_preflight must revalidate immediately after checkout'],
+  ['unnamed step after preflight checkout', 'production_preflight', 'Checkout exact release for production preflight', 'production_preflight must revalidate immediately after checkout'],
   ['unnamed step after database checkout', 'database_gate', 'Checkout exact release for migration', 'database_gate must revalidate immediately after checkout'],
-  ['unnamed step after deploy checkout', 'deploy', 'Checkout exact release for staging deployment', 'deploy must revalidate immediately after checkout'],
+  ['unnamed step after deploy checkout', 'deploy', 'Checkout exact release for production deployment', 'deploy must revalidate immediately after checkout'],
   ['unnamed step before database mutation', 'database_gate', 'Reconfirm release freshness before database mutation', 'database_gate must reconfirm freshness directly before database mutation'],
-  ['unnamed step before staging deployment', 'deploy', 'Reconfirm release freshness before staging deployment', 'deploy must reconfirm freshness directly before staging deployment'],
+  ['unnamed step before production deployment', 'deploy', 'Reconfirm release freshness before production deployment', 'deploy must reconfirm freshness directly before production deployment'],
 ];
 
 for (const [name, jobName, stepName, expected] of unnamedAdjacencyFixtures) {

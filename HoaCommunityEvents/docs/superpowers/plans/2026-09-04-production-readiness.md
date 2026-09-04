@@ -1,5 +1,7 @@
 # HOA Combined BFF Production Readiness Implementation Plan
 
+> **Superseded by user decision:** Retain B1 and deploy directly without staging. See [current B1 runbook](../../B1-DIRECT-DEPLOYMENT.md). Do not execute slot creation or upgrade steps from this historical plan.
+
 > **Superseded:** This plan is retained as historical implementation context. The current approval chain and final release-safety requirements are defined in [2026-09-04-release-approval-freshness.md](2026-09-04-release-approval-freshness.md); do not execute this older three-job sequence.
 
 > **For agentic workers:** Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. All paths are repository-relative.

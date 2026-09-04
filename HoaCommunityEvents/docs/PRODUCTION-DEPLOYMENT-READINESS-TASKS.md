@@ -1,5 +1,7 @@
 # HOA Community Events — Production Deployment Readiness Tasks
 
+> **Superseded 2026-09-04:** The user selected direct deployment on Basic B1 and removed staging. Use [B1-DIRECT-DEPLOYMENT.md](B1-DIRECT-DEPLOYMENT.md) for current tasking, configuration, approval, and rollback. The slot-based requirements below are historical and must not be executed.
+
 **Audit date:** 2026-09-04
 **Repository:** `Victor-CS-Core/hoa-practice-project`
 **Decision:** **NOT READY TO DEPLOY TO PRODUCTION**

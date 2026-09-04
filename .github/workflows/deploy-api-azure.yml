@@ -5,6 +5,12 @@ env:
 
 "on":
   workflow_dispatch:
+    inputs:
+      approve_production:
+        description: Approve direct production release after backup and migration review
+        required: true
+        default: false
+        type: boolean
   workflow_run:
     workflows: [CI]
     types: [completed]
@@ -50,7 +56,7 @@ jobs:
           set -euo pipefail
           current_main=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
           if [ "$DEPLOY_SHA" != "$current_main" ]; then
-            echo "::error::This run is stale. Stage the current main commit after its CI succeeds."
+            echo "::error::This run is stale. Deploy the current main commit after its CI succeeds."
             exit 1
           fi
 
@@ -129,9 +135,11 @@ jobs:
           test -f "$publish_dir/HoaCommunityEvents.API.dll"
           test -f "$publish_dir/wwwroot/index.html"
 
-  staging_preflight:
-    name: Approve and Validate Staging Configuration
+  production_preflight:
+    name: Approve and Validate Production Configuration
     needs: prepare
+    # CI completion verifies artifacts only. Mutations require an explicit dispatch.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.approve_production == true }}
     environment:
       name: production
     runs-on: ubuntu-latest
@@ -141,13 +149,13 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout exact release for staging preflight
+      - name: Checkout exact release for production preflight
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.deploy_sha }}
           persist-credentials: false
 
-      - name: Verify release freshness after staging-preflight approval
+      - name: Verify release freshness after production-preflight approval
         uses: ./.github/actions/verify-release-freshness
         with:
           deploy-sha: ${{ needs.prepare.outputs.deploy_sha }}
@@ -155,36 +163,23 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ github.token }}
 
-      - name: Validate staging deployment configuration
+      - name: Validate production deployment configuration
         shell: bash
         env:
           APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
           PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-          SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
         run: |
           set -euo pipefail
           if [ -z "$APP_NAME" ] || [ -z "$PUBLISH_PROFILE" ]; then
-            echo "::error::Configure the staging App Service name and slot-scoped publish profile."
+            echo "::error::Configure the production App Service name and production publish profile."
             exit 1
           fi
 
-          slot_name_canonical="${SLOT_NAME//[[:space:]]/}"
-          if [ -z "$slot_name_canonical" ]; then
-            echo "::error::Configure AZURE_WEBAPP_SLOT_NAME_PRODUCTION with a non-production staging slot."
-            exit 1
-          fi
-
-          slot_name_canonical_lower="${slot_name_canonical,,}"
-          if [ "$slot_name_canonical_lower" = "production" ]; then
-            echo "::error::AZURE_WEBAPP_SLOT_NAME_PRODUCTION must name a non-production staging slot."
-            exit 1
-          fi
-
-          SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py
+          python3 scripts/validate_azure_publish_profile.py
 
   database_gate:
     name: Approve and Gate Production Database
-    needs: [prepare, staging_preflight]
+    needs: [prepare, production_preflight]
     environment:
       name: production-database
     runs-on: ubuntu-latest
@@ -272,8 +267,8 @@ jobs:
         run: echo "Database migration is an approved external release gate." >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    name: Deploy Exact Combined BFF to Staging
-    needs: [prepare, staging_preflight, database_gate]
+    name: Deploy Exact Combined BFF to Production
+    needs: [prepare, production_preflight, database_gate]
     environment:
       name: production
     runs-on: ubuntu-latest
@@ -286,13 +281,13 @@ jobs:
       CI_RUN_ID: ${{ needs.prepare.outputs.ci_run_id }}
 
     steps:
-      - name: Checkout exact release for staging deployment
+      - name: Checkout exact release for production deployment
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.deploy_sha }}
           persist-credentials: false
 
-      - name: Verify release freshness after staging approval
+      - name: Verify release freshness after production approval
         uses: ./.github/actions/verify-release-freshness
         with:
           deploy-sha: ${{ needs.prepare.outputs.deploy_sha }}
@@ -300,32 +295,18 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ github.token }}
 
-      - name: Validate staging deployment configuration
+      - name: Validate production deployment configuration
         shell: bash
         env:
           APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
           PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-          SLOT_NAME: ${{ vars.AZURE_WEBAPP_SLOT_NAME_PRODUCTION }}
         run: |
           if [ -z "$APP_NAME" ] || [ -z "$PUBLISH_PROFILE" ]; then
             echo "::error::Configure AZURE_WEBAPP_NAME_PRODUCTION and AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION."
             exit 1
           fi
 
-          slot_name_canonical="${SLOT_NAME//[[:space:]]/}"
-          if [ -z "$slot_name_canonical" ]; then
-            echo "::error::Configure AZURE_WEBAPP_SLOT_NAME_PRODUCTION with a non-production staging slot."
-            exit 1
-          fi
-
-          slot_name_canonical_lower="${slot_name_canonical,,}"
-          if [ "$slot_name_canonical_lower" = "production" ]; then
-            echo "::error::AZURE_WEBAPP_SLOT_NAME_PRODUCTION must name a non-production staging slot."
-            exit 1
-          fi
-
-          SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py
-          printf 'SLOT_NAME_CANONICAL=%s\n' "$slot_name_canonical" >> "$GITHUB_ENV"
+          python3 scripts/validate_azure_publish_profile.py
 
       - name: Download exact CI artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -356,7 +337,7 @@ jobs:
           test -f "$publish_dir/HoaCommunityEvents.API.dll"
           test -f "$publish_dir/wwwroot/index.html"
 
-      - name: Reconfirm release freshness before staging deployment
+      - name: Reconfirm release freshness before production deployment
         uses: ./.github/actions/verify-release-freshness
         with:
           deploy-sha: ${{ needs.prepare.outputs.deploy_sha }}
@@ -364,22 +345,21 @@ jobs:
           repository: ${{ github.repository }}
           token: ${{ github.token }}
 
-      - name: Deploy exact artifact to Azure staging slot
+      - name: Deploy exact artifact to Azure production app
         id: deploy
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
-          slot-name: ${{ env.SLOT_NAME_CANONICAL }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
           package: ${{ runner.temp }}/hoa-bff-publish
 
-      - name: Smoke test staged combined BFF
+      - name: Smoke test deployed combined BFF
         shell: bash
         env:
           WEBAPP_URL: ${{ steps.deploy.outputs.webapp-url }}
         run: |
           if [ -z "$WEBAPP_URL" ]; then
-            echo "::error::Azure deploy action did not provide the staged webapp URL."
+            echo "::error::Azure deploy action did not provide the deployed webapp URL."
             exit 1
           fi
 
@@ -388,7 +368,7 @@ jobs:
             --retry 12 --retry-all-errors --retry-delay 5 \
             --output /dev/null --write-out '%{http_code}' "$base_url/health")
           if [ "$health_status" != "200" ]; then
-            echo "::error::Staged /health endpoint did not return HTTP 200."
+            echo "::error::Deployed /health endpoint did not return HTTP 200."
             exit 1
           fi
 
@@ -402,7 +382,7 @@ jobs:
               --output "$response_file" --write-out '%{http_code}' "$base_url$endpoint")
             if [ "$status" != "200" ] || ! grep -qi '<!doctype html' "$response_file"; then
               rm -f "$response_file"
-              echo "::error::Staged $endpoint endpoint did not return HTTP 200 HTML."
+              echo "::error::Deployed $endpoint endpoint did not return HTTP 200 HTML."
               exit 1
             fi
             rm -f "$response_file"
@@ -415,6 +395,6 @@ jobs:
             --retry 3 --retry-all-errors --retry-delay 3 \
             --output /dev/null --write-out '%{http_code}' "$base_url/api/security/csrf")
           if [ "$csrf_status" != "200" ]; then
-            echo "::error::Staged /api/security/csrf endpoint did not return HTTP 200."
+            echo "::error::Deployed /api/security/csrf endpoint did not return HTTP 200."
             exit 1
           fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate that an Azure publish profile belongs to an app staging slot."""
+"""Validate a direct-production Azure publish profile without exposing credentials."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 
 class PublishProfileValidationError(ValueError):
-    """Raised when release configuration cannot safely target staging."""
+    """Raised when release configuration does not match the production app."""
 
 
 def _first_publish_profile(root: ET.Element) -> ET.Element | None:
@@ -20,14 +20,10 @@ def _first_publish_profile(root: ET.Element) -> ET.Element | None:
     return None
 
 
-def validate_publish_profile(profile_xml: str, app_name: str, slot_name: str) -> None:
+def validate_publish_profile(profile_xml: str, app_name: str) -> None:
     """Mirror Azure/webapps-deploy's app/slot check without exposing credentials."""
     if not app_name:
         raise PublishProfileValidationError("The App Service name is required.")
-    if not slot_name:
-        raise PublishProfileValidationError("A non-production staging slot is required.")
-    if slot_name.casefold() == "production":
-        raise PublishProfileValidationError("The production slot is not an allowed staging target.")
     if not profile_xml:
         raise PublishProfileValidationError("The Azure publish profile is required.")
 
@@ -44,15 +40,15 @@ def validate_publish_profile(profile_xml: str, app_name: str, slot_name: str) ->
     if not username:
         raise PublishProfileValidationError("The Azure publish profile has no deployment username.")
 
-    # Azure/webapps-deploy strips a leading '$', uppercases, splits on '__',
-    # and compares app segment 0 plus non-production slot segment 1.
+    # The production deployment username is the app name; slot credentials
+    # carry an __slot suffix and must not be accepted for this workflow.
     identity = username[1:] if username.startswith("$") else username
     identity_segments = identity.upper().split("__")
     app_matches = identity_segments[0] == app_name.upper()
-    slot_matches = len(identity_segments) > 1 and identity_segments[1] == slot_name.upper()
-    if not app_matches or not slot_matches:
+    production_matches = len(identity_segments) == 1
+    if not app_matches or not production_matches:
         raise PublishProfileValidationError(
-            "The Azure publish profile does not match the configured App Service and staging slot."
+            "The Azure publish profile must belong to the configured production App Service, not a slot."
         )
 
 
@@ -60,7 +56,6 @@ def validate_from_environment() -> None:
     validate_publish_profile(
         os.environ.get("PUBLISH_PROFILE", ""),
         os.environ.get("APP_NAME", ""),
-        os.environ.get("SLOT_NAME", ""),
     )
 
 
@@ -72,40 +67,35 @@ class PublishProfileValidatorTests(unittest.TestCase):
             f'userName="{username}" userPWD="not-a-real-secret" /></publishData>'
         )
 
-    def test_accepts_slot_profile_with_azure_leading_dollar(self) -> None:
-        validate_publish_profile(self.profile("$hoa-events__staging"), "hoa-events", "staging")
+    def test_accepts_production_profile_with_azure_leading_dollar(self) -> None:
+        validate_publish_profile(self.profile("$hoa-events"), "hoa-events")
 
     def test_accepts_kubeapp_style_username_without_leading_dollar(self) -> None:
-        validate_publish_profile(self.profile("hoa-events__staging"), "HOA-EVENTS", "STAGING")
+        validate_publish_profile(self.profile("hoa-events"), "HOA-EVENTS")
 
     def test_rejects_missing_or_empty_values(self) -> None:
-        valid = self.profile("$hoa-events__staging")
-        for profile, app, slot in [
-            ("", "hoa-events", "staging"),
-            (valid, "", "staging"),
-            (valid, "hoa-events", ""),
+        valid = self.profile("$hoa-events")
+        for profile, app in [
+            ("", "hoa-events"),
+            (valid, ""),
         ]:
-            with self.subTest(profile=bool(profile), app=bool(app), slot=bool(slot)):
+            with self.subTest(profile=bool(profile), app=bool(app)):
                 with self.assertRaises(PublishProfileValidationError):
-                    validate_publish_profile(profile, app, slot)
+                    validate_publish_profile(profile, app)
 
     def test_rejects_malformed_xml(self) -> None:
         with self.assertRaises(PublishProfileValidationError):
-            validate_publish_profile("<publishData>", "hoa-events", "staging")
+            validate_publish_profile("<publishData>", "hoa-events")
 
     def test_rejects_profile_for_wrong_app(self) -> None:
         with self.assertRaises(PublishProfileValidationError):
-            validate_publish_profile(self.profile("$different-app__staging"), "hoa-events", "staging")
+            validate_publish_profile(self.profile("$different-app"), "hoa-events")
 
-    def test_rejects_profile_for_wrong_slot(self) -> None:
-        with self.assertRaises(PublishProfileValidationError):
-            validate_publish_profile(self.profile("$hoa-events__preview"), "hoa-events", "staging")
-
-    def test_rejects_production_slot_and_production_profile(self) -> None:
-        with self.assertRaises(PublishProfileValidationError):
-            validate_publish_profile(self.profile("$hoa-events"), "hoa-events", "staging")
-        with self.assertRaises(PublishProfileValidationError):
-            validate_publish_profile(self.profile("$hoa-events__production"), "hoa-events", "production")
+    def test_rejects_slot_profiles(self) -> None:
+        for slot in ("staging", "preview", "production"):
+            with self.subTest(slot=slot):
+                with self.assertRaises(PublishProfileValidationError):
+                    validate_publish_profile(self.profile(f"$hoa-events__{slot}"), "hoa-events")
 
 
 def main() -> int:
@@ -123,7 +113,7 @@ def main() -> int:
         print(f"::error::{error}", file=sys.stderr)
         return 1
 
-    print("Azure staging publish-profile identity validated.")
+    print("Azure production publish-profile identity validated.")
     return 0
 
 

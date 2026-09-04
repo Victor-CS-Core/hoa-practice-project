@@ -1,5 +1,7 @@
 # HOA Release Approval Freshness Implementation Plan
 
+> **Superseded by user decision:** Retain B1 and deploy directly without staging. See [current B1 runbook](../../B1-DIRECT-DEPLOYMENT.md). Do not execute slot creation or upgrade steps from this historical plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Close the two final release-safety gaps by proving staging configuration before any production database mutation and revalidating the exact trusted release after every protected approval wait and immediately before mutation or staging deployment.
