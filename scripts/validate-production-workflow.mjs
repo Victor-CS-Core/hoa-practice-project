@@ -10,6 +10,9 @@ const legacyStaticWorkflow = fileURLToPath(
 const freshnessActionPath = fileURLToPath(
   new URL('.github/actions/verify-release-freshness/action.yml', repositoryRoot),
 );
+const publishProfileValidatorPath = fileURLToPath(
+  new URL('scripts/validate_azure_publish_profile.py', repositoryRoot),
+);
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const withoutCommentLines = (text) =>
   text.split('\n').filter((line) => !line.trimStart().startsWith('#')).join('\n');
@@ -87,6 +90,14 @@ function requireJobPermissions(header, owner, expected, errors) {
   }
 }
 
+function requireExactWorkflowPermissions(header, owner, expected, errors) {
+  const match = /^permissions:\n((?:  [A-Za-z0-9_-]+: (?:read|write|none)\n?)*)/m.exec(header);
+  const actual = match?.[1].trim().split('\n').map((line) => line.trim()) ?? [];
+  if (actual.length !== expected.length || expected.some((entry, index) => actual[index] !== entry)) {
+    errors.push(`${owner} must grant exactly ${expected.join(', ')} at workflow scope`);
+  }
+}
+
 function requireFreshnessAction(step, owner, errors) {
   for (const [value, description] of [
     ['uses: ./.github/actions/verify-release-freshness', `${owner} must use the local freshness action`],
@@ -114,11 +125,39 @@ function requireStagingConfiguration(step, owner, errors, { requireExport = fals
     ['if [ -z "$slot_name_canonical" ]; then', `${owner} must reject whitespace-only SLOT_NAME values`],
     ['slot_name_canonical_lower="${slot_name_canonical,,}"', `${owner} must compare the canonical slot case-insensitively`],
     ['if [ "$slot_name_canonical_lower" = "production" ]; then', `${owner} must reject the production slot`],
+    ['SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py', `${owner} must validate that the publish profile belongs to the configured app and staging slot`],
   ]) requireText(step, value, description, errors);
   if (requireExport) {
     requireText(step, 'SLOT_NAME_CANONICAL=%s\\n', `${owner} must export the validated canonical slot`, errors);
   }
   rejectText(step, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', `${owner} must not receive the SQL secret`, errors);
+}
+
+function validatePublishProfileValidator(script, errors) {
+  if (!script) {
+    errors.push('repository must define the Azure publish-profile identity validator');
+    return;
+  }
+
+  for (const [value, description] of [
+    ['if not app_name:', 'publish-profile validator must reject a missing App Service name'],
+    ['if not slot_name:', 'publish-profile validator must reject a missing staging slot'],
+    ['if not profile_xml:', 'publish-profile validator must reject an empty publish-profile secret'],
+    ['ET.fromstring(profile_xml)', 'publish-profile validator must parse XML with ElementTree'],
+    ['username.startswith("$")', 'publish-profile validator must strip Azure\'s leading dollar sign'],
+    ['identity.upper().split("__")', 'publish-profile validator must uppercase and split the deployment username on double underscores'],
+    ['identity_segments[0] == app_name.upper()', 'publish-profile validator must compare username segment zero to the App Service name'],
+    ['identity_segments[1] == slot_name.upper()', 'publish-profile validator must compare username segment one to the staging slot'],
+    ['slot_name.casefold() == "production"', 'publish-profile validator must reject the production slot'],
+    ['test_rejects_missing_or_empty_values', 'publish-profile self-tests must cover missing and empty configuration'],
+    ['test_rejects_malformed_xml', 'publish-profile self-tests must cover malformed XML'],
+    ['test_rejects_profile_for_wrong_app', 'publish-profile self-tests must cover a wrong App Service'],
+    ['test_rejects_profile_for_wrong_slot', 'publish-profile self-tests must cover a wrong staging slot'],
+    ['test_rejects_production_slot_and_production_profile', 'publish-profile self-tests must cover production configuration'],
+  ]) requireText(script, value, description, errors);
+
+  rejectText(script, 'print(profile_xml', 'publish-profile validator must never print the publish-profile secret', errors);
+  rejectText(script, 'print(username', 'publish-profile validator must never print the deployment username', errors);
 }
 
 function validateFreshnessAction(action, errors) {
@@ -177,8 +216,8 @@ function validateActionPins(workflow, workflowName, errors) {
 
 function validateCiWorkflow(ci, errors) {
   const header = workflowHeader(ci);
-  requireText(header, 'permissions:\n  contents: read', 'CI must explicitly grant only contents: read', errors);
-  rejectText(header, ': write', 'CI must not grant write permissions', errors);
+  requireExactWorkflowPermissions(header, 'CI', ['contents: read'], errors);
+  if (/^    permissions:/m.test(ci)) errors.push('CI jobs must not override workflow permissions');
   validateActionPins(ci, 'CI', errors);
 
   const backend = jobBlock(ci, 'backend');
@@ -186,6 +225,14 @@ function validateCiWorkflow(ci, errors) {
     errors.push('CI must define the backend job');
     return;
   }
+
+  const publishProfileValidation = requireStep(backend, 'Test Azure publish-profile validator', errors);
+  requireText(
+    publishProfileValidation,
+    'run: python3 scripts/validate_azure_publish_profile.py --self-test',
+    'CI backend job must run the Azure publish-profile validator self-tests',
+    errors,
+  );
 
   const workflowValidation = requireStep(backend, 'Validate production workflow contract', errors);
   requireText(
@@ -206,13 +253,18 @@ function validateCiWorkflow(ci, errors) {
   ]) requireText(syntaxValidation, value, description, errors);
 
   const restore = requireStep(backend, 'Restore', errors);
+  requireText(restore, 'dotnet restore HoaCommunityEvents/backend/HoaCommunityEvents.slnx', 'CI backend job must restore the backend solution', errors);
+  const build = requireStep(backend, 'Build', errors);
+  requireText(build, 'dotnet build HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-restore', 'CI backend job must build the restored backend solution in Release', errors);
+  const test = requireStep(backend, 'Test', errors);
+  requireText(test, 'dotnet test HoaCommunityEvents/backend/HoaCommunityEvents.slnx --configuration Release --no-build', 'CI backend job must test the built backend solution in Release', errors);
   const publish = requireStep(backend, 'Publish combined BFF', errors);
-  requireText(
-    publish,
-    'dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj',
-    'CI must publish the combined API project',
-    errors,
-  );
+  for (const [value, description] of [
+    ['dotnet publish HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj', 'CI must publish the combined API project'],
+    ['--configuration Release', 'CI must publish the combined API project in Release'],
+    ['--no-restore', 'CI publish must reuse the trusted restore'],
+    ['--output "$RUNNER_TEMP/hoa-bff-publish"', 'CI publish must write the reviewed combined artifact directory'],
+  ]) requireText(publish, value, description, errors);
   const packageVerification = requireStep(backend, 'Verify combined package', errors);
   requireText(packageVerification, 'HoaCommunityEvents.API.dll', 'CI package verification must require the API DLL', errors);
   requireText(packageVerification, 'wwwroot/index.html', 'CI package verification must require the SPA entry point', errors);
@@ -232,10 +284,29 @@ function validateCiWorkflow(ci, errors) {
   ]) requireText(uploadArtifact, value, description, errors);
 
   requireOrdered(
-    [workflowValidation, syntaxValidation, restore, publish, packageVerification, packageArtifact, uploadArtifact],
-    'CI must validate, build, verify, package, and upload the release artifact in order',
+    [publishProfileValidation, workflowValidation, syntaxValidation, restore, build, test, publish, packageVerification, packageArtifact, uploadArtifact],
+    'CI must self-test release validation, restore, build, test, publish, verify, package, and upload in order',
     errors,
   );
+
+  const frontend = jobBlock(ci, 'frontend');
+  if (!frontend) {
+    errors.push('CI must define the frontend job');
+  } else {
+    const install = requireStep(frontend, 'Install', errors);
+    requireText(install, 'run: npm ci', 'CI frontend job must install from the lockfile', errors);
+    const lint = requireStep(frontend, 'Lint', errors);
+    requireText(lint, 'run: npm run lint', 'CI frontend job must lint the frontend', errors);
+    const frontendTest = requireStep(frontend, 'Test', errors);
+    requireText(frontendTest, 'run: npm run test:run', 'CI frontend job must run the frontend test suite', errors);
+    const frontendBuild = requireStep(frontend, 'Build', errors);
+    requireText(frontendBuild, 'run: npm run build', 'CI frontend job must build the frontend', errors);
+    requireOrdered(
+      [install, lint, frontendTest, frontendBuild],
+      'CI frontend must install, lint, test, and build in order',
+      errors,
+    );
+  }
   rejectText(ci, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', 'CI must not receive the production SQL secret', errors);
 }
 
@@ -386,6 +457,14 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   const installEf = requireStep(databaseGate, 'Install EF migration tool', errors);
   requireText(installEf, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'EF tool setup must run only in workflow mode', errors);
   requireText(installEf, 'dotnet tool install', 'database_gate must install the EF tool before its final freshness check', errors);
+  const restoreEf = requireStep(databaseGate, 'Restore EF migration projects', errors);
+  requireText(restoreEf, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'EF project restore must run only in workflow mode', errors);
+  requireText(restoreEf, 'dotnet restore HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj', 'database_gate must restore the EF startup project before its final freshness check', errors);
+  rejectText(restoreEf, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', 'EF project restore must not receive the SQL secret', errors);
+  const buildEf = requireStep(databaseGate, 'Build EF migration projects', errors);
+  requireText(buildEf, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'EF project build must run only in workflow mode', errors);
+  requireText(buildEf, 'dotnet build HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj --configuration Release --no-restore', 'database_gate must build the restored EF startup project in Release before its final freshness check', errors);
+  rejectText(buildEf, 'AZURE_SQL_CONNECTION_STRING_PRODUCTION', 'EF project build must not receive the SQL secret', errors);
   const databaseMutationFreshness = requireStep(databaseGate, 'Reconfirm release freshness before database mutation', errors);
   requireFreshnessAction(databaseMutationFreshness, 'database_gate pre-mutation check', errors);
   requireText(databaseMutationFreshness, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'workflow' }}", 'database_gate pre-mutation check must run only in workflow mode', errors);
@@ -395,14 +474,18 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
     ['SQL_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING_PRODUCTION }}', 'only the migration step must receive the SQL secret'],
     ['if [ -z "$SQL_CONNECTION" ]; then', 'migration step must reject an empty SQL secret'],
     ['dotnet ef database update', 'workflow migration mode must execute the reviewed EF migration'],
+    ['--configuration Release', 'workflow migration must use the prebuilt Release configuration'],
+    ['--no-build', 'workflow migration must not build or restore after the final freshness check'],
   ]) requireText(migration, value, description, errors);
   rejectText(migration, 'dotnet tool install', 'migration step must not perform tool setup after the final freshness check', errors);
+  rejectText(migration, 'dotnet restore', 'migration step must not restore after the final freshness check', errors);
+  rejectText(migration, 'dotnet build', 'migration step must not build after the final freshness check', errors);
   const externalMigration = requireStep(databaseGate, 'Record external migration release gate', errors);
   requireText(externalMigration, "if: ${{ vars.PRODUCTION_MIGRATION_MODE == 'external' }}", 'external migration gate must run only in external mode', errors);
   requireText(externalMigration, 'approved external release gate', 'external mode must record the approved database release gate', errors);
   requireOrdered(
-    [migrationMode, checkout, databaseApprovalFreshness, setupDotnet, installEf, databaseMutationFreshness, migration],
-    'database_gate must validate mode, revalidate the release, finish setup, reconfirm freshness, and only then migrate',
+    [migrationMode, checkout, databaseApprovalFreshness, setupDotnet, installEf, restoreEf, buildEf, databaseMutationFreshness, migration],
+    'database_gate must validate mode, revalidate, install tooling, restore and build, reconfirm freshness, and only then migrate',
     errors,
   );
   requireAdjacent(checkout, databaseApprovalFreshness, 'database_gate must revalidate immediately after checkout', errors);
@@ -453,11 +536,21 @@ function validateDeploymentWorkflow(deploy, freshnessAction, errors) {
   if (sqlSecretOccurrences !== 1) errors.push('production SQL secret must appear exactly once, on the conditional migration step');
 }
 
-function validateProductionWorkflow(deployWorkflow, ciWorkflow, freshnessActionWorkflow, { checkLegacy = true } = {}) {
+function validateProductionWorkflow(
+  deployWorkflow,
+  ciWorkflow,
+  freshnessActionWorkflow,
+  publishProfileValidatorScript,
+  { checkLegacy = true } = {},
+) {
   const errors = [];
   const deploy = withoutCommentLines(deployWorkflow);
   const ci = withoutCommentLines(ciWorkflow);
   const freshnessAction = freshnessActionWorkflow ? withoutCommentLines(freshnessActionWorkflow) : '';
+  const publishProfileValidator = publishProfileValidatorScript
+    ? withoutCommentLines(publishProfileValidatorScript)
+    : '';
+  validatePublishProfileValidator(publishProfileValidator, errors);
   validateCiWorkflow(ci, errors);
   validateDeploymentWorkflow(deploy, freshnessAction, errors);
   if (checkLegacy && existsSync(legacyStaticWorkflow)) errors.push('legacy Azure Static Web Apps workflow must remain deleted');
@@ -482,6 +575,14 @@ function removeNamedStep(workflow, jobName, stepName, fixtureName) {
   return workflow.replace(block, block.replace(step[0], ''));
 }
 
+function replaceInNamedStep(workflow, jobName, stepName, search, replacement, fixtureName) {
+  const block = jobBlock(workflow, jobName);
+  const step = namedStep(block, stepName);
+  if (!step) throw new Error(`Negative fixture ${fixtureName} could not find step ${stepName}`);
+  const mutatedStep = replaceRequired(step[0], search, replacement, fixtureName);
+  return workflow.replace(block, block.replace(step[0], mutatedStep));
+}
+
 function swapNamedSteps(workflow, jobName, firstName, secondName, fixtureName) {
   const block = jobBlock(workflow, jobName);
   const first = namedStep(block, firstName);
@@ -502,11 +603,23 @@ function insertUnnamedStepAfter(workflow, jobName, stepName, fixtureName) {
   return workflow.replace(block, block.replace(step[0], `${step[0]}${unnamedStep}`));
 }
 
-function expectInvalid(name, { deploy = deployWorkflow, ci = ciWorkflow, action = freshnessAction }, expected) {
-  const errors = validateProductionWorkflow(deploy, ci, action, { checkLegacy: false });
+let negativeFixtureCount = 0;
+
+function expectInvalid(
+  name,
+  {
+    deploy = deployWorkflow,
+    ci = ciWorkflow,
+    action = freshnessAction,
+    profileValidator = publishProfileValidator,
+  },
+  expected,
+) {
+  const errors = validateProductionWorkflow(deploy, ci, action, profileValidator, { checkLegacy: false });
   if (!errors.some((error) => error.includes(expected))) {
     throw new Error(`Negative fixture ${name} unexpectedly passed: ${errors.join('; ')}`);
   }
+  negativeFixtureCount += 1;
 }
 
 const deployWorkflow = read('.github/workflows/deploy-api-azure.yml');
@@ -514,7 +627,15 @@ const ciWorkflow = read('.github/workflows/ci.yml');
 const freshnessAction = existsSync(freshnessActionPath)
   ? read('.github/actions/verify-release-freshness/action.yml')
   : '';
-const errors = validateProductionWorkflow(deployWorkflow, ciWorkflow, freshnessAction);
+const publishProfileValidator = existsSync(publishProfileValidatorPath)
+  ? read('scripts/validate_azure_publish_profile.py')
+  : '';
+const errors = validateProductionWorkflow(
+  deployWorkflow,
+  ciWorkflow,
+  freshnessAction,
+  publishProfileValidator,
+);
 if (errors.length > 0) throw new Error(`Production workflows are missing required release controls:\n- ${errors.join('\n- ')}`);
 
 const fixtures = [
@@ -548,6 +669,58 @@ for (const [name, target, search, replacement, expected] of fixtures) {
 }
 
 expectInvalid(
+  'CI extra top-level permission',
+  { ci: replaceRequired(ciWorkflow, 'permissions:\n  contents: read', 'permissions:\n  contents: read\n  actions: read', 'CI extra top-level permission') },
+  'CI must grant exactly contents: read at workflow scope',
+);
+expectInvalid(
+  'CI backend job permission override',
+  { ci: replaceInJob(ciWorkflow, 'backend', '    runs-on: ubuntu-latest\n', '    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n', 'CI backend job permission override') },
+  'CI jobs must not override workflow permissions',
+);
+
+const requiredCiSteps = [
+  ['missing publish-profile self-test', 'backend', 'Test Azure publish-profile validator'],
+  ['missing backend restore', 'backend', 'Restore'],
+  ['missing backend build', 'backend', 'Build'],
+  ['missing backend test', 'backend', 'Test'],
+  ['missing combined publish', 'backend', 'Publish combined BFF'],
+  ['missing combined package verification', 'backend', 'Verify combined package'],
+  ['missing SHA-addressed package step', 'backend', 'Package SHA-addressed combined BFF artifact'],
+  ['missing SHA-addressed upload step', 'backend', 'Upload SHA-addressed combined BFF artifact'],
+  ['missing frontend install', 'frontend', 'Install'],
+  ['missing frontend lint', 'frontend', 'Lint'],
+  ['missing frontend test', 'frontend', 'Test'],
+  ['missing frontend build', 'frontend', 'Build'],
+];
+
+for (const [name, jobName, stepName] of requiredCiSteps) {
+  expectInvalid(
+    name,
+    { ci: removeNamedStep(ciWorkflow, jobName, stepName, name) },
+    `missing named step: ${stepName}`,
+  );
+}
+
+const profileValidatorFixtures = [
+  ['publish-profile empty-secret guard', 'if not profile_xml:', 'if False:', 'must reject an empty publish-profile secret'],
+  ['publish-profile app comparison', 'identity_segments[0] == app_name.upper()', 'identity_segments[0] != app_name.upper()', 'must compare username segment zero'],
+  ['publish-profile slot comparison', 'identity_segments[1] == slot_name.upper()', 'identity_segments[1] != slot_name.upper()', 'must compare username segment one'],
+  ['publish-profile production rejection', 'slot_name.casefold() == "production"', 'False', 'must reject the production slot'],
+  ['publish-profile wrong-app self-test', 'test_rejects_profile_for_wrong_app', 'removed_wrong_app_test', 'self-tests must cover a wrong App Service'],
+  ['publish-profile wrong-slot self-test', 'test_rejects_profile_for_wrong_slot', 'removed_wrong_slot_test', 'self-tests must cover a wrong staging slot'],
+  ['publish-profile production self-test', 'test_rejects_production_slot_and_production_profile', 'removed_production_test', 'self-tests must cover production configuration'],
+];
+
+for (const [name, search, replacement, expected] of profileValidatorFixtures) {
+  expectInvalid(
+    name,
+    { profileValidator: replaceRequired(publishProfileValidator, search, replacement, name) },
+    expected,
+  );
+}
+
+expectInvalid(
   'missing staging preflight',
   { deploy: deployWorkflow.replace(jobBlock(deployWorkflow, 'staging_preflight'), '') },
   'must define the staging_preflight job',
@@ -566,6 +739,34 @@ expectInvalid(
   'missing staging preflight configuration validation',
   { deploy: removeNamedStep(deployWorkflow, 'staging_preflight', 'Validate staging deployment configuration', 'missing staging preflight configuration validation') },
   'missing named step: Validate staging deployment configuration',
+);
+expectInvalid(
+  'preflight skips publish-profile identity validation',
+  {
+    deploy: replaceInNamedStep(
+      deployWorkflow,
+      'staging_preflight',
+      'Validate staging deployment configuration',
+      'SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py',
+      'echo "Configuration present."',
+      'preflight skips publish-profile identity validation',
+    ),
+  },
+  'staging_preflight must validate that the publish profile belongs to the configured app and staging slot',
+);
+expectInvalid(
+  'deploy skips publish-profile identity validation',
+  {
+    deploy: replaceInNamedStep(
+      deployWorkflow,
+      'deploy',
+      'Validate staging deployment configuration',
+      'SLOT_NAME="$slot_name_canonical" python3 scripts/validate_azure_publish_profile.py',
+      'echo "Configuration present."',
+      'deploy skips publish-profile identity validation',
+    ),
+  },
+  'deploy staging configuration must validate that the publish profile belongs to the configured app and staging slot',
 );
 expectInvalid(
   'database bypasses staging preflight',
@@ -601,6 +802,31 @@ expectInvalid(
   'missing immediate pre-migration freshness check',
   { deploy: removeNamedStep(deployWorkflow, 'database_gate', 'Reconfirm release freshness before database mutation', 'missing immediate pre-migration freshness check') },
   'missing named step: Reconfirm release freshness before database mutation',
+);
+expectInvalid(
+  'missing EF project restore',
+  { deploy: removeNamedStep(deployWorkflow, 'database_gate', 'Restore EF migration projects', 'missing EF project restore') },
+  'missing named step: Restore EF migration projects',
+);
+expectInvalid(
+  'missing EF project build',
+  { deploy: removeNamedStep(deployWorkflow, 'database_gate', 'Build EF migration projects', 'missing EF project build') },
+  'missing named step: Build EF migration projects',
+);
+expectInvalid(
+  'EF build after final freshness check',
+  { deploy: swapNamedSteps(deployWorkflow, 'database_gate', 'Build EF migration projects', 'Reconfirm release freshness before database mutation', 'EF build after final freshness check') },
+  'database_gate must validate mode, revalidate, install tooling, restore and build, reconfirm freshness, and only then migrate',
+);
+expectInvalid(
+  'migration permits implicit build',
+  { deploy: replaceInNamedStep(deployWorkflow, 'database_gate', 'Apply production database migrations', '            --no-build \\\n', '', 'migration permits implicit build') },
+  'workflow migration must not build or restore after the final freshness check',
+);
+expectInvalid(
+  'migration loses Release configuration',
+  { deploy: replaceInNamedStep(deployWorkflow, 'database_gate', 'Apply production database migrations', '            --configuration Release \\\n', '', 'migration loses Release configuration') },
+  'workflow migration must use the prebuilt Release configuration',
 );
 expectInvalid(
   'missing immediate pre-deploy freshness check',
@@ -650,4 +876,4 @@ expectInvalid('redirect smoke request', { deploy: replaceRequired(deployWorkflow
 expectInvalid('HTML helper status enforcement', { deploy: replaceRequired(deployWorkflow, '[ "$status" != "200" ] || ', '', 'HTML helper status enforcement') }, 'require_html must directly reject non-200 responses');
 expectInvalid('HTML helper doctype enforcement', { deploy: replaceRequired(deployWorkflow, "! grep -qi '<!doctype html' \"$response_file\"", 'true', 'HTML helper doctype enforcement') }, 'require_html must directly require <!doctype html');
 
-console.log('Production workflow contract and all negative fixtures are valid.');
+console.log(`Production workflow contract and all ${negativeFixtureCount} negative fixtures are valid.`);

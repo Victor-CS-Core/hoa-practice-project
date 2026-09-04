@@ -32,6 +32,9 @@ jobs:
           cache: npm
           cache-dependency-path: HoaCommunityEvents/frontend/package-lock.json
 
+      - name: Test Azure publish-profile validator
+        run: python3 scripts/validate_azure_publish_profile.py --self-test
+
       - name: Validate production workflow contract
         run: node scripts/validate-production-workflow.mjs
 

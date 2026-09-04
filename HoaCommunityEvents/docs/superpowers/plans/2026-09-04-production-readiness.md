@@ -1,5 +1,7 @@
 # HOA Combined BFF Production Readiness Implementation Plan
 
+> **Superseded:** This plan is retained as historical implementation context. The current approval chain and final release-safety requirements are defined in [2026-09-04-release-approval-freshness.md](2026-09-04-release-approval-freshness.md); do not execute this older three-job sequence.
+
 > **For agentic workers:** Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` to implement this plan task-by-task. All paths are repository-relative.
 
 **Goal:** Make the combined ASP.NET Core and Vite BFF safe to stage from GitHub Actions by promoting the exact successful-CI artifact, separating database authorization from staging authorization, and preserving explicit human control over production promotion.
