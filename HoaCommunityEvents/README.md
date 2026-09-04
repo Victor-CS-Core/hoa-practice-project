@@ -168,23 +168,29 @@ The publish target runs a clean frontend install and build, then copies `fronten
 ## Deployment status and cutover gate
 
 - `.github/workflows/ci.yml` builds/tests both applications and verifies the combined publish contains `wwwroot/index.html`.
-- `.github/workflows/deploy-api-azure.yml` deploys the combined BFF to **Azure App Service** after `CI` succeeds for a `main` push in this repository. Pull-request, fork, failed, and cancelled CI runs cannot trigger deployment.
+- `.github/workflows/deploy-api-azure.yml` stages the combined BFF to an **Azure App Service staging slot** after `CI` succeeds for a trusted `main` push in this repository. Pull-request, fork, failed, and cancelled CI runs cannot trigger deployment. A successful workflow never swaps a slot into production.
 - The workflow checks out the exact commit that passed CI, not a later branch tip. It rejects stale commits and queues up to 100 pending production runs without replacing waiting deployments or cancelling an in-progress migration or deployment.
-- Manual runs remain available through **Actions → Deploy HOA BFF to Azure App Service → Run workflow**. Select `main`; the current `main` commit must already have a successful push-triggered `CI` run. Manual dispatch does not bypass the CI gate.
-- One `dotnet publish` builds the API and Vite frontend together. The workflow verifies both `HoaCommunityEvents.API.dll` and `wwwroot/index.html` before migrations or deployment, then sends that combined folder to App Service.
+- Manual runs remain available through **Actions → Deploy HOA BFF to Azure App Service → Run workflow**. Select `main`; the current `main` commit must already have a successful push-triggered `CI` run. Manual dispatch does not bypass the CI gate or the protected GitHub Environment.
+- Configure the GitHub Environment named `production` with a required reviewer. The deploy job uses that Environment, so staging deployment is approval-gated.
+- One `dotnet publish` builds the API and Vite frontend together. The workflow verifies both `HoaCommunityEvents.API.dll` and `wwwroot/index.html`, retains the exact combined artifact for 30 days, then sends that folder only to the configured staging slot.
+- The workflow runs only non-mutating, unauthenticated smoke checks against the staged URL: `/health`, `/`, a SPA deep route, and `/api/security/csrf`. It does not sign in or write application data.
 - The historical frontend-only Static Web Apps workflow has been removed. No workflow uploads the migrated frontend alone to the old Static Web Apps origin. This source change does **not** delete the existing Azure Static Web Apps resource or change its domain.
 
-Required GitHub Actions secrets (the workflow validates that the first two are present):
+Required GitHub Environment configuration:
 
-| Secret | Purpose |
+| Variable or secret | Purpose |
 | --- | --- |
-| `AZURE_WEBAPP_NAME_PRODUCTION` | Name of the existing Azure App Service application |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION` | Publish profile for that same App Service application |
-| `AZURE_SQL_CONNECTION_STRING_PRODUCTION` | Optional: when present, applies EF Core migrations before deploying; when absent, migration is skipped |
+| `AZURE_WEBAPP_SLOT_NAME_PRODUCTION` | Required Environment variable naming the staging slot. It must be nonempty and must not be `production`. |
+| `PRODUCTION_MIGRATION_MODE` | Required Environment variable. It must be exactly `workflow` or `external`. |
+| `AZURE_WEBAPP_NAME_PRODUCTION` | Secret naming the existing Azure App Service application. |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION` | Secret containing a publish profile scoped to the staging slot. |
+| `AZURE_SQL_CONNECTION_STRING_PRODUCTION` | Required secret only when `PRODUCTION_MIGRATION_MODE` is `workflow`; it is used to apply the reviewed migration before staging deployment. |
 
-The optional migration secret is only supplied to the migration step. It does not configure the application's runtime database connection. App Service still needs its own `ConnectionStrings__DefaultConnection`, Cloudinary settings, Production environment, and .NET 10 runtime. Keep `Seed__EnableBootstrap` and `Seed__EnableDemoData` false. Keep one API instance until the process-local SSE broker is replaced with a shared backplane. GitHub's token has only repository-content and Actions read permissions; the publish profile provides the separate Azure deployment authority.
+When `PRODUCTION_MIGRATION_MODE` is `external`, the workflow does not run a migration: a separately verified database migration is an explicit release gate before slot promotion. It never silently skips migration because a secret is missing.
 
-**Release gate:** once these workflow changes are pushed to GitHub's default branch, a successful `main` CI run can deploy to the configured App Service and, if configured, update its database. Before that push, confirm the target, secrets, database backup/migration readiness, and release authority. Coordinate BFF login/current/logout, role, CSRF, deep-link, Cloudinary, database, and SSE smoke tests before switching the client-facing domain. Publishing source changes is not itself a DNS change or retirement of the old Azure resource.
+The workflow migration secret is supplied only to the migration step. It does not configure the application's runtime database connection. App Service still needs its own `ConnectionStrings__DefaultConnection`, Cloudinary settings, Production environment, and .NET 10 runtime. Keep `Seed__EnableBootstrap` and `Seed__EnableDemoData` false. Keep one API instance until the process-local SSE broker is replaced with a shared backplane. GitHub's token has only repository-content and Actions read permissions; the publish profile provides the separate Azure deployment authority.
+
+**Release gate:** once these workflow changes are pushed to GitHub's default branch, a successful trusted `main` CI run can stage the exact artifact after Environment approval. Before staging, confirm the target, slot-scoped publish profile, secrets, database backup/migration readiness, and release authority. A human-authorized slot swap and the full authenticated smoke matrix complete production cutover. Coordinate BFF login/current/logout, role, CSRF, deep-link, Cloudinary, database, and SSE smoke tests before switching the client-facing domain. Publishing source changes is not itself a slot swap, DNS change, or retirement of the old Azure resource.
 
 ## Architecture diagrams
 
