@@ -22,13 +22,12 @@ test.describe('Route Guards', () => {
     await expect(page.getByText(/welcome back, casey resident/i)).toBeVisible();
   });
 
-  test('resident is redirected away from admin design system route', async ({ page }) => {
+  test('removed design system route shows not found for a resident', async ({ page }) => {
     await installMockApi(page, { initialSession: 'resident' });
 
     await page.goto('/admin/design-system');
 
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText(/welcome back, casey resident/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
   });
 
   test('admin can access admin dashboard', async ({ page }) => {
@@ -41,12 +40,14 @@ test.describe('Route Guards', () => {
     ).toBeVisible();
   });
 
-  test('admin can access admin design system route', async ({ page }) => {
+  test('removed design system route shows not found for an admin', async ({ page }) => {
     await installMockApi(page, { initialSession: 'admin' });
 
     await page.goto('/admin/design-system');
 
     await expect(page).toHaveURL(/\/admin\/design-system$/);
-    await expect(page.getByRole('heading', { name: /^design system$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Page Not Found' })).toBeVisible();
+    await page.getByRole('button', { name: 'Community Admin', exact: true }).click();
+    await expect(page.getByRole('menuitem', { name: 'Design System' })).toHaveCount(0);
   });
 });

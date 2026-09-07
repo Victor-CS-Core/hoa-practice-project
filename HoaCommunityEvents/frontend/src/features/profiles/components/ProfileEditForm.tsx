@@ -379,7 +379,7 @@ export function ProfileEditForm({
                   onClick={() => setImageSource("url")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     imageSource === "url"
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-white dark:text-[#111827]"
                       : "text-ink-muted hover:bg-surface"
                   }`}
                 >
@@ -390,7 +390,7 @@ export function ProfileEditForm({
                   onClick={() => setImageSource("upload")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     imageSource === "upload"
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-white dark:text-[#111827]"
                       : "text-ink-muted hover:bg-surface"
                   }`}
                 >
@@ -528,15 +528,16 @@ export function ProfileEditForm({
               {canShowPreview && (
                 <div className="space-y-3 rounded-md border border-hairline bg-surface p-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
-                      Zoom ({(formValues.profileImageZoom ?? 1).toFixed(2)}x)
+                      <label htmlFor="profile-avatar-zoom" className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
+                        Avatar zoom ({(formValues.profileImageZoom ?? 1).toFixed(2)}x)
                     </label>
                     <input
                       type="range"
                       min={1}
                       max={3}
                       step={0.05}
-                      value={formValues.profileImageZoom ?? 1}
+                        id="profile-avatar-zoom"
+                        value={formValues.profileImageZoom ?? 1}
                       onChange={(event) => {
                         const next = Number(event.target.value);
                         setFormValues((prev) => ({
@@ -658,15 +659,16 @@ export function ProfileEditForm({
           {bannerEnabled && bannerImageUrl && (
             <div className="space-y-3 rounded-lg border border-hairline bg-page p-3">
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
-                  Zoom ({(formValues.bannerImageZoom ?? 1).toFixed(2)}x)
+                  <label htmlFor="profile-banner-zoom" className="mb-1 block text-xs font-medium uppercase tracking-wide text-ink-muted">
+                    Banner zoom ({(formValues.bannerImageZoom ?? 1).toFixed(2)}x)
                 </label>
                 <input
                   type="range"
                   min={1}
                   max={3}
                   step={0.05}
-                  value={formValues.bannerImageZoom ?? 1}
+                    id="profile-banner-zoom"
+                    value={formValues.bannerImageZoom ?? 1}
                   onChange={(event) => {
                     const next = Number(event.target.value);
                     setFormValues((prev) => ({
@@ -690,7 +692,7 @@ export function ProfileEditForm({
                   onClick={() => setBannerImageSource("url")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     bannerImageSource === "url"
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-white dark:text-[#111827]"
                       : "text-ink-muted hover:bg-surface"
                   }`}
                 >
@@ -701,7 +703,7 @@ export function ProfileEditForm({
                   onClick={() => setBannerImageSource("upload")}
                   className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
                     bannerImageSource === "upload"
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-white dark:text-[#111827]"
                       : "text-ink-muted hover:bg-surface"
                   }`}
                 >
@@ -869,7 +871,7 @@ export function ProfileEditForm({
           Cancel
         </Button>
         <Button
-          className="w-full bg-accent text-white hover:bg-accent/90 sm:w-auto"
+          className="w-full sm:w-auto"
           disabled={isSubmitting}
           onClick={() =>
             onSubmit({

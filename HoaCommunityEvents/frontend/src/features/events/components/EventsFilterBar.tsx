@@ -41,7 +41,7 @@ export function EventsFilterBar({
                 category === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
               } ${
                 currentCategory === category
-                  ? "bg-accent font-medium text-accent-ink shadow-sm"
+                  ? "bg-accent font-medium text-accent-ink dark:text-[#111827] shadow-sm"
                   : "border border-hairline bg-surface text-ink-muted hover:bg-hairline/35"
               }`}
             >
@@ -73,7 +73,7 @@ export function EventsFilterBar({
                 status === "All" ? "h-11 w-11 px-0 py-0" : "px-3 py-1.5"
               } ${
                 currentStatus === status
-                  ? "bg-accent font-medium text-accent-ink shadow-sm"
+                  ? "bg-accent font-medium text-accent-ink dark:text-[#111827] shadow-sm"
                   : "border border-hairline bg-surface text-ink-muted hover:bg-hairline/35"
               }`}
             >

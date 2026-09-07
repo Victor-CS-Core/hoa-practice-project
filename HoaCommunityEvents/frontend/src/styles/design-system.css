@@ -306,7 +306,7 @@
   }
 
   .btn-primary {
-    @apply bg-accent text-accent-ink hover:bg-accent/90;
+    @apply bg-accent text-accent-ink dark:text-[#111827] hover:bg-accent/90;
   }
   .btn-secondary {
     @apply bg-surface text-ink-display border border-hairline hover:bg-hairline/40;

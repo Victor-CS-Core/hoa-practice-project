@@ -79,7 +79,7 @@ export function ProfileOverview({
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Badge tone="solid" className="bg-white/85 text-accent-display">
+            <Badge tone="solid" className="bg-[#ffffff] text-[#245f47]">
               {roleLabel}
             </Badge>
             {isOwner && (

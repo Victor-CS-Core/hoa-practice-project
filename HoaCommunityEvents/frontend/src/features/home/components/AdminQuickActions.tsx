@@ -57,7 +57,7 @@ export function AdminQuickActions({ events }: AdminQuickActionsProps) {
               Admin Quick Actions
             </h2>
           </div>
-          <span className="rounded-full bg-signal px-3 py-1 text-xs font-semibold text-page">
+          <span className="rounded-full bg-signal px-3 py-1 text-xs font-semibold text-[#111827]">
             Admin
           </span>
         </div>
