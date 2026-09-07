@@ -103,11 +103,6 @@ export const AppLayout = observer(function AppLayout() {
           label: "User Management",
           icon: Users,
         },
-        {
-          to: "/admin/design-system",
-          label: "Design System",
-          icon: Shield,
-        },
       ]
     : [];
 
@@ -135,7 +130,7 @@ export const AppLayout = observer(function AppLayout() {
   const navTone = isDark
     ? "text-slate-100 hover:bg-white/10 hover:text-white"
     : "text-ink-body hover:bg-surface-muted hover:text-ink-display";
-  const activeTone = "bg-accent text-white";
+  const activeTone = "bg-accent text-white dark:text-[#111827]";
   const brandTextTone = isDark ? "text-white" : "text-ink-display";
   const controlTone = isDark
     ? "border-white/20 bg-white/10 text-slate-100 hover:bg-white/20"
@@ -235,12 +230,6 @@ export const AppLayout = observer(function AppLayout() {
                         className="gap-2"
                       >
                         <Users className="h-4 w-4" /> User Management
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => void navigate("/admin/design-system")}
-                        className="gap-2"
-                      >
-                        <Shield className="h-4 w-4" /> Design System
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -16,7 +16,7 @@ export function AdminAttendeeList({
         <h3 className="font-heading text-lg font-semibold text-signal-display">
           Admin: Attendee Roster
         </h3>
-        <span className="rounded-full border border-signal/45 bg-signal px-2.5 py-1 text-xs font-bold text-signal-display">
+        <span className="rounded-full border border-signal/45 bg-signal px-2.5 py-1 text-xs font-bold text-[#111827]">
           {totalCount} Total
         </span>
       </div>
