@@ -98,7 +98,7 @@ export function BackNavigationButton({
           onClick={handleClick}
           aria-label={willUseHistory ? "Back" : label}
           tabIndex={showFloating ? 0 : -1}
-          className="h-12 w-12 rounded-full! border-transparent bg-stone-200/65 p-0 text-stone-900 shadow-none backdrop-blur-sm supports-backdrop-filter:bg-stone-200/55 hover:bg-stone-200/80 sm:h-auto sm:w-auto sm:rounded-md sm:px-3 sm:py-2 dark:bg-stone-700/55 dark:text-stone-100 dark:supports-backdrop-filter:bg-stone-700/45 dark:hover:bg-stone-700/70"
+          className="h-12 w-12 rounded-full! border-transparent bg-stone-200/65 p-0 text-stone-900 shadow-none backdrop-blur-sm supports-backdrop-filter:bg-stone-200/55 hover:bg-stone-200/80 sm:h-auto sm:w-auto sm:rounded-md sm:px-3 sm:py-2 dark:bg-stone-700/65 dark:text-stone-100 dark:supports-backdrop-filter:bg-stone-700/65 dark:hover:bg-stone-700/70"
         >
           {buttonContent}
         </Button>

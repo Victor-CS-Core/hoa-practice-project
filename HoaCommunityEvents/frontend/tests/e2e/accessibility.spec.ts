@@ -106,5 +106,25 @@ test.describe(`Section 508 / WCAG 2 AA audit (${colorScheme})`, () => {
     await page.addStyleTag({ content: '*,*::before,*::after { transition: none !important; animation: none !important; }' });
     await expectNoA11yViolations(page, 'admin:event details');
   });
+  test('floating back navigation stays readable over bright content', async ({ page }) => {
+    await installMockApi(page, { initialSession: 'admin' });
+    await page.goto('/events/event-1');
+    await page.getByRole('heading', { name: 'Admin: Attendee Roster' }).waitFor();
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const floating = page.locator('body > .fixed').filter({ has: page.getByRole('button', { name: 'Back to events', exact: true }) });
+    await expect(floating).toBeVisible();
+    // A white image is valid page content; keep the real control and its layers.
+    await page.evaluate(() => {
+      const backdrop = document.createElement('div');
+      backdrop.style.cssText = 'position:fixed;inset:0;background:white;z-index:59;pointer-events:none';
+      document.body.append(backdrop);
+    });
+    await page.addStyleTag({ content: '*,*::before,*::after { transition:none!important; animation:none!important }' });
+    await floating.evaluate(element => element.setAttribute('data-contrast-target', 'back'));
+    const results = await new AxeBuilder({ page }).include('[data-contrast-target="back"]')
+      .withRules(['color-contrast']).analyze();
+    expect(results.violations).toEqual([]);
+    expect(results.incomplete).toEqual([]);
+  });
 });
 }
