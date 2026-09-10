@@ -101,8 +101,7 @@ The cookie is not the same thing as the MobX `user`. The cookie is the credentia
 HoaCommunityEvents/
   backend/       Trusted .NET server and backend tests
   frontend/      Browser application and browser tests
-  docs/          Human and generated architecture knowledge
-  graphify-out/  Generated code-relationship graph
+  docs/          Architecture, development, and deployment documentation
 ```
 
 The frontend and backend remain separate **source projects** because they use different compilers, dependency managers, test tools, and development loops. They are no longer separate **production applications**: .NET publishing builds the frontend and includes it in the BFF artifact.
