@@ -175,7 +175,7 @@ The production Environment requires AZURE_WEBAPP_NAME_PRODUCTION and AZURE_WEBAP
 
 Direct deployment can briefly interrupt service. Smoke checks run against production after deployment. Recovery uses a verified previous package redeployed to the same app; preserve that artifact and review database compatibility before release. No automatic rollback or database reversal occurs.
 
-See [B1 deployment tasking and rollback](docs/B1-DIRECT-DEPLOYMENT.md) for current Azure findings, remaining configuration, migration rehearsal, approval, and smoke-test requirements. Older slot-based plans are historical. Production deployment, database migration, DNS cutover, and legacy deletion still require explicit approval.
+See the [documentation index](docs/README.md), [B1 deployment runbook](docs/B1-DIRECT-DEPLOYMENT.md), and [dated release record](docs/RELEASE-STATUS.md) for current instructions and recorded verification limits. Production deployment, database migration, DNS cutover, and legacy deletion still require explicit approval.
 
 ## Architecture diagrams
 
@@ -185,4 +185,4 @@ See [B1 deployment tasking and rollback](docs/B1-DIRECT-DEPLOYMENT.md) for curre
 
 ## Historical terminology
 
-JWT stored by browser JavaScript, a SignalR event hub, and a separately hosted Static Web Apps frontend describe the former architecture only. They are not the current source design. Historical implementation plans under `docs/superpowers/` retain those words solely to record the migration.
+JWT stored by browser JavaScript, a SignalR event hub, and a separately hosted Static Web Apps frontend describe the former architecture only. They are not the current source design. Superseded implementation plans were removed from working documentation; Git history preserves them. The release record retains the useful decisions.
