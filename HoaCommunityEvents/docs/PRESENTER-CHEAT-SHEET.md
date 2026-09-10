@@ -1,5 +1,7 @@
 # HOA Community Events presenter cheat sheet
 
+Reviewed September 10, 2026. Production evidence is dated September 7; see [release status](RELEASE-STATUS.md).
+
 Use this during the meeting. Use [HOA-CODEBASE-GUIDE.md](HOA-CODEBASE-GUIDE.md) when you need the full mechanism or source trail.
 
 Paths are relative to `HoaCommunityEvents/` unless they begin with `.github/`, which is relative to the enclosing Git repository root.
@@ -36,7 +38,7 @@ Diagram: [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [render
 
 ### 2:00–3:00 — Security
 
-“Identity verifies the password and issues an encrypted HttpOnly cookie. The browser sends it automatically, authentication middleware reconstructs the claims principal, and authorization middleware checks named role policies before protected actions run. The frontend never stores the credential. All writes require a CSRF request token header paired with an HttpOnly antiforgery cookie.”
+“Identity verifies the password and issues an encrypted HttpOnly cookie. The browser sends it automatically, authentication middleware reconstructs the claims principal, and authorization middleware checks named role policies before protected actions run. The frontend never stores the credential. Unsafe HOA controller requests require a CSRF request-token header paired with an HttpOnly antiforgery cookie; direct Cloudinary upload uses its separately signed upload parameters.”
 
 ### 3:00–4:00 — Data and live updates
 
@@ -44,7 +46,7 @@ Diagram: [rendered SVG](diagrams/platform-bff-clean-architecture.svg) · [render
 
 ### 4:00–5:00 — Build, tests, delivery
 
-“Vite gives us the development server and optimized browser build. During `dotnet publish`, the API project runs the Vite build and puts it in `wwwroot`, producing one App Service artifact and origin. WebApplicationFactory tests real backend middleware and cookies, Vitest covers browser logic/components, and Playwright covers user journeys. A normal `main` merge still auto-deploys the frontend to the API-less legacy Static Web Apps origin, so release authority, BFF staging, smoke tests, workflow freeze, and domain switching must be coordinated before the merge.”
+“Vite gives us the development server and optimized browser build. During `dotnet publish`, the API project runs the Vite build and puts it in `wwwroot`, producing one App Service artifact and origin. WebApplicationFactory tests real backend middleware and cookies, Vitest covers browser logic/components, and Playwright covers user journeys. GitHub CI produces a checksum-verified combined artifact. Explicit manual approval deploys that exact artifact directly on Basic B1, without a staging slot. The old Static Web Apps workflow is removed.”
 
 ## Know these folders
 
@@ -233,7 +235,7 @@ Point to:
 
 ## Deployment status answer
 
-“The repository and manual App Service workflow are prepared for a combined BFF artifact. That does not mean live cutover is complete. Every `main` push still triggers the frontend-only Static Web Apps workflow with no API, while the migrated frontend calls same-origin `/api`. Do not merge this as an unattended update. A release owner must coordinate BFF staging, real login/roles/CSRF/Azure SQL/Cloudinary/deep-route/SSE smoke tests, a freeze of the automatic SWA deployment, the client-facing domain switch, and the final merge/retirement.”
+“The combined app was deployed on September 7. Azure installation succeeded, but the immediate workflow smoke check failed with HTTP 404. Later basic endpoint and asset checks passed. Authenticated production writes, uploads, SSE, and restart behavior were not tested; restoration and screen-reader reviews were waived, not passed. CI does not automatically authorize the next release.”
 
 ## Historical words to correct immediately
 
@@ -279,4 +281,4 @@ Before presenting, explain aloud without looking:
 7. Role policy evaluation.
 8. WebApplicationFactory.
 9. Switch state to submitted fields.
-10. The Azure cutover gate.
+10. Exact-artifact deployment, manual approval, and the difference between deployed and fully verified.

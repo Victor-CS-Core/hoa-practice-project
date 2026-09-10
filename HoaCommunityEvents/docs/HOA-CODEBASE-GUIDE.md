@@ -1,5 +1,7 @@
 # HOA Community Events: professor-style codebase guide
 
+Reviewed September 10, 2026 against repository source. Dated production evidence and unresolved checks are in [RELEASE-STATUS.md](RELEASE-STATUS.md); this review did not retest Azure.
+
 This guide is for a presenter who is new to web development but needs to explain this project accurately and confidently. It was traced from the current implementation, tests, and workflows. It does not treat an older slide or migration note as evidence of current behavior.
 
 Unless a path starts with `.github/`, paths in this guide are relative to `HoaCommunityEvents/`. Workflow paths beginning with `.github/` are relative to the enclosing Git repository root.
@@ -150,7 +152,7 @@ One deliberate practical exception is `AppUser : IdentityUser`. The Domain proje
 | `frontend/src/app/` | App-wide plumbing after startup | router, layout, `agent.ts`, MobX store, QueryClient |
 | `frontend/src/features/` | Product screens grouped by feature | `auth/`, `events/`, `profiles/`, `home/` |
 | `frontend/src/hooks/` | TanStack Query adapters and realtime hook | `useEvents.ts`, `useAttendance.ts`, `useEventStream.ts`, `useProfile.ts` |
-| `frontend/src/components/design-system/` | Reusable visual and accessible primitives | buttons, inputs, switch, dialogs, design-system reference page |
+| `frontend/src/components/design-system/` | Reusable visual and accessible primitives | buttons, inputs, switch, dialogs, shared design tokens |
 | `frontend/src/types/` | TypeScript versions of API shapes | `event.ts`, `profile.ts`, `user.ts`, `attendee.ts` |
 | `frontend/src/test/` | Vitest browser-like setup | `setup.ts` |
 | `frontend/tests/e2e/` | Playwright user journeys | auth, profiles, admin, attendance, routing, accessibility |
@@ -163,7 +165,7 @@ One deliberate practical exception is `AppUser : IdentityUser`. The Domain proje
 - **Tailwind CSS:** utility classes and design tokens assembled through `frontend/src/index.css` and `frontend/src/styles/design-system.css`.
 - **Radix UI:** accessible behavior underneath dialog and dropdown primitives in `frontend/src/components/design-system/ui/`.
 - **Lucide:** SVG icon components across navigation and feature components.
-- **Milkdown:** a rich-text design-system primitive in `rich-text-field.tsx` and the design-system example. Current product event/profile forms do not use that rich-text editor.
+- **Milkdown:** a rich-text design-system primitive in `rich-text-field.tsx` (the former admin showcase page has been removed). Current product event/profile forms do not use that rich-text editor.
 - **AutoMapper:** the package is referenced by the Application project, but current production code does not call `IMapper`; mappings are explicit object initializers in services. Do not claim AutoMapper drives current DTO mapping.
 
 ---
@@ -310,7 +312,7 @@ Important relational rules are configured in `OnModelCreating`:
 
 In a read service, LINQ such as `Where`, `Include`, `OrderBy`, `Skip`, `Take`, and `Select` becomes SQL through the SQL Server EF provider. `AsNoTracking()` avoids tracking when the objects are only being read. In a write service, EF tracks entity changes until `SaveChangesAsync()` sends them in a transaction.
 
-The migrations under `backend/src/Persistence/Migrations/` are the database history. They are applied locally with `dotnet ef database update` and optionally by the Azure deployment workflow when its SQL secret is configured.
+The migrations under `backend/src/Persistence/Migrations/` are the database history. Apply them only to an explicitly selected database. The deployment workflow requires an explicit `PRODUCTION_MIGRATION_MODE` decision: `workflow` runs the reviewed migration with its scoped secret; `external` records separately handled database work. Merely adding a secret does not select migration mode.
 
 ### Follow this request: load the event list
 
@@ -329,7 +331,7 @@ The migrations under `backend/src/Persistence/Migrations/` are the database hist
 1. An admin submits `AdminEventForm.tsx` inside the admin dashboard.
 2. `useCreateEvent()` calls `Events.create(values)`.
 3. The Axios interceptor ensures a CSRF request token exists, then sends `POST /api/events` with the CSRF header; the browser automatically adds its cookies.
-4. Antiforgery validation runs before the controller action. Authentication reconstructs the principal. `AdminOnly` checks its role claims.
+4. Authentication reconstructs the principal and authorization checks `AdminOnly` before MVC executes the action. Inside MVC, antiforgery validation must also pass before business work begins.
 5. `[ApiController]` binds JSON into `CreateEventDto`; FluentValidation checks it.
 6. `EventsController.CreateEvent` gets the authenticated user ID and asks whether this user has the special master-admin claim.
 7. `EventService.CreateEventAsync` creates an `Event` entity with `Pending` status and saves it.
@@ -591,7 +593,7 @@ EventDetailsPage.tsx
 - TanStack Query does not dictate a transport. It requires a promise-returning function. That function can use Axios, native `fetch`, or another client.
 - Native `fetch` could replace Axios, but the project would still need a wrapper for base URLs, JSON/error normalization, CSRF bootstrap, and typed endpoint functions.
 
-### Ponytail decision
+### Decision: retain the existing responsibilities
 
 The smallest correct solution is to keep the working Axios transport and TanStack Query server-state layer. Replacing Axios during the cookie/SSE migration would create a second migration, more test churn, and no user-facing benefit. Revisit only if measured bundle, platform, or maintenance costs justify it.
 
@@ -638,7 +640,7 @@ At runtime, `UseDefaultFiles()` and `UseStaticFiles()` serve that output. `MapFa
 
 ### Why this is a BFF improvement
 
-- One public origin means no browser token handling.
+- Same-origin hosting supports the chosen HttpOnly-cookie design; JavaScript does not handle the authentication credential (it still handles the CSRF request token).
 - Cookies and CSRF use normal same-origin behavior.
 - Frontend and API versions ship in one artifact.
 - Deep-route and API-fallback behavior is controlled by one host.
@@ -908,48 +910,24 @@ These are user-flow tests for navigation, roles, auth, session expiry, profile i
 
 ---
 
-## 15. Deployment status and the hard cutover gate
+## 15. Deployment status and the current release process
 
-### Target production shape
+The combined BFF was deployed to the [production App Service](https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net/) on September 7. React assets, the API, health, and SPA fallback share that origin. The frontend still executes in the browser; C# executes on the server.
 
-```text
-Browser
-  -> Azure App Service combined BFF
-       -> serves Vite assets
-       -> handles /api
-       -> keeps one process-local SSE broker
-       -> EF Core -> Azure SQL
-  -> Cloudinary for image upload and delivery
-```
+### Current workflow
 
-### Current workflow state
+- `.github/workflows/ci.yml` tests both applications and publishes the combined package with a checksum and 30-day artifact retention.
+- `.github/workflows/deploy-api-azure.yml` verifies the exact trusted current-main CI artifact; it does not republish the app.
+- CI completion may prepare an artifact but cannot deploy production alone. Explicit manual dispatch with `approve_production=true` authorizes the release chain.
+- The chain is `prepare -> production_preflight -> database_gate -> deploy`. Database mode must be `workflow` or `external`; a secret's presence does not choose the mode.
+- Keep Basic B1 and one instance. There is no staging slot or slot swap.
+- The legacy Static Web Apps workflow is removed. Azure resource deletion and DNS changes are separate actions and were not part of that release.
 
-- `.github/workflows/deploy-api-azure.yml` is manually triggered. It sets up .NET and Node, publishes the combined artifact, optionally applies migrations when the production SQL secret is present, and deploys to App Service.
-- `.github/workflows/azure-static-web-apps-blue-moss-0d503960f.yml` still runs automatically on every push to `main`. It uploads `HoaCommunityEvents/frontend` with an empty `api_location`, so that legacy origin has no matching API deployment.
-- The repository is prepared for the BFF deployment, but source changes alone do not prove the production App Service, secrets, DNS, or client-facing URL have been cut over.
+### Do not confuse deployment with complete verification
 
-### Do not treat this as an ordinary merge
+The recorded Azure deployment step succeeded, but its immediate smoke check failed with HTTP 404 and the run remained red. Later independent basic endpoint and entry-asset checks passed. Signed-in production writes, uploads, SSE, and restart behavior were not tested. Restore rehearsal and screen-reader review were explicitly waived, not passed.
 
-The migrated browser uses same-origin `/api` for cookie login, CSRF, data, and SSE. An unattended merge to `main` would trigger the legacy Static Web Apps workflow and could publish this new frontend on an origin where those `/api` routes do not exist.
-
-**Hard gate: do not merge this migration as an unattended `main` update.** First obtain release authority and coordinate the staging/BFF deployment, the smoke tests below, the client-facing domain switch, and the freeze or retirement of the automatic Static Web Apps workflow. Freezing the workflow stops new frontend-only uploads; it does not remove the already deployed legacy site.
-
-### Required gate before disabling the old deployment
-
-1. Deploy the combined artifact to a staging slot or chosen App Service.
-2. Verify `/`, a deep React route, `/health`, and an unknown `/api` route.
-3. Verify registration/login/current/logout with real cookies and CSRF.
-4. Verify resident/admin policies and 401/403 behavior.
-5. Verify EF migrations and real Azure SQL reads/writes.
-6. Verify Cloudinary signature and direct upload.
-7. Verify the SSE content type and attendance invalidation.
-8. Keep the API at one instance while the broker is in memory.
-9. With the release owner, freeze the automatic Static Web Apps workflow before the coordinated merge can publish a frontend-only build.
-10. Switch the client-facing custom domain or URL to the verified App Service.
-11. Merge and deploy only as part of that coordinated release, then confirm the running BFF matches the released commit.
-12. Retire the former Static Web Apps workflow after the cutover is confirmed.
-
-That is a hard gate because disabling the old frontend before the new origin is proven could create downtime, while merging first can automatically publish an API-dependent frontend to the API-less legacy origin.
+Use [the release record](RELEASE-STATUS.md) for dated evidence and [the B1 runbook](B1-DIRECT-DEPLOYMENT.md) for the next release's approval, database, verification, and recovery procedure. Do not infer today's cloud state from this documentation.
 
 ---
 
@@ -995,8 +973,8 @@ AttendanceActionCard
 Admin dashboard action
   -> usePublishEvent mutation
   -> Axios PATCH plus CSRF header and cookie
-  -> antiforgery validation
-  -> AdminOnly role policy
+  -> authentication and AdminOnly role policy
+  -> MVC antiforgery validation
   -> EventsController.PublishEvent
   -> EventService checks state and end date
   -> status becomes Published and EF commits
@@ -1055,7 +1033,7 @@ GET /events/123
 
 ### Minute 4–5: delivery and quality
 
-“Vite provides fast frontend development and creates optimized production assets. The .NET publish target builds those assets into one App Service artifact and preserves React deep links without hiding API 404s. Backend behavior is covered through WebApplicationFactory integration tests, frontend behavior through Vitest, and user flows through Playwright. The remaining release gate is operational: a normal merge to `main` would still auto-deploy the frontend to the API-less legacy Static Web Apps origin, so the release owner must coordinate BFF staging, smoke tests, workflow freeze, domain switch, and the final merge rather than treating this as an unattended update.”
+“Vite provides fast frontend development and creates optimized production assets. The .NET publish target builds those assets into one App Service artifact and preserves React deep links without hiding API 404s. Backend behavior is covered through WebApplicationFactory integration tests, frontend behavior through Vitest, and user flows through Playwright. GitHub CI creates the exact combined artifact; an explicitly approved workflow deploys it directly on B1 without staging. The combined app was deployed September 7, but the release record separates successful installation and later basic checks from the failed immediate smoke step and untested authenticated flows.”
 
 ---
 
@@ -1112,7 +1090,7 @@ The following are historical migration context only:
 - A SignalR hub and its former frontend realtime hook.
 - A frontend intended to remain independently deployed on Azure Static Web Apps.
 
-Current source uses Identity cookies, CSRF, native SSE/EventSource, and a combined ASP.NET Core BFF publish. Historical plan/spec files under `docs/superpowers/` intentionally mention the old state to explain the migration.
+Current source uses Identity cookies, CSRF, native SSE/EventSource, and a combined ASP.NET Core BFF publish. Superseded execution plans have been removed; Git history preserves them. [RELEASE-STATUS.md](RELEASE-STATUS.md) retains the decisions and verification limits.
 
 ---
 

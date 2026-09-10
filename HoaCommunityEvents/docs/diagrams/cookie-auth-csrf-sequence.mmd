@@ -20,8 +20,9 @@ sequenceDiagram
   Anti-->>Pipeline: Valid
   Pipeline->>Account: Bind LoginDto and run action
   Account->>Identity: PasswordSignInAsync
-  Identity->>SQL: Find user and verify password hash
+  Identity->>SQL: Load user and password verifier
   SQL-->>Identity: User, role membership, security stamp
+  Identity->>Identity: Verify password hash and lockout rules
   Identity->>Identity: Build claims principal and protect authentication ticket
   Identity-->>Browser: Set HoaCommunityEvents.Auth as HttpOnly cookie
   Account-->>Browser: Return UserDto without a token
@@ -29,14 +30,20 @@ sequenceDiagram
   Browser->>Pipeline: GET /api/account/current with auth cookie
   Pipeline->>Identity: Unprotect ticket and reconstruct HttpContext.User
   Identity->>SQL: Periodically validate security stamp
-  Pipeline->>Account: Evaluate ResidentOrAdmin policy
+  Pipeline->>Pipeline: Evaluate ResidentOrAdmin policy
+  Pipeline->>Account: Invoke current-user action
   Account->>SQL: Load current user and roles
+  Account->>Identity: RefreshSignInAsync with current membership
+  Identity-->>Browser: Renew protected cookie ticket
   Account-->>Browser: Return current UserDto
 
   User->>Browser: Choose logout
   Browser->>Axios: Account.logout()
+  Axios->>Pipeline: GET /api/security/csrf after login reset
+  Anti-->>Axios: Request token for current identity
   Axios->>Pipeline: POST /api/account/logout with X-CSRF-TOKEN
   Note over Browser,Pipeline: Browser automatically sends both cookies
+  Pipeline->>Pipeline: Authenticate cookie and authorize logout
   Pipeline->>Anti: Validate header and cookie pair
   Pipeline->>Account: Authorized logout action
   Account->>Identity: SignOutAsync
