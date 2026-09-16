@@ -1,4 +1,5 @@
 import type { AxiosRequestConfig } from "axios";
+import { AxiosError } from "axios";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Account, agent, Events, resetCsrfTokenCache } from "./agent";
 
@@ -24,7 +25,7 @@ afterEach(() => {
 
 describe("BFF API client", () => {
   it("uses same-origin cookies without a bearer token", async () => {
-    localStorage.setItem("jwt", "stale-legacy-token");
+    globalThis.localStorage?.setItem("jwt", "stale-legacy-token");
     await Account.current();
 
     const request = requests.at(-1)!;
@@ -91,5 +92,62 @@ describe("BFF API client", () => {
     await Events.cancel("event-1");
 
     expect(requests.filter((request) => request.url === "/security/csrf")).toHaveLength(4);
+  });
+
+  it("does not treat a failed login 401 as session expiry", async () => {
+    sessionStorage.clear();
+    agent.defaults.adapter = async (config) => {
+      requests.push(config);
+      if (config.url === "/security/csrf") {
+        return { data: { requestToken: "csrf-one" }, status: 200, statusText: "OK", headers: {}, config };
+      }
+      if (config.url === "/account/login") {
+        throw new AxiosError(
+          "Request failed",
+          "ERR_BAD_REQUEST",
+          config,
+          undefined,
+          {
+            status: 401,
+            statusText: "Unauthorized",
+            data: { code: "invalid_credentials", message: "Invalid email or password." },
+            headers: {},
+            config,
+          },
+        );
+      }
+      return { data: {}, status: 200, statusText: "OK", headers: {}, config };
+    };
+
+    await expect(
+      Account.login({ email: "resident@example.com", password: "wrong" }),
+    ).rejects.toBeTruthy();
+    expect(sessionStorage.getItem("sessionExpired")).toBeNull();
+  });
+
+  it("marks session expiry for authenticated request 401s", async () => {
+    sessionStorage.clear();
+    agent.defaults.adapter = async (config) => {
+      requests.push(config);
+      if (config.url === "/security/csrf") {
+        return { data: { requestToken: "csrf-one" }, status: 200, statusText: "OK", headers: {}, config };
+      }
+      throw new AxiosError(
+        "Request failed",
+        "ERR_BAD_REQUEST",
+        config,
+        undefined,
+        {
+          status: 401,
+          statusText: "Unauthorized",
+          data: { message: "Authentication is required." },
+          headers: {},
+          config,
+        },
+      );
+    };
+
+    await expect(Events.cancel("event-1")).rejects.toBeTruthy();
+    expect(sessionStorage.getItem("sessionExpired")).toBe("1");
   });
 });

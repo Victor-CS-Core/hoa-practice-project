@@ -10,9 +10,10 @@ import { Input } from "../../components/design-system/ui/input";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthBanner } from "./components/AuthBanner";
 import { BRAND } from "../../app/branding";
+import { isAxiosError } from "axios";
 import {
   getFieldError,
-  toApiError,
+  toApiErrorWithFallback,
   type ApiErrorEnvelope,
 } from "./authApiError";
 
@@ -49,8 +50,14 @@ export const LoginPage = observer(function LoginPage() {
       await authStore.login(values);
       navigate("/");
     } catch (error) {
-      const next = toApiError(error);
-      setApiError(next ?? { message: "Unable to login. Please try again." });
+      const status = isAxiosError(error) ? error.response?.status : undefined;
+      const fallback =
+        status === 401
+          ? "Invalid email or password."
+          : status === 423
+            ? "Account is temporarily locked due to repeated failed sign-in attempts. Try again later."
+            : "Unable to login. Please try again.";
+      setApiError(toApiErrorWithFallback(error, fallback));
     }
   };
 

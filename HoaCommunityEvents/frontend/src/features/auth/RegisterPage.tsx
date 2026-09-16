@@ -12,7 +12,7 @@ import { AuthBanner } from "./components/AuthBanner";
 import { BRAND } from "../../app/branding";
 import {
   getFieldError,
-  toApiError,
+  toApiErrorWithFallback,
   type ApiErrorEnvelope,
 } from "./authApiError";
 
@@ -40,9 +40,11 @@ export const RegisterPage = observer(function RegisterPage() {
       await authStore.register(values);
       navigate("/");
     } catch (error) {
-      const next = toApiError(error);
       setApiError(
-        next ?? { message: "Unable to create account. Please try again." },
+        toApiErrorWithFallback(
+          error,
+          "Unable to create account. Please try again.",
+        ),
       );
     }
   };
