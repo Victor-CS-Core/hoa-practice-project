@@ -94,7 +94,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     [HttpPost("bootstrap-master-admin")]
     public async Task<ActionResult<UserDto>> BootstrapMasterAdmin(RegisterDto dto)
     {
-        var result = await accountService.BootstrapMasterAdminAsync(dto, allowReplace: false);
+        var result = await accountService.BootstrapMasterAdminAsync(dto, allowReplace: true);
         if (result.User is null)
         {
             return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);
