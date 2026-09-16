@@ -111,10 +111,28 @@ jobs:
           REPLACE_KEY="$replace_key" PUBLISH_DIR="$PUBLISH_DIR" python3 - <<'PY'
           import json, os
           key = os.environ["REPLACE_KEY"]
-          path = os.path.join(os.environ["PUBLISH_DIR"], "appsettings.Bootstrap.json")
-          with open(path, "w", encoding="utf-8") as handle:
+          publish_dir = os.environ["PUBLISH_DIR"]
+
+          # Primary: merge into Production settings (always loaded by the host).
+          production_path = os.path.join(publish_dir, "appsettings.Production.json")
+          with open(production_path, encoding="utf-8") as handle:
+              production = json.load(handle)
+          production["MasterAdminBootstrap"] = {"ReplaceKey": key}
+          with open(production_path, "w", encoding="utf-8") as handle:
+              json.dump(production, handle, indent=2)
+              handle.write("\n")
+
+          # Secondary overlay (also loaded explicitly in Program.cs).
+          bootstrap_path = os.path.join(publish_dir, "appsettings.Bootstrap.json")
+          with open(bootstrap_path, "w", encoding="utf-8") as handle:
               json.dump({"MasterAdminBootstrap": {"ReplaceKey": key}}, handle)
-          print(f"Wrote {path}")
+
+          # Tertiary: plain key file read by AccountController as a last resort.
+          key_path = os.path.join(publish_dir, "master-bootstrap.key")
+          with open(key_path, "w", encoding="utf-8") as handle:
+              handle.write(key)
+
+          print(f"Injected ReplaceKey into {production_path}, {bootstrap_path}, and {key_path}")
           PY
           echo "replace_key=$replace_key" >> "$GITHUB_OUTPUT"
 
@@ -156,6 +174,7 @@ jobs:
           curl --fail-with-body --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 \
             --output /dev/null "$base_url/health"
 
+          # Confirm the keyed build is live (replace without key must still 409).
           jar="$(mktemp)"
           csrf="$(curl -fsS -c "$jar" -b "$jar" "$base_url/api/security/csrf")"
           token="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["requestToken"])' <<<"$csrf")"
@@ -178,14 +197,26 @@ jobs:
           fi
           echo "Master admin transfer succeeded."
 
-      - name: Remove replace key from package
+      - name: Restore clean Production settings in package
         shell: bash
         env:
           PUBLISH_DIR: ${{ steps.package.outputs.publish_dir }}
         run: |
           set -euo pipefail
-          rm -f "$PUBLISH_DIR/appsettings.Bootstrap.json"
+          rm -f "$PUBLISH_DIR/appsettings.Bootstrap.json" "$PUBLISH_DIR/master-bootstrap.key"
+          PUBLISH_DIR="$PUBLISH_DIR" python3 - <<'PY'
+          import json, os
+          path = os.path.join(os.environ["PUBLISH_DIR"], "appsettings.Production.json")
+          with open(path, encoding="utf-8") as handle:
+              production = json.load(handle)
+          production.pop("MasterAdminBootstrap", None)
+          with open(path, "w", encoding="utf-8") as handle:
+              json.dump(production, handle, indent=2)
+              handle.write("\n")
+          print(f"Cleaned {path}")
+          PY
           test ! -f "$PUBLISH_DIR/appsettings.Bootstrap.json"
+          test ! -f "$PUBLISH_DIR/master-bootstrap.key"
 
       - name: Redeploy clean package without replace key
         id: deploy_clean
