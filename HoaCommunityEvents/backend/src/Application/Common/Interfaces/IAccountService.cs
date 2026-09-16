@@ -12,5 +12,6 @@ public interface IAccountService
     Task<IReadOnlyList<AdminUserDto>> GetAllUsersForAdminAsync(ClaimsPrincipal principal);
     Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> PromoteUserToAdminAsync(PromoteUserToAdminDto dto);
     Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto, bool allowReplace = false);
+    Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> TransferMasterAdminAsync(PromoteUserToAdminDto dto, ClaimsPrincipal principal);
     Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors)> DeleteUserAsync(DeleteUserDto dto, ClaimsPrincipal principal);
 }

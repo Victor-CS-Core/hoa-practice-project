@@ -170,6 +170,57 @@ public class AccountService(
         return (200, "ok", "Master admin bootstrapped.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
     }
 
+    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> TransferMasterAdminAsync(PromoteUserToAdminDto dto, ClaimsPrincipal principal)
+    {
+        var currentUser = await userManager.GetUserAsync(principal);
+        if (currentUser is null)
+        {
+            return (401, "unauthorized", "Authentication is required.", null, null);
+        }
+
+        if (!await IsMasterAdminAsync(currentUser))
+        {
+            return (403, "forbidden", "Only the master admin can transfer master rights.", null, null);
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return (400, "validation_failed", "Email is required.", ["Email is required."], null);
+        }
+
+        var email = dto.Email.Trim();
+        var target = await userManager.FindByEmailAsync(email);
+        if (target is null)
+        {
+            return (404, "not_found", "User was not found.", ["No user exists with the provided email."], null);
+        }
+
+        if (!await userManager.IsInRoleAsync(target, AppRoles.HoaAdmin))
+        {
+            var addRole = await userManager.AddToRoleAsync(target, AppRoles.HoaAdmin);
+            if (!addRole.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to assign admin role.", addRole.Errors.Select(e => e.Description), null);
+            }
+        }
+
+        if (await userManager.IsInRoleAsync(target, AppRoles.Resident))
+        {
+            await userManager.RemoveFromRoleAsync(target, AppRoles.Resident);
+        }
+
+        foreach (var other in userManager.Users.Where(u => u.Id != target.Id).ToList())
+        {
+            if (await IsMasterAdminAsync(other))
+            {
+                await RemoveMasterAdminClaimAsync(other);
+            }
+        }
+
+        await EnsureMasterAdminClaimAsync(target);
+        return (200, "ok", "Master admin transferred.", null, CreateUserDto(target, await userManager.GetRolesAsync(target)));
+    }
+
     private async Task EnsureMasterAdminClaimAsync(AppUser user)
     {
         var claims = await userManager.GetClaimsAsync(user);
