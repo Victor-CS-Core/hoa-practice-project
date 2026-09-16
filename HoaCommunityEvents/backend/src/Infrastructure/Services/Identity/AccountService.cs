@@ -7,7 +7,10 @@ using System.Security.Claims;
 
 namespace HoaCommunityEvents.Infrastructure.Services.Identity;
 
-public class AccountService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager) : IAccountService
+public class AccountService(
+    UserManager<AppUser> userManager,
+    SignInManager<AppUser> signInManager,
+    RoleManager<IdentityRole> roleManager) : IAccountService
 {
     private const string MasterAdminClaimType = "is_master_admin";
 
@@ -70,6 +73,91 @@ public class AccountService(UserManager<AppUser> userManager, SignInManager<AppU
         }
         if (await userManager.IsInRoleAsync(user, AppRoles.Resident)) await userManager.RemoveFromRoleAsync(user, AppRoles.Resident);
         return (200, "ok", "User promoted to admin.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
+    }
+
+    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto)
+    {
+        foreach (var role in new[] { AppRoles.Resident, AppRoles.HoaAdmin })
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(role));
+            }
+        }
+
+        foreach (var existing in userManager.Users.ToList())
+        {
+            if (await IsMasterAdminAsync(existing))
+            {
+                return (409, "master_admin_exists", "A master admin already exists.", null, null);
+            }
+        }
+
+        var email = dto.Email.Trim();
+        var username = dto.Username.Trim();
+        var displayName = dto.DisplayName.Trim();
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user is null)
+        {
+            user = new AppUser
+            {
+                Email = email,
+                UserName = username,
+                DisplayName = displayName,
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var create = await userManager.CreateAsync(user, dto.Password);
+            if (!create.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to create master admin.", create.Errors.Select(e => e.Description), null);
+            }
+        }
+        else
+        {
+            user.UserName = username;
+            user.DisplayName = displayName;
+            user.EmailConfirmed = true;
+            var update = await userManager.UpdateAsync(user);
+            if (!update.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to update master admin.", update.Errors.Select(e => e.Description), null);
+            }
+
+            var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+            var reset = await userManager.ResetPasswordAsync(user, resetToken, dto.Password);
+            if (!reset.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to set master admin password.", reset.Errors.Select(e => e.Description), null);
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, AppRoles.HoaAdmin))
+        {
+            var addRole = await userManager.AddToRoleAsync(user, AppRoles.HoaAdmin);
+            if (!addRole.Succeeded)
+            {
+                return (400, "validation_failed", "Failed to assign admin role.", addRole.Errors.Select(e => e.Description), null);
+            }
+        }
+
+        if (await userManager.IsInRoleAsync(user, AppRoles.Resident))
+        {
+            await userManager.RemoveFromRoleAsync(user, AppRoles.Resident);
+        }
+
+        var claims = await userManager.GetClaimsAsync(user);
+        if (!claims.Any(c =>
+                c.Type == MasterAdminClaimType
+                && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase)))
+        {
+            await userManager.AddClaimAsync(user, new Claim(MasterAdminClaimType, "true"));
+        }
+
+        await signInManager.SignInAsync(user, isPersistent: false);
+        return (200, "ok", "Master admin bootstrapped.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
     }
 
     public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors)> DeleteUserAsync(DeleteUserDto dto, ClaimsPrincipal principal)

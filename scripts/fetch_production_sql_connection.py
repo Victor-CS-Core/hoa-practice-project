@@ -81,18 +81,23 @@ def main() -> int:
     scm = _scm_base(publish_url)
 
     # Write candidate env vars to a temp file inside the App Service sandbox.
+    keys_path = "/home/hoa_bootstrap_sql_keys.txt"
     remote_script = (
         "bash -lc "
-        f"\"rm -f {REMOTE_PATH}; "
+        f"\"rm -f {REMOTE_PATH} {keys_path}; "
+        "printenv | awk -F= 'BEGIN{{IGNORECASE=1}} /connection|sqlazure|sqlconn|database/ {{print \$1}}' "
+        f"> {keys_path}; "
         "for key in ConnectionStrings__DefaultConnection "
         "SQLAZURECONNSTR_DefaultConnection SQLCONNSTR_DefaultConnection "
-        "CUSTOMCONNSTR_DefaultConnection; do "
+        "CUSTOMCONNSTR_DefaultConnection DATABASE_URL; do "
         "val=$(printenv \"$key\" || true); "
         "if [ -n \"$val\" ]; then printf '%s' \"$val\" > "
         f"{REMOTE_PATH}; "
-        "echo wrote:$key; exit 0; fi; "
+        "echo wrote:$key:len:${{#val}}; exit 0; fi; "
         "done; "
-        "echo missing_connection_env; exit 2\""
+        "echo missing_connection_env; "
+        f"echo keys_file={keys_path}; "
+        "exit 2\""
     )
     command_body = json.dumps({"command": remote_script, "dir": "/home"}).encode()
     command_payload = json.loads(
@@ -107,8 +112,13 @@ def main() -> int:
     exit_code = command_payload.get("ExitCode", command_payload.get("exitCode"))
     output = (command_payload.get("Output") or command_payload.get("output") or "").strip()
     if exit_code not in (0, "0"):
+        try:
+            keys = _request(f"{scm}/api/vfs/hoa_bootstrap_sql_keys.txt", auth=auth).decode("utf-8", errors="replace")
+            key_lines = ",".join(line.strip() for line in keys.splitlines() if line.strip()) or "(none)"
+        except SystemExit:
+            key_lines = "(keys file unavailable)"
         print(
-            f"::error::Could not locate a SQL connection env var in App Service (exit={exit_code}, output={output!r}).",
+            f"::error::Could not locate a SQL connection env var in App Service (exit={exit_code}, output={output!r}, keys={key_lines}).",
             file=sys.stderr,
         )
         return 1
