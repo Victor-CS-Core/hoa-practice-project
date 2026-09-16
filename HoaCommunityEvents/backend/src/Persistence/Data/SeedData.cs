@@ -54,7 +54,7 @@ public static class SeedData
             }
 
             await userManager.AddToRoleAsync(adminUser, AppRoles.HoaAdmin);
-            await EnsureMasterAdminClaimAsync(userManager, adminUser);
+            await EnsureSoleMasterAdminAsync(userManager, adminUser);
         }
         else
         {
@@ -90,7 +90,7 @@ public static class SeedData
                 await userManager.RemoveFromRoleAsync(existingAdmin, AppRoles.Resident);
             }
 
-            await EnsureMasterAdminClaimAsync(userManager, existingAdmin);
+            await EnsureSoleMasterAdminAsync(userManager, existingAdmin);
         }
     }
 
@@ -152,8 +152,19 @@ public static class SeedData
         await dbContext.SaveChangesAsync();
     }
 
-    private static async Task EnsureMasterAdminClaimAsync(UserManager<AppUser> userManager, AppUser user)
+    private static async Task EnsureSoleMasterAdminAsync(UserManager<AppUser> userManager, AppUser user)
     {
+        foreach (var other in userManager.Users.Where(u => u.Id != user.Id).ToList())
+        {
+            var otherClaims = await userManager.GetClaimsAsync(other);
+            foreach (var claim in otherClaims.Where(c =>
+                         c.Type == MasterAdminClaimType
+                         && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase)))
+            {
+                await userManager.RemoveClaimAsync(other, claim);
+            }
+        }
+
         var claims = await userManager.GetClaimsAsync(user);
         if (!claims.Any(c =>
                 c.Type == MasterAdminClaimType
