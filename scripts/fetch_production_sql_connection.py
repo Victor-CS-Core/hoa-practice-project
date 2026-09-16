@@ -12,7 +12,9 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
-REMOTE_PATH = "/tmp/hoa_bootstrap_sql_connection.txt"
+REMOTE_PATH = "/home/hoa_bootstrap_sql_connection.txt"
+VFS_PATH = "/hoa_bootstrap_sql_connection.txt"
+
 
 
 def _msdeploy_profile(root: ET.Element) -> ET.Element:
@@ -113,12 +115,12 @@ def main() -> int:
 
     # Brief settle for VFS visibility.
     time.sleep(1)
-    raw = _request(f"{scm}/api/vfs{REMOTE_PATH}", auth=auth).decode("utf-8", errors="replace")
+    raw = _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth).decode("utf-8", errors="replace")
     connection = raw.strip().strip('"').strip("'")
 
     # Best-effort cleanup; ignore failure.
     try:
-        _request(f"{scm}/api/vfs{REMOTE_PATH}", auth=auth, method="DELETE")
+        _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth, method="DELETE")
     except SystemExit:
         pass
 
