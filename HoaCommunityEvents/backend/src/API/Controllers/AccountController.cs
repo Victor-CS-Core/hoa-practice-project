@@ -85,18 +85,16 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     }
 
     /// <summary>
-    /// Bootstrap or transfer the sole master admin. Currently allows replace so an
-    /// ops transfer can establish the production master account; lock this down
-    /// immediately afterward.
+    /// One-time bootstrap used when no master admin exists yet. After the first
+    /// successful call, further calls return 409 (unless resetting the existing
+    /// sole master account credentials).
     /// </summary>
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
     [HttpPost("bootstrap-master-admin")]
     public async Task<ActionResult<UserDto>> BootstrapMasterAdmin(RegisterDto dto)
     {
-        // One-shot production transfer: allow sole-master replace without an injected key.
-        // Lock this back down immediately after victor@creativesims.com is established.
-        var result = await accountService.BootstrapMasterAdminAsync(dto, allowReplace: true);
+        var result = await accountService.BootstrapMasterAdminAsync(dto, allowReplace: false);
         if (result.User is null)
         {
             return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);

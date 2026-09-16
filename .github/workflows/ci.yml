@@ -56,8 +56,7 @@ jobs:
           "$install_dir/actionlint" -color \
             .github/workflows/ci.yml \
             .github/workflows/deploy-api-azure.yml \
-            .github/workflows/bootstrap-master-admin.yml \
-            .github/workflows/transfer-master-admin.yml
+            .github/workflows/bootstrap-master-admin.yml
 
       - name: Restore
         run: dotnet restore HoaCommunityEvents/backend/HoaCommunityEvents.slnx
