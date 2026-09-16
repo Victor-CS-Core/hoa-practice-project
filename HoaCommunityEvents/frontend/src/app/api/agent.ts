@@ -47,10 +47,28 @@ agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
     return config;
 });
 
+function isAnonymousAccountUrl(url: string | undefined) {
+    if (!url) return false;
+    // Axios config.url is relative to baseURL (/api), e.g. "/account/login".
+    return (
+        url === '/account/current' ||
+        url === '/account/login' ||
+        url === '/account/register' ||
+        url.endsWith('/account/current') ||
+        url.endsWith('/account/login') ||
+        url.endsWith('/account/register')
+    );
+}
+
 agent.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
-        if (error.response?.status === 401 && error.config?.url !== '/account/current') {
+        // Failed sign-in/sign-up is not a session expiry. Only mark expiry when an
+        // authenticated request loses its cookie/session.
+        if (
+            error.response?.status === 401 &&
+            !isAnonymousAccountUrl(error.config?.url)
+        ) {
             sessionStorage.setItem('sessionExpired', '1');
         }
         return Promise.reject(error);
