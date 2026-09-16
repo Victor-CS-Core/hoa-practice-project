@@ -9,6 +9,10 @@ var bootstrapAdminOnly = args.Contains("--bootstrap-admin-only", StringComparer.
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Optional ops overlay (never committed). Used to inject MasterAdminBootstrap:ReplaceKey
+// into a one-shot production package, then removed on the next clean deploy.
+builder.Configuration.AddJsonFile("appsettings.Bootstrap.json", optional: true, reloadOnChange: false);
+
 builder.Services.AddApplicationServices(builder.Configuration, builder.Environment);
 builder.Services.AddIdentityServices(builder.Configuration, builder.Environment);
 

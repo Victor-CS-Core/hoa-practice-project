@@ -75,7 +75,7 @@ public class AccountService(
         return (200, "ok", "User promoted to admin.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
     }
 
-    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto)
+    public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto, bool allowReplace = false)
     {
         foreach (var role in new[] { AppRoles.Resident, AppRoles.HoaAdmin })
         {
@@ -85,15 +85,26 @@ public class AccountService(
             }
         }
 
+        var email = dto.Email.Trim();
+        var existingMasters = new List<AppUser>();
         foreach (var existing in userManager.Users.ToList())
         {
             if (await IsMasterAdminAsync(existing))
+            {
+                existingMasters.Add(existing);
+            }
+        }
+
+        if (existingMasters.Count > 0)
+        {
+            var requestedIsSoleMaster = existingMasters.Count == 1
+                && string.Equals(existingMasters[0].Email, email, StringComparison.OrdinalIgnoreCase);
+            if (!allowReplace && !requestedIsSoleMaster)
             {
                 return (409, "master_admin_exists", "A master admin already exists.", null, null);
             }
         }
 
-        var email = dto.Email.Trim();
         var username = dto.Username.Trim();
         var displayName = dto.DisplayName.Trim();
         var user = await userManager.FindByEmailAsync(email);
@@ -148,6 +159,19 @@ public class AccountService(
             await userManager.RemoveFromRoleAsync(user, AppRoles.Resident);
         }
 
+        foreach (var other in existingMasters.Where(m => m.Id != user.Id))
+        {
+            await RemoveMasterAdminClaimAsync(other);
+        }
+
+        await EnsureMasterAdminClaimAsync(user);
+
+        await signInManager.SignInAsync(user, isPersistent: false);
+        return (200, "ok", "Master admin bootstrapped.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
+    }
+
+    private async Task EnsureMasterAdminClaimAsync(AppUser user)
+    {
         var claims = await userManager.GetClaimsAsync(user);
         if (!claims.Any(c =>
                 c.Type == MasterAdminClaimType
@@ -155,9 +179,17 @@ public class AccountService(
         {
             await userManager.AddClaimAsync(user, new Claim(MasterAdminClaimType, "true"));
         }
+    }
 
-        await signInManager.SignInAsync(user, isPersistent: false);
-        return (200, "ok", "Master admin bootstrapped.", null, CreateUserDto(user, await userManager.GetRolesAsync(user)));
+    private async Task RemoveMasterAdminClaimAsync(AppUser user)
+    {
+        var claims = await userManager.GetClaimsAsync(user);
+        foreach (var claim in claims.Where(c =>
+                     c.Type == MasterAdminClaimType
+                     && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase)))
+        {
+            await userManager.RemoveClaimAsync(user, claim);
+        }
     }
 
     public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors)> DeleteUserAsync(DeleteUserDto dto, ClaimsPrincipal principal)

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HoaCommunityEvents.API.Controllers;
 
-public class AccountController(IAccountService accountService) : BaseApiController
+public class AccountController(IAccountService accountService, IConfiguration configuration) : BaseApiController
 {
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
@@ -85,15 +85,22 @@ public class AccountController(IAccountService accountService) : BaseApiControll
     }
 
     /// <summary>
-    /// One-time bootstrap used when no master admin exists yet. After the first
-    /// successful call, further calls return 409.
+    /// Bootstrap or transfer the sole master admin. Without a matching replace key,
+    /// succeeds only when no other master admin exists (or when resetting the current
+    /// sole master). With <c>X-Master-Bootstrap-Key</c> matching
+    /// <c>MasterAdminBootstrap:ReplaceKey</c>, transfers master rights to this account.
     /// </summary>
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
     [HttpPost("bootstrap-master-admin")]
     public async Task<ActionResult<UserDto>> BootstrapMasterAdmin(RegisterDto dto)
     {
-        var result = await accountService.BootstrapMasterAdminAsync(dto);
+        var configuredKey = configuration["MasterAdminBootstrap:ReplaceKey"];
+        var providedKey = Request.Headers["X-Master-Bootstrap-Key"].FirstOrDefault();
+        var allowReplace = !string.IsNullOrWhiteSpace(configuredKey)
+            && string.Equals(configuredKey, providedKey, StringComparison.Ordinal);
+
+        var result = await accountService.BootstrapMasterAdminAsync(dto, allowReplace);
         if (result.User is null)
         {
             return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);

@@ -27,6 +27,8 @@ secrets.json
 **/secrets.json
 appsettings.Development.json
 **/appsettings.Development.json
+appsettings.Bootstrap.json
+**/appsettings.Bootstrap.json
 *.pfx
 *.p12
 *.pem
