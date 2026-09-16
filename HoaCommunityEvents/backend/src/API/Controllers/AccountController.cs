@@ -84,6 +84,24 @@ public class AccountController(IAccountService accountService) : BaseApiControll
         return Ok(result.User);
     }
 
+    /// <summary>
+    /// One-time bootstrap used when no master admin exists yet. After the first
+    /// successful call, further calls return 409.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
+    [HttpPost("bootstrap-master-admin")]
+    public async Task<ActionResult<UserDto>> BootstrapMasterAdmin(RegisterDto dto)
+    {
+        var result = await accountService.BootstrapMasterAdminAsync(dto);
+        if (result.User is null)
+        {
+            return ApiError(result.StatusCode, result.Code, result.Message, result.Errors);
+        }
+
+        return Ok(result.User);
+    }
+
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     [HttpPost("delete-user")]
     public async Task<ActionResult> DeleteUser(DeleteUserDto dto)
