@@ -94,8 +94,12 @@ def main() -> int:
         print("::error::GITHUB_OUTPUT is not set.", file=sys.stderr)
         return 1
 
+    # Connection strings contain '=' / ';' and must use a heredoc delimiter.
+    delimiter = "HOA_SQL_CONNECTION_EOF"
     with open(github_output, "a", encoding="utf-8") as handle:
-        handle.write(f"connection_string={connection}\n")
+        handle.write(f"connection_string<<{delimiter}\n")
+        handle.write(f"{connection}\n")
+        handle.write(f"{delimiter}\n")
 
     # Register a secret mask so later steps cannot leak it.
     print(f"::add-mask::{connection}")
