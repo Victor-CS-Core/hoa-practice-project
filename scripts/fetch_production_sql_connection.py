@@ -7,9 +7,12 @@ import base64
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+
+REMOTE_PATH = "/tmp/hoa_bootstrap_sql_connection.txt"
 
 
 def _msdeploy_profile(root: ET.Element) -> ET.Element:
@@ -25,11 +28,36 @@ def _scm_base(publish_url: str) -> str:
     host = publish_url.split(":")[0].strip()
     if not host:
         raise SystemExit("MSDeploy publishUrl is empty.")
-    if not host.endswith(".scm.azurewebsites.net") and ".scm." not in host:
-        # Some profiles omit .scm in publishUrl host shape; prefer explicit scm host.
-        if host.endswith(".azurewebsites.net"):
-            host = host.replace(".azurewebsites.net", ".scm.azurewebsites.net", 1)
+    if host.endswith(".azurewebsites.net") and ".scm." not in host:
+        host = host.replace(".azurewebsites.net", ".scm.azurewebsites.net", 1)
     return f"https://{host}"
+
+
+def _request(
+    url: str,
+    *,
+    auth: str,
+    method: str = "GET",
+    data: bytes | None = None,
+    content_type: str | None = None,
+) -> bytes:
+    headers = {"Authorization": f"Basic {auth}"}
+    if content_type:
+        headers["Content-Type"] = content_type
+    request = urllib.request.Request(url, data=data, method=method, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return response.read()
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", errors="replace")[:300]
+        raise SystemExit(f"Kudu {method} {url} failed with HTTP {error.code}: {body}") from error
+
+
+def _looks_like_sql_connection(value: str) -> bool:
+    lowered = value.lower()
+    return ("server=" in lowered or "data source=" in lowered) and (
+        "initial catalog=" in lowered or "database=" in lowered
+    )
 
 
 def main() -> int:
@@ -48,43 +76,56 @@ def main() -> int:
         return 1
 
     auth = base64.b64encode(f"{username}:{password}".encode()).decode()
-    body = json.dumps(
-        {
-            "command": (
-                "bash -lc "
-                "'printenv ConnectionStrings__DefaultConnection "
-                "|| printenv SQLAZURECONNSTR_DefaultConnection "
-                "|| printenv SQLCONNSTR_DefaultConnection'"
-            ),
-            "dir": "/home/site/wwwroot",
-        }
-    ).encode()
-    request = urllib.request.Request(
-        f"{_scm_base(publish_url)}/api/command",
-        data=body,
-        method="POST",
-        headers={
-            "Authorization": f"Basic {auth}",
-            "Content-Type": "application/json",
-        },
-    )
+    scm = _scm_base(publish_url)
 
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            payload = json.loads(response.read().decode())
-    except urllib.error.HTTPError as error:
-        print(f"::error::Kudu command failed with HTTP {error.code}.", file=sys.stderr)
+    # Write candidate env vars to a temp file inside the App Service sandbox.
+    remote_script = (
+        "bash -lc "
+        f"\"rm -f {REMOTE_PATH}; "
+        "for key in ConnectionStrings__DefaultConnection "
+        "SQLAZURECONNSTR_DefaultConnection SQLCONNSTR_DefaultConnection "
+        "CUSTOMCONNSTR_DefaultConnection; do "
+        "val=$(printenv \"$key\" || true); "
+        "if [ -n \"$val\" ]; then printf '%s' \"$val\" > "
+        f"{REMOTE_PATH}; "
+        "echo wrote:$key; exit 0; fi; "
+        "done; "
+        "echo missing_connection_env; exit 2\""
+    )
+    command_body = json.dumps({"command": remote_script, "dir": "/home"}).encode()
+    command_payload = json.loads(
+        _request(
+            f"{scm}/api/command",
+            auth=auth,
+            method="POST",
+            data=command_body,
+            content_type="application/json",
+        ).decode()
+    )
+    exit_code = command_payload.get("ExitCode", command_payload.get("exitCode"))
+    output = (command_payload.get("Output") or command_payload.get("output") or "").strip()
+    if exit_code not in (0, "0"):
+        print(
+            f"::error::Could not locate a SQL connection env var in App Service (exit={exit_code}, output={output!r}).",
+            file=sys.stderr,
+        )
         return 1
 
-    output = (payload.get("Output") or payload.get("output") or "").strip()
-    error_output = (payload.get("Error") or payload.get("error") or "").strip()
-    # Prefer stdout; some hosts write the value to Error.
-    connection = output or error_output
-    # Drop trailing shell noise / newlines.
-    connection = connection.splitlines()[0].strip() if connection else ""
-    if not connection or connection.lower() in {"null", "none"}:
+    # Brief settle for VFS visibility.
+    time.sleep(1)
+    raw = _request(f"{scm}/api/vfs{REMOTE_PATH}", auth=auth).decode("utf-8", errors="replace")
+    connection = raw.strip().strip('"').strip("'")
+
+    # Best-effort cleanup; ignore failure.
+    try:
+        _request(f"{scm}/api/vfs{REMOTE_PATH}", auth=auth, method="DELETE")
+    except SystemExit:
+        pass
+
+    if not _looks_like_sql_connection(connection):
         print(
-            "::error::Could not read DefaultConnection from the App Service environment.",
+            "::error::Fetched App Service value is not a SQL connection string "
+            f"(length={len(connection)}, starts_with_code={ord(connection[:1]) if connection else -1}).",
             file=sys.stderr,
         )
         return 1
@@ -94,16 +135,14 @@ def main() -> int:
         print("::error::GITHUB_OUTPUT is not set.", file=sys.stderr)
         return 1
 
-    # Connection strings contain '=' / ';' and must use a heredoc delimiter.
     delimiter = "HOA_SQL_CONNECTION_EOF"
     with open(github_output, "a", encoding="utf-8") as handle:
         handle.write(f"connection_string<<{delimiter}\n")
         handle.write(f"{connection}\n")
         handle.write(f"{delimiter}\n")
 
-    # Register a secret mask so later steps cannot leak it.
     print(f"::add-mask::{connection}")
-    print("Production SQL connection string loaded from App Service.")
+    print(f"Production SQL connection string loaded from App Service ({output}).")
     return 0
 
 
