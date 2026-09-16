@@ -59,10 +59,35 @@ public static class SeedData
         else
         {
             adminUser = existingAdmin;
+            adminUser.UserName = adminUserName;
+            adminUser.DisplayName = adminDisplayName;
+            adminUser.EmailConfirmed = true;
+
+            var updateAdmin = await userManager.UpdateAsync(adminUser);
+            if (!updateAdmin.Succeeded)
+            {
+                throw new InvalidOperationException(BuildIdentityErrors(
+                    "Could not update seeded admin user.",
+                    updateAdmin.Errors));
+            }
+
+            var resetToken = await userManager.GeneratePasswordResetTokenAsync(adminUser);
+            var resetPassword = await userManager.ResetPasswordAsync(adminUser, resetToken, adminPassword);
+            if (!resetPassword.Succeeded)
+            {
+                throw new InvalidOperationException(BuildIdentityErrors(
+                    "Could not reset seeded admin password.",
+                    resetPassword.Errors));
+            }
 
             if (!await userManager.IsInRoleAsync(existingAdmin, AppRoles.HoaAdmin))
             {
                 await userManager.AddToRoleAsync(existingAdmin, AppRoles.HoaAdmin);
+            }
+
+            if (await userManager.IsInRoleAsync(existingAdmin, AppRoles.Resident))
+            {
+                await userManager.RemoveFromRoleAsync(existingAdmin, AppRoles.Resident);
             }
 
             await EnsureMasterAdminClaimAsync(userManager, existingAdmin);
