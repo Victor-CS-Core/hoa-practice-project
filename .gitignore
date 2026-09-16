@@ -29,6 +29,8 @@ appsettings.Development.json
 **/appsettings.Development.json
 appsettings.Bootstrap.json
 **/appsettings.Bootstrap.json
+master-bootstrap.key
+**/master-bootstrap.key
 *.pfx
 *.p12
 *.pem

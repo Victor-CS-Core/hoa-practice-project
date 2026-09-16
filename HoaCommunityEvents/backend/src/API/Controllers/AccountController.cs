@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace HoaCommunityEvents.API.Controllers;
 
-public class AccountController(IAccountService accountService, IConfiguration configuration) : BaseApiController
+public class AccountController(
+    IAccountService accountService,
+    IConfiguration configuration,
+    IWebHostEnvironment environment) : BaseApiController
 {
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
@@ -88,14 +91,15 @@ public class AccountController(IAccountService accountService, IConfiguration co
     /// Bootstrap or transfer the sole master admin. Without a matching replace key,
     /// succeeds only when no other master admin exists (or when resetting the current
     /// sole master). With <c>X-Master-Bootstrap-Key</c> matching
-    /// <c>MasterAdminBootstrap:ReplaceKey</c>, transfers master rights to this account.
+    /// <c>MasterAdminBootstrap:ReplaceKey</c> (or a sibling <c>master-bootstrap.key</c>
+    /// file), transfers master rights to this account.
     /// </summary>
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
     [HttpPost("bootstrap-master-admin")]
     public async Task<ActionResult<UserDto>> BootstrapMasterAdmin(RegisterDto dto)
     {
-        var configuredKey = configuration["MasterAdminBootstrap:ReplaceKey"];
+        var configuredKey = ResolveReplaceKey();
         var providedKey = Request.Headers["X-Master-Bootstrap-Key"].FirstOrDefault();
         var allowReplace = !string.IsNullOrWhiteSpace(configuredKey)
             && string.Equals(configuredKey, providedKey, StringComparison.Ordinal);
@@ -107,6 +111,24 @@ public class AccountController(IAccountService accountService, IConfiguration co
         }
 
         return Ok(result.User);
+    }
+
+    private string? ResolveReplaceKey()
+    {
+        var configured = configuration["MasterAdminBootstrap:ReplaceKey"];
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured.Trim();
+        }
+
+        var keyPath = Path.Combine(environment.ContentRootPath, "master-bootstrap.key");
+        if (!System.IO.File.Exists(keyPath))
+        {
+            return null;
+        }
+
+        var fromFile = System.IO.File.ReadAllText(keyPath).Trim();
+        return string.IsNullOrWhiteSpace(fromFile) ? null : fromFile;
     }
 
     [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
