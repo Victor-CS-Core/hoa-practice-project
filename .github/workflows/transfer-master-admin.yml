@@ -1,8 +1,7 @@
 name: Transfer Master Admin
 
-# One-shot ops: deploy the current main BFF artifact with a non-committed
-# MasterAdminBootstrap replace key, transfer sole master admin to the account in
-# BOOTSTRAP_ADMIN_* secrets, then redeploy the clean artifact (key removed).
+# One-shot ops: deploy the current main BFF artifact, transfer sole master admin
+# to BOOTSTRAP_ADMIN_*, verify login. Requires bootstrap endpoint allowReplace.
 
 on:
   workflow_dispatch:
@@ -99,45 +98,8 @@ jobs:
           test -f "$publish_dir/wwwroot/index.html"
           echo "publish_dir=$publish_dir" >> "$GITHUB_OUTPUT"
 
-      - name: Inject one-shot replace key
-        id: key
-        shell: bash
-        env:
-          PUBLISH_DIR: ${{ steps.package.outputs.publish_dir }}
-        run: |
-          set -euo pipefail
-          replace_key="$(openssl rand -hex 32)"
-          echo "::add-mask::$replace_key"
-          REPLACE_KEY="$replace_key" PUBLISH_DIR="$PUBLISH_DIR" python3 - <<'PY'
-          import json, os
-          key = os.environ["REPLACE_KEY"]
-          publish_dir = os.environ["PUBLISH_DIR"]
-
-          # Primary: merge into Production settings (always loaded by the host).
-          production_path = os.path.join(publish_dir, "appsettings.Production.json")
-          with open(production_path, encoding="utf-8") as handle:
-              production = json.load(handle)
-          production["MasterAdminBootstrap"] = {"ReplaceKey": key}
-          with open(production_path, "w", encoding="utf-8") as handle:
-              json.dump(production, handle, indent=2)
-              handle.write("\n")
-
-          # Secondary overlay (also loaded explicitly in Program.cs).
-          bootstrap_path = os.path.join(publish_dir, "appsettings.Bootstrap.json")
-          with open(bootstrap_path, "w", encoding="utf-8") as handle:
-              json.dump({"MasterAdminBootstrap": {"ReplaceKey": key}}, handle)
-
-          # Tertiary: plain key file read by AccountController as a last resort.
-          key_path = os.path.join(publish_dir, "master-bootstrap.key")
-          with open(key_path, "w", encoding="utf-8") as handle:
-              handle.write(key)
-
-          print(f"Injected ReplaceKey into {production_path}, {bootstrap_path}, and {key_path}")
-          PY
-          echo "replace_key=$replace_key" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy package with replace key
-        id: deploy_keyed
+      - name: Deploy package
+        id: deploy
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
@@ -147,34 +109,34 @@ jobs:
       - name: Transfer master admin via bootstrap API
         shell: bash
         env:
-          WEBAPP_URL: ${{ steps.deploy_keyed.outputs.webapp-url }}
-          REPLACE_KEY: ${{ steps.key.outputs.replace_key }}
+          WEBAPP_URL: ${{ steps.deploy.outputs.webapp-url }}
           ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
           ADMIN_USERNAME: ${{ secrets.BOOTSTRAP_ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
           ADMIN_DISPLAY_NAME: ${{ secrets.BOOTSTRAP_ADMIN_DISPLAY_NAME }}
         run: |
           set -euo pipefail
-          for required in WEBAPP_URL REPLACE_KEY ADMIN_EMAIL ADMIN_USERNAME ADMIN_PASSWORD ADMIN_DISPLAY_NAME; do
+          for required in WEBAPP_URL ADMIN_EMAIL ADMIN_USERNAME ADMIN_PASSWORD ADMIN_DISPLAY_NAME; do
             if [ -z "${!required}" ]; then
               echo "::error::Missing required secret/env: $required"
               exit 1
             fi
           done
           echo "::add-mask::$ADMIN_PASSWORD"
-          echo "::add-mask::$REPLACE_KEY"
 
           base_url="${WEBAPP_URL%/}"
-          for _ in $(seq 1 24); do
-            if curl --fail --silent --show-error --output /dev/null "$base_url/health"; then
+          for _ in $(seq 1 36); do
+            if curl --fail --silent --show-error --output /dev/null "$base_url/health" \
+              && curl --fail --silent --show-error --output /dev/null "$base_url/api/security/csrf"; then
               break
             fi
             sleep 5
           done
           curl --fail-with-body --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 \
             --output /dev/null "$base_url/health"
+          curl --fail-with-body --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 \
+            --output /dev/null "$base_url/api/security/csrf"
 
-          # Confirm the keyed build is live (replace without key must still 409).
           jar="$(mktemp)"
           csrf="$(curl -fsS -c "$jar" -b "$jar" "$base_url/api/security/csrf")"
           token="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["requestToken"])' <<<"$csrf")"
@@ -187,7 +149,6 @@ jobs:
           code="$(curl -sS -o /tmp/hoa-bootstrap.json -w '%{http_code}' -X POST "$base_url/api/account/bootstrap-master-admin" \
             -H 'Content-Type: application/json' \
             -H "X-CSRF-TOKEN: $token" \
-            -H "X-Master-Bootstrap-Key: $REPLACE_KEY" \
             -b "$jar" -c "$jar" \
             --data-binary "$payload")"
           if [ "$code" != "200" ]; then
@@ -197,51 +158,16 @@ jobs:
           fi
           echo "Master admin transfer succeeded."
 
-      - name: Restore clean Production settings in package
-        shell: bash
-        env:
-          PUBLISH_DIR: ${{ steps.package.outputs.publish_dir }}
-        run: |
-          set -euo pipefail
-          rm -f "$PUBLISH_DIR/appsettings.Bootstrap.json" "$PUBLISH_DIR/master-bootstrap.key"
-          PUBLISH_DIR="$PUBLISH_DIR" python3 - <<'PY'
-          import json, os
-          path = os.path.join(os.environ["PUBLISH_DIR"], "appsettings.Production.json")
-          with open(path, encoding="utf-8") as handle:
-              production = json.load(handle)
-          production.pop("MasterAdminBootstrap", None)
-          with open(path, "w", encoding="utf-8") as handle:
-              json.dump(production, handle, indent=2)
-              handle.write("\n")
-          print(f"Cleaned {path}")
-          PY
-          test ! -f "$PUBLISH_DIR/appsettings.Bootstrap.json"
-          test ! -f "$PUBLISH_DIR/master-bootstrap.key"
-
-      - name: Redeploy clean package without replace key
-        id: deploy_clean
-        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-          package: ${{ steps.package.outputs.publish_dir }}
-
       - name: Verify master admin can sign in
         shell: bash
         env:
-          WEBAPP_URL: ${{ steps.deploy_clean.outputs.webapp-url }}
+          WEBAPP_URL: ${{ steps.deploy.outputs.webapp-url }}
           ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           echo "::add-mask::$ADMIN_PASSWORD"
           base_url="${WEBAPP_URL%/}"
-          for _ in $(seq 1 24); do
-            if curl --fail --silent --show-error --output /dev/null "$base_url/health"; then
-              break
-            fi
-            sleep 5
-          done
           jar="$(mktemp)"
           csrf="$(curl -fsS -c "$jar" -b "$jar" "$base_url/api/security/csrf")"
           token="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["requestToken"])' <<<"$csrf")"
