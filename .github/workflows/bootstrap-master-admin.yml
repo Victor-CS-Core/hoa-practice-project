@@ -1,0 +1,113 @@
+name: Bootstrap Master Admin
+
+# One-shot ops workflow: create/ensure the master admin against production SQL
+# using Identity seeding. Runs outside ASPNETCORE_ENVIRONMENT=Production.
+# Does not change the live App Service configuration.
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: hoa-master-admin-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    name: Ensure Master Admin
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate publish profile identity
+        shell: bash
+        env:
+          APP_NAME: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_azure_publish_profile.py
+
+      - name: Load production SQL connection string via Kudu
+        id: sql
+        shell: bash
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          python3 scripts/fetch_production_sql_connection.py
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Bootstrap master admin
+        shell: bash
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__DefaultConnection: ${{ steps.sql.outputs.connection_string }}
+          Seed__EnableBootstrap: "true"
+          Seed__EnableDemoData: "false"
+          AdminSeed__Email: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          AdminSeed__Username: ${{ secrets.BOOTSTRAP_ADMIN_USERNAME }}
+          AdminSeed__Password: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
+          AdminSeed__DisplayName: ${{ secrets.BOOTSTRAP_ADMIN_DISPLAY_NAME }}
+          DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+        run: |
+          set -euo pipefail
+          for required in AdminSeed__Email AdminSeed__Username AdminSeed__Password AdminSeed__DisplayName ConnectionStrings__DefaultConnection; do
+            if [ -z "${!required}" ]; then
+              echo "::error::Missing required secret/env: $required"
+              exit 1
+            fi
+          done
+          echo "::add-mask::${AdminSeed__Password}"
+          echo "::add-mask::${ConnectionStrings__DefaultConnection}"
+          dotnet run \
+            --project HoaCommunityEvents/backend/src/API/HoaCommunityEvents.API.csproj \
+            --configuration Release \
+            --no-launch-profile \
+            -- \
+            --bootstrap-admin-only
+
+      - name: Verify master admin can sign in
+        shell: bash
+        env:
+          ADMIN_EMAIL: ${{ secrets.BOOTSTRAP_ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.BOOTSTRAP_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${ADMIN_PASSWORD}"
+          BASE="https://hoa-events-prod-czd6cmg6fyhwcha7.eastus2-01.azurewebsites.net"
+          jar="$(mktemp)"
+          csrf="$(curl -fsS -c "$jar" -b "$jar" "$BASE/api/security/csrf")"
+          token="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["requestToken"])' <<<"$csrf")"
+          code="$(curl -sS -o /tmp/hoa-login.json -w '%{http_code}' -X POST "$BASE/api/account/login" \
+            -H 'Content-Type: application/json' \
+            -H "X-CSRF-TOKEN: $token" \
+            -b "$jar" -c "$jar" \
+            --data-binary @<(python3 -c 'import json,os; print(json.dumps({"email":os.environ["ADMIN_EMAIL"],"password":os.environ["ADMIN_PASSWORD"]}))'))"
+          if [ "$code" != "200" ]; then
+            echo "::error::Login verification failed with HTTP $code"
+            python3 -c 'import json; print(json.load(open("/tmp/hoa-login.json")))' || true
+            exit 1
+          fi
+          role="$(python3 -c 'import json; print(json.load(open("/tmp/hoa-login.json")).get("role",""))')"
+          email="$(python3 -c 'import json; print(json.load(open("/tmp/hoa-login.json")).get("email",""))')"
+          if [ "$role" != "hoa_admin" ]; then
+            echo "::error::Expected hoa_admin role, got: $role"
+            exit 1
+          fi
+          if [ "$email" != "$ADMIN_EMAIL" ]; then
+            echo "::error::Login email mismatch."
+            exit 1
+          fi
+          echo "Master admin login verified."
