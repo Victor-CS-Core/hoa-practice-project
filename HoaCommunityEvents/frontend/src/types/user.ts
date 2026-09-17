@@ -4,6 +4,9 @@ export type User = {
     email: string;
     role: string;
     profileImageUrl?: string | null;
+    profileImagePositionX?: number;
+    profileImagePositionY?: number;
+    profileImageZoom?: number;
 };
 
 export type LoginFormValues = {

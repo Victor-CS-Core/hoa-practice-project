@@ -24,6 +24,7 @@ import {
 import { useStore } from "../stores/store";
 import { useState } from "react";
 import { useTheme } from "../theme/theme-context";
+import { FramedImage } from "../../components/media/FramedImage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -264,10 +265,12 @@ export const AppLayout = observer(function AppLayout() {
                   >
                     <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-accent text-xs font-bold text-page">
                       {user?.profileImageUrl ? (
-                        <img
+                        <FramedImage
                           src={user.profileImageUrl}
                           alt={user.displayName ?? user.username ?? "User"}
-                          className="h-full w-full object-cover"
+                          positionX={user.profileImagePositionX ?? 50}
+                          positionY={user.profileImagePositionY ?? 50}
+                          zoom={user.profileImageZoom ?? 1}
                         />
                       ) : (
                         initials

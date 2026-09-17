@@ -258,7 +258,17 @@ public class AccountService(
         catch { return (400, "validation_failed", "Failed to delete user.", ["The user may be referenced by existing records."]); }
     }
 
-    private UserDto CreateUserDto(AppUser user, IList<string> roles) => new() { DisplayName = user.DisplayName, Username = user.UserName ?? string.Empty, Email = user.Email ?? string.Empty, ProfileImageUrl = user.ProfileImageUrl, Role = ResolvePrimaryRole(roles) };
+    private UserDto CreateUserDto(AppUser user, IList<string> roles) => new()
+    {
+        DisplayName = user.DisplayName,
+        Username = user.UserName ?? string.Empty,
+        Email = user.Email ?? string.Empty,
+        ProfileImageUrl = user.ProfileImageUrl,
+        ProfileImagePositionX = user.ProfileImagePositionX,
+        ProfileImagePositionY = user.ProfileImagePositionY,
+        ProfileImageZoom = user.ProfileImageZoom,
+        Role = ResolvePrimaryRole(roles)
+    };
     private async Task<bool> IsMasterAdminAsync(AppUser user) => (await userManager.GetClaimsAsync(user)).Any(c => c.Type == MasterAdminClaimType && string.Equals(c.Value, "true", StringComparison.OrdinalIgnoreCase));
     private static string ResolvePrimaryRole(IList<string> roles) => roles.Contains(AppRoles.HoaAdmin) ? AppRoles.HoaAdmin : roles.FirstOrDefault() ?? AppRoles.Resident;
 }
