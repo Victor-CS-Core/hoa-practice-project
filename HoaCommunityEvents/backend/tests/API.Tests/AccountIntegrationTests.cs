@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HoaCommunityEvents.Persistence.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace HoaCommunityEvents.API.Tests;
@@ -171,6 +174,69 @@ public class AccountIntegrationTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         using var json = await ReadJsonAsync(response);
         Assert.Equal("invalid_credentials", GetString(json, "code", ignoreCase: true));
+    }
+
+    [Fact]
+    public async Task BootstrapMasterAdmin_WhenMasterExists_RejectsAnonymousPasswordResetForSameEmail()
+    {
+        var master = NewRegistration("master");
+        using (var bootstrapper = factory.CreateCookieClient())
+        {
+            var first = await bootstrapper.SendAsync(await factory.WithCsrfAsync(bootstrapper, HttpMethod.Post, "/api/account/bootstrap-master-admin", master));
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        }
+
+        using var attacker = factory.CreateCookieClient();
+        var hijack = await attacker.SendAsync(await factory.WithCsrfAsync(attacker, HttpMethod.Post, "/api/account/bootstrap-master-admin", master with { password = "Hijack3d!" }));
+        Assert.Equal(HttpStatusCode.Conflict, hijack.StatusCode);
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { master.email, password = "Hijack3d!" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { master.email, master.password }))).StatusCode);
+    }
+
+    [Fact]
+    public async Task BootstrapMasterAdmin_WhenNoMasterExists_RejectsTakeoverOfExistingAccount()
+    {
+        await factory.EnsureRolesAsync();
+        var resident = NewRegistration("existing");
+        using (var owner = factory.CreateCookieClient())
+        {
+            Assert.Equal(HttpStatusCode.Created, (await owner.SendAsync(await factory.WithCsrfAsync(owner, HttpMethod.Post, "/api/account/register", resident))).StatusCode);
+        }
+
+        using var attacker = factory.CreateCookieClient();
+        var hijack = await attacker.SendAsync(await factory.WithCsrfAsync(attacker, HttpMethod.Post, "/api/account/bootstrap-master-admin", resident with { password = "Hijack3d!" }));
+        Assert.Equal(HttpStatusCode.Conflict, hijack.StatusCode);
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { resident.email, resident.password }))).StatusCode);
+    }
+
+    [Fact]
+    public async Task SeedRolesAndAdmin_ResetsPasswordOfExistingAdmin()
+    {
+        var email = UniqueEmail("seeded");
+        var username = UniqueUserName("seeded");
+        await factory.CreateAdminUserAsync(email, username, "OldPassw0rd!", "Seeded Admin");
+
+        var seedConfiguration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AdminSeed:Email"] = email,
+                ["AdminSeed:Username"] = username,
+                ["AdminSeed:Password"] = "NewPassw0rd!",
+                ["AdminSeed:DisplayName"] = "Seeded Admin"
+            })
+            .Build();
+        using (var scope = factory.Services.CreateScope())
+        {
+            await SeedData.SeedRolesAndAdminAsync(scope.ServiceProvider, seedConfiguration);
+        }
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { email, password = "OldPassw0rd!" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { email, password = "NewPassw0rd!" }))).StatusCode);
     }
 
     private static RegistrationPayload NewRegistration(string prefix) => new(UniqueEmail(prefix), UniqueUserName(prefix), "Integration Test User", "Passw0rd!");

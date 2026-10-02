@@ -86,8 +86,7 @@ public class AccountController(IAccountService accountService) : BaseApiControll
 
     /// <summary>
     /// One-time bootstrap used when no master admin exists yet. After the first
-    /// successful call, further calls return 409 (unless resetting the existing
-    /// sole master account credentials).
+    /// successful call, further calls return 409. It never modifies an existing account.
     /// </summary>
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.AuthLoginRegister)]
