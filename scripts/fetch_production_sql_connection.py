@@ -15,6 +15,13 @@ import xml.etree.ElementTree as ET
 
 REMOTE_PATH = "/home/hoa_bootstrap_sql_connection.txt"
 VFS_PATH = "/hoa_bootstrap_sql_connection.txt"
+SQL_SETTING_KEYS = (
+    "ConnectionStrings__DefaultConnection",
+    "SQLAZURECONNSTR_DefaultConnection",
+    "SQLCONNSTR_DefaultConnection",
+    "CUSTOMCONNSTR_DefaultConnection",
+    "DATABASE_URL",
+)
 
 
 def _build_remote_script(keys_path: str) -> str:
@@ -82,6 +89,21 @@ def _looks_like_sql_connection(value: str) -> bool:
     )
 
 
+def _connection_from_settings(settings: object) -> tuple[str, str] | None:
+    if not isinstance(settings, dict):
+        return None
+
+    normalized = {str(key).lower(): (str(key), value) for key, value in settings.items()}
+    for candidate in SQL_SETTING_KEYS:
+        match = normalized.get(candidate.lower())
+        if match is None or not isinstance(match[1], str):
+            continue
+        connection = match[1].strip().strip('"').strip("'")
+        if _looks_like_sql_connection(connection):
+            return match[0], connection
+    return None
+
+
 def main() -> int:
     profile_xml = os.environ.get("PUBLISH_PROFILE", "")
     if not profile_xml:
@@ -116,27 +138,33 @@ def main() -> int:
     exit_code = command_payload.get("ExitCode", command_payload.get("exitCode"))
     output = (command_payload.get("Output") or command_payload.get("output") or "").strip()
     if exit_code not in (0, "0"):
+        settings = json.loads(_request(f"{scm}/api/settings", auth=auth).decode())
+        settings_connection = _connection_from_settings(settings)
+        if settings_connection is not None:
+            source_key, connection = settings_connection
+            output = f"settings:{source_key}:len:{len(connection)}"
+        else:
+            try:
+                keys = _request(f"{scm}/api/vfs/hoa_bootstrap_sql_keys.txt", auth=auth).decode("utf-8", errors="replace")
+                key_lines = ",".join(line.strip() for line in keys.splitlines() if line.strip()) or "(none)"
+            except SystemExit:
+                key_lines = "(keys file unavailable)"
+            print(
+                f"::error::Could not locate a SQL connection setting in App Service (exit={exit_code}, output={output!r}, environment_keys={key_lines}).",
+                file=sys.stderr,
+            )
+            return 1
+    else:
+        # Brief settle for VFS visibility.
+        time.sleep(1)
+        raw = _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth).decode("utf-8", errors="replace")
+        connection = raw.strip().strip('"').strip("'")
+
+        # Best-effort cleanup; ignore failure.
         try:
-            keys = _request(f"{scm}/api/vfs/hoa_bootstrap_sql_keys.txt", auth=auth).decode("utf-8", errors="replace")
-            key_lines = ",".join(line.strip() for line in keys.splitlines() if line.strip()) or "(none)"
+            _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth, method="DELETE")
         except SystemExit:
-            key_lines = "(keys file unavailable)"
-        print(
-            f"::error::Could not locate a SQL connection env var in App Service (exit={exit_code}, output={output!r}, keys={key_lines}).",
-            file=sys.stderr,
-        )
-        return 1
-
-    # Brief settle for VFS visibility.
-    time.sleep(1)
-    raw = _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth).decode("utf-8", errors="replace")
-    connection = raw.strip().strip('"').strip("'")
-
-    # Best-effort cleanup; ignore failure.
-    try:
-        _request(f"{scm}/api/vfs{VFS_PATH}", auth=auth, method="DELETE")
-    except SystemExit:
-        pass
+            pass
 
     if not _looks_like_sql_connection(connection):
         print(
