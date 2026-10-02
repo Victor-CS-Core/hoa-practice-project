@@ -6,6 +6,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shlex
 import sys
 import time
 import urllib.error
@@ -15,6 +16,25 @@ import xml.etree.ElementTree as ET
 REMOTE_PATH = "/home/hoa_bootstrap_sql_connection.txt"
 VFS_PATH = "/hoa_bootstrap_sql_connection.txt"
 
+
+def _build_remote_script(keys_path: str) -> str:
+    inner_script = (
+        f"rm -f {REMOTE_PATH} {keys_path}; "
+        "printenv | awk -F= 'BEGIN{IGNORECASE=1} /connection|sqlazure|sqlconn|database/ {print $1}' "
+        f"> {keys_path}; "
+        "for key in ConnectionStrings__DefaultConnection "
+        "SQLAZURECONNSTR_DefaultConnection SQLCONNSTR_DefaultConnection "
+        "CUSTOMCONNSTR_DefaultConnection DATABASE_URL; do "
+        'val=$(printenv "$key" || true); '
+        'if [ -n "$val" ]; then printf \'%s\' "$val" > '
+        f"{REMOTE_PATH}; "
+        'echo wrote:$key:len:${#val}; exit 0; fi; '
+        "done; "
+        "echo missing_connection_env; "
+        f"echo keys_file={keys_path}; "
+        "exit 2"
+    )
+    return f"bash -lc {shlex.quote(inner_script)}"
 
 
 def _msdeploy_profile(root: ET.Element) -> ET.Element:
@@ -82,23 +102,7 @@ def main() -> int:
 
     # Write candidate env vars to a temp file inside the App Service sandbox.
     keys_path = "/home/hoa_bootstrap_sql_keys.txt"
-    remote_script = (
-        "bash -lc "
-        f"\"rm -f {REMOTE_PATH} {keys_path}; "
-        "printenv | awk -F= 'BEGIN{{IGNORECASE=1}} /connection|sqlazure|sqlconn|database/ {{print \$1}}' "
-        f"> {keys_path}; "
-        "for key in ConnectionStrings__DefaultConnection "
-        "SQLAZURECONNSTR_DefaultConnection SQLCONNSTR_DefaultConnection "
-        "CUSTOMCONNSTR_DefaultConnection DATABASE_URL; do "
-        "val=$(printenv \"$key\" || true); "
-        "if [ -n \"$val\" ]; then printf '%s' \"$val\" > "
-        f"{REMOTE_PATH}; "
-        "echo wrote:$key:len:${{#val}}; exit 0; fi; "
-        "done; "
-        "echo missing_connection_env; "
-        f"echo keys_file={keys_path}; "
-        "exit 2\""
-    )
+    remote_script = _build_remote_script(keys_path)
     command_body = json.dumps({"command": remote_script, "dir": "/home"}).encode()
     command_payload = json.loads(
         _request(
