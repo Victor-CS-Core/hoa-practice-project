@@ -21,7 +21,8 @@ public static class IdentityServiceExtensions
         })
         .AddRoles<IdentityRole>()
         .AddSignInManager<SignInManager<AppUser>>()
-        .AddEntityFrameworkStores<AppDbContext>();
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
 
         services.AddAuthentication(IdentityConstants.ApplicationScheme)
             .AddIdentityCookies();

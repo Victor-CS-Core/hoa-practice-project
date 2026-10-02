@@ -13,6 +13,7 @@ public class AccountService(
     RoleManager<IdentityRole> roleManager) : IAccountService
 {
     private const string MasterAdminClaimType = "is_master_admin";
+    private static readonly SemaphoreSlim BootstrapLock = new(1, 1);
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors, UserDto? User)> RegisterAsync(RegisterDto dto)
     {
@@ -77,6 +78,19 @@ public class AccountService(
 
     public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto, bool allowReplace = false)
     {
+        await BootstrapLock.WaitAsync();
+        try
+        {
+            return await BootstrapMasterAdminCoreAsync(dto, allowReplace);
+        }
+        finally
+        {
+            BootstrapLock.Release();
+        }
+    }
+
+    private async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminCoreAsync(RegisterDto dto, bool allowReplace)
+    {
         foreach (var role in new[] { AppRoles.Resident, AppRoles.HoaAdmin })
         {
             if (!await roleManager.RoleExistsAsync(role))
@@ -95,19 +109,19 @@ public class AccountService(
             }
         }
 
-        if (existingMasters.Count > 0)
+        if (existingMasters.Count > 0 && !allowReplace)
         {
-            var requestedIsSoleMaster = existingMasters.Count == 1
-                && string.Equals(existingMasters[0].Email, email, StringComparison.OrdinalIgnoreCase);
-            if (!allowReplace && !requestedIsSoleMaster)
-            {
-                return (409, "master_admin_exists", "A master admin already exists.", null, null);
-            }
+            return (409, "master_admin_exists", "A master admin already exists.", null, null);
         }
 
         var username = dto.Username.Trim();
         var displayName = dto.DisplayName.Trim();
         var user = await userManager.FindByEmailAsync(email);
+
+        if (user is not null && !allowReplace)
+        {
+            return (409, "email_in_use", "Email is already in use.", null, null);
+        }
 
         if (user is null)
         {

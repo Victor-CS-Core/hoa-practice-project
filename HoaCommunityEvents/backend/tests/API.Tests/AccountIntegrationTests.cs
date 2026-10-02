@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HoaCommunityEvents.Persistence.Data;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace HoaCommunityEvents.API.Tests;
@@ -171,6 +174,99 @@ public class AccountIntegrationTests : IDisposable
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         using var json = await ReadJsonAsync(response);
         Assert.Equal("invalid_credentials", GetString(json, "code", ignoreCase: true));
+    }
+
+    [Fact]
+    public async Task BootstrapMasterAdmin_WhenMasterExists_RejectsAnonymousPasswordResetForSameEmail()
+    {
+        var master = NewRegistration("master");
+        using (var bootstrapper = factory.CreateCookieClient())
+        {
+            var first = await bootstrapper.SendAsync(await factory.WithCsrfAsync(bootstrapper, HttpMethod.Post, "/api/account/bootstrap-master-admin", master));
+            Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        }
+
+        using var attacker = factory.CreateCookieClient();
+        var hijack = await attacker.SendAsync(await factory.WithCsrfAsync(attacker, HttpMethod.Post, "/api/account/bootstrap-master-admin", master with { password = "Hijack3d!" }));
+        Assert.Equal(HttpStatusCode.Conflict, hijack.StatusCode);
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { master.email, password = "Hijack3d!" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { master.email, master.password }))).StatusCode);
+    }
+
+    [Fact]
+    public async Task BootstrapMasterAdmin_WhenNoMasterExists_RejectsTakeoverOfExistingAccount()
+    {
+        await factory.EnsureRolesAsync();
+        var resident = NewRegistration("existing");
+        using (var owner = factory.CreateCookieClient())
+        {
+            Assert.Equal(HttpStatusCode.Created, (await owner.SendAsync(await factory.WithCsrfAsync(owner, HttpMethod.Post, "/api/account/register", resident))).StatusCode);
+        }
+
+        using var attacker = factory.CreateCookieClient();
+        var hijack = await attacker.SendAsync(await factory.WithCsrfAsync(attacker, HttpMethod.Post, "/api/account/bootstrap-master-admin", resident with { password = "Hijack3d!" }));
+        Assert.Equal(HttpStatusCode.Conflict, hijack.StatusCode);
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { resident.email, resident.password }))).StatusCode);
+    }
+
+    [Fact]
+    public async Task BootstrapMasterAdmin_WhenRequestsAreConcurrent_CreatesOnlyOneMaster()
+    {
+        using var firstClient = factory.CreateCookieClient();
+        using var secondClient = factory.CreateCookieClient();
+        var firstRequest = await factory.WithCsrfAsync(firstClient, HttpMethod.Post, "/api/account/bootstrap-master-admin", NewRegistration("concurrentfirst"));
+        var secondRequest = await factory.WithCsrfAsync(secondClient, HttpMethod.Post, "/api/account/bootstrap-master-admin", NewRegistration("concurrentsecond"));
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task<HttpResponseMessage> SendAfterStartAsync(HttpClient client, HttpRequestMessage request)
+        {
+            await start.Task;
+            return await client.SendAsync(request);
+        }
+
+        var firstTask = SendAfterStartAsync(firstClient, firstRequest);
+        var secondTask = SendAfterStartAsync(secondClient, secondRequest);
+        start.SetResult();
+        var responses = await Task.WhenAll(firstTask, secondTask);
+        var responseDetails = await Task.WhenAll(responses.Select(async response =>
+            $"{response.StatusCode}: {await response.Content.ReadAsStringAsync()}"));
+
+        Assert.True(responses.Count(response => response.StatusCode == HttpStatusCode.OK) == 1, string.Join(Environment.NewLine, responseDetails));
+        Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Conflict);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Single(dbContext.UserClaims.Where(claim => claim.ClaimType == "is_master_admin" && claim.ClaimValue == "true"));
+    }
+
+    [Fact]
+    public async Task SeedRolesAndAdmin_ResetsPasswordOfExistingAdmin()
+    {
+        var email = UniqueEmail("seeded");
+        var username = UniqueUserName("seeded");
+        await factory.CreateAdminUserAsync(email, username, "OldPassw0rd!", "Seeded Admin");
+
+        var seedConfiguration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AdminSeed:Email"] = email,
+                ["AdminSeed:Username"] = username,
+                ["AdminSeed:Password"] = "NewPassw0rd!",
+                ["AdminSeed:DisplayName"] = "Seeded Admin"
+            })
+            .Build();
+        using (var scope = factory.Services.CreateScope())
+        {
+            await SeedData.SeedRolesAndAdminAsync(scope.ServiceProvider, seedConfiguration);
+        }
+
+        using var client = factory.CreateCookieClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { email, password = "OldPassw0rd!" }))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(await factory.WithCsrfAsync(client, HttpMethod.Post, "/api/account/login", new { email, password = "NewPassw0rd!" }))).StatusCode);
     }
 
     private static RegistrationPayload NewRegistration(string prefix) => new(UniqueEmail(prefix), UniqueUserName(prefix), "Integration Test User", "Passw0rd!");
