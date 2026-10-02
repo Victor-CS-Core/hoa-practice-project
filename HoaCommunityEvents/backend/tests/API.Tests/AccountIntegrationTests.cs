@@ -214,6 +214,36 @@ public class AccountIntegrationTests : IDisposable
     }
 
     [Fact]
+    public async Task BootstrapMasterAdmin_WhenRequestsAreConcurrent_CreatesOnlyOneMaster()
+    {
+        using var firstClient = factory.CreateCookieClient();
+        using var secondClient = factory.CreateCookieClient();
+        var firstRequest = await factory.WithCsrfAsync(firstClient, HttpMethod.Post, "/api/account/bootstrap-master-admin", NewRegistration("concurrentfirst"));
+        var secondRequest = await factory.WithCsrfAsync(secondClient, HttpMethod.Post, "/api/account/bootstrap-master-admin", NewRegistration("concurrentsecond"));
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        async Task<HttpResponseMessage> SendAfterStartAsync(HttpClient client, HttpRequestMessage request)
+        {
+            await start.Task;
+            return await client.SendAsync(request);
+        }
+
+        var firstTask = SendAfterStartAsync(firstClient, firstRequest);
+        var secondTask = SendAfterStartAsync(secondClient, secondRequest);
+        start.SetResult();
+        var responses = await Task.WhenAll(firstTask, secondTask);
+        var responseDetails = await Task.WhenAll(responses.Select(async response =>
+            $"{response.StatusCode}: {await response.Content.ReadAsStringAsync()}"));
+
+        Assert.True(responses.Count(response => response.StatusCode == HttpStatusCode.OK) == 1, string.Join(Environment.NewLine, responseDetails));
+        Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Conflict);
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Single(dbContext.UserClaims.Where(claim => claim.ClaimType == "is_master_admin" && claim.ClaimValue == "true"));
+    }
+
+    [Fact]
     public async Task SeedRolesAndAdmin_ResetsPasswordOfExistingAdmin()
     {
         var email = UniqueEmail("seeded");

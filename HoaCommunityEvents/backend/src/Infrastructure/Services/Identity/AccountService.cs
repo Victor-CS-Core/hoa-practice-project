@@ -13,6 +13,7 @@ public class AccountService(
     RoleManager<IdentityRole> roleManager) : IAccountService
 {
     private const string MasterAdminClaimType = "is_master_admin";
+    private static readonly SemaphoreSlim BootstrapLock = new(1, 1);
 
     public async Task<(bool Succeeded, IEnumerable<string> Errors, UserDto? User)> RegisterAsync(RegisterDto dto)
     {
@@ -76,6 +77,19 @@ public class AccountService(
     }
 
     public async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminAsync(RegisterDto dto, bool allowReplace = false)
+    {
+        await BootstrapLock.WaitAsync();
+        try
+        {
+            return await BootstrapMasterAdminCoreAsync(dto, allowReplace);
+        }
+        finally
+        {
+            BootstrapLock.Release();
+        }
+    }
+
+    private async Task<(int StatusCode, string Code, string Message, IEnumerable<string>? Errors, UserDto? User)> BootstrapMasterAdminCoreAsync(RegisterDto dto, bool allowReplace)
     {
         foreach (var role in new[] { AppRoles.Resident, AppRoles.HoaAdmin })
         {
