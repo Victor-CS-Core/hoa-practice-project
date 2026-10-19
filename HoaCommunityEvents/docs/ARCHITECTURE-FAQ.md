@@ -16,6 +16,7 @@ Language: **English** | [Español](#versión-en-español)
 8. [What are roles, and where do they run?](#8-what-are-roles-and-where-do-they-run)
 9. [What is WebApplicationFactory?](#9-what-is-webapplicationfactory)
 10. [Why keep frontend and backend folders if production is one application?](#10-why-keep-frontend-and-backend-folders-if-production-is-one-application)
+11. [Is CI implemented, and how does it work?](#11-is-ci-implemented-and-how-does-it-work)
 
 ## The whole application at a glance
 
@@ -379,6 +380,100 @@ frontend source
 
 This is a modular monolith: the source is separated into meaningful modules, while deployment uses one application, one origin, and one operational unit.
 
+## 11. Is CI implemented, and how does it work?
+
+Yes. GitHub Actions provides continuous integration, or CI, and a separate controlled production-deployment workflow.
+
+```text
+Feature branch
+  -> pull request
+  -> backend and frontend CI jobs
+  -> required checks pass
+  -> merge into main
+  -> CI runs again for the main commit
+  -> combined BFF artifact is built, hashed, and retained
+  -> explicit production dispatch and approval
+  -> database gate
+  -> deploy the exact CI artifact
+  -> production smoke tests
+```
+
+### CI triggers
+
+[`ci.yml`](../../.github/workflows/ci.yml) runs for every pull request and every push to `main`. A normal push to a feature branch does not start this workflow until the branch has a pull request.
+
+CI has read-only repository permission and exposes two independent jobs:
+
+| Job | Main checks |
+| --- | --- |
+| Backend Build | Workflow validation, .NET restore, Release build, .NET tests, combined BFF publish, package verification, checksum, artifact upload |
+| Frontend Lint and Build | Clean npm install, ESLint, Vitest tests, TypeScript and Vite production build |
+
+### Backend and release artifact
+
+The backend job installs .NET 10 and Node 22, then:
+
+1. Self-tests the Azure publish-profile validator.
+2. Runs [`validate-production-workflow.mjs`](../../scripts/validate-production-workflow.mjs) to check release-control invariants.
+3. Downloads a checksum-pinned `actionlint` binary and validates all workflow files.
+4. Restores and builds the .NET solution in Release mode.
+5. Runs the backend integration tests.
+6. Runs `dotnet publish` for the API project.
+7. Verifies that the output contains the API DLL and `wwwroot/index.html`.
+8. Packages the output as `hoa-bff-{commit SHA}.tar.gz`.
+9. Generates a SHA-256 checksum and uploads both files for 30-day retention.
+
+`dotnet publish` builds the frontend again because [`HoaCommunityEvents.API.csproj`](../backend/src/API/HoaCommunityEvents.API.csproj) includes the Vite output in `wwwroot`. The separate frontend job proves frontend quality independently; the publish step proves that the final combined deployment package can actually be assembled.
+
+### Why CI runs again after merge
+
+Pull-request CI proves the proposed commit passes its checks. After merge, a push-triggered CI run verifies the exact resulting `main` commit. Production accepts only an artifact from a successful push-triggered CI run for the current `main` SHA; it never trusts a pull-request artifact or an artifact from a fork.
+
+### Production deployment
+
+[`deploy-api-azure.yml`](../../.github/workflows/deploy-api-azure.yml) separates deployment, or CD, from ordinary CI. A successful main CI run can start artifact preparation, but it does not automatically mutate production. Actual deployment requires a manual workflow dispatch with `approve_production=true`.
+
+```text
+prepare -> production_preflight -> database_gate -> deploy
+```
+
+- `prepare` confirms the commit is still current `main`, selects the exact trusted CI run, downloads its artifact, verifies the checksum, and checks the expected API and React files.
+- `production_preflight` rechecks release freshness and validates that the configured publish profile belongs to the intended production App Service.
+- `database_gate` requires `PRODUCTION_MIGRATION_MODE` to be `workflow` or `external`. Workflow mode applies EF Core migrations; external mode records that database handling was approved outside the workflow.
+- `deploy` rechecks freshness, downloads and verifies the same artifact again, and sends it to Azure App Service without rebuilding it.
+
+The reusable [`verify-release-freshness` action](../../.github/actions/verify-release-freshness/action.yml) repeatedly confirms that the approved SHA is still current and still belongs to the selected successful CI run. This prevents a newer `main` commit from silently making an earlier approval stale.
+
+### Production smoke tests
+
+After deployment, the workflow verifies:
+
+- `/health` returns HTTP `200`.
+- `/` returns HTML.
+- A React deep route returns HTML.
+- `/api/security/csrf` returns HTTP `200`.
+
+These checks prove that the deployed process, SPA entry point, deep-route fallback, and a basic API endpoint respond. A failed smoke test marks the workflow as failed but does not automatically roll back the deployment.
+
+### Security design
+
+The workflows use full commit-SHA pins for third-party actions, minimal GitHub token permissions, commit-addressed artifacts, SHA-256 verification, explicit production confirmation, environment-scoped secrets, and repeated release-freshness checks. The SQL connection secret is provided only to the migration step when workflow migration mode is selected.
+
+[`bootstrap-master-admin.yml`](../../.github/workflows/bootstrap-master-admin.yml) is a separate manually dispatched production-operations workflow. It is not part of normal CI or deployment.
+
+### Current CI limits
+
+The normal CI workflow does not currently run:
+
+- Playwright end-to-end tests.
+- Tests against real Azure SQL.
+- Real Cloudinary uploads.
+- Live production SSE checks.
+- Dependency vulnerability scanning or a coverage threshold.
+- Automated deployment rollback or database restore rehearsal.
+
+CI therefore gives strong source, build, integration, packaging, and workflow-contract evidence. It does not by itself prove that every external production service or recovery procedure works.
+
 ## Further reading
 
 - [Full codebase guide](HOA-CODEBASE-GUIDE.md)
@@ -407,6 +502,7 @@ Idioma: [English](#hoa-community-events-architecture-faq) | **Español**
 8. [¿Qué son los roles y dónde se ejecutan?](#8-qué-son-los-roles-y-dónde-se-ejecutan)
 9. [¿Qué es WebApplicationFactory?](#9-qué-es-webapplicationfactory)
 10. [¿Por qué conservar las carpetas frontend y backend si producción es una sola aplicación?](#10-por-qué-conservar-las-carpetas-frontend-y-backend-si-producción-es-una-sola-aplicación)
+11. [¿Está implementada la integración continua y cómo funciona?](#11-está-implementada-la-integración-continua-y-cómo-funciona)
 
 ## La aplicación completa de un vistazo
 
@@ -769,6 +865,100 @@ Código fuente del frontend
 ```
 
 Esto es un monolito modular: el código fuente se separa en módulos con significado, mientras que la implementación utiliza una aplicación, un origen y una unidad operativa.
+
+## 11. ¿Está implementada la integración continua y cómo funciona?
+
+Sí. GitHub Actions proporciona integración continua, o CI, y un flujo separado y controlado para la implementación en producción.
+
+```text
+Rama de funcionalidad
+  -> solicitud de incorporación de cambios
+  -> trabajos de CI del backend y frontend
+  -> las comprobaciones requeridas se aprueban
+  -> incorporación a main
+  -> CI vuelve a ejecutarse para el commit de main
+  -> el artefacto BFF combinado se compila, verifica y conserva
+  -> ejecución y aprobación explícitas para producción
+  -> puerta de base de datos
+  -> implementación del artefacto exacto de CI
+  -> pruebas básicas de producción
+```
+
+### Activadores de CI
+
+[`ci.yml`](../../.github/workflows/ci.yml) se ejecuta para cada solicitud de incorporación de cambios y cada envío a `main`. Un envío normal a una rama de funcionalidad no inicia este flujo hasta que la rama tenga una solicitud de incorporación.
+
+CI tiene permisos de solo lectura para el repositorio y expone dos trabajos independientes:
+
+| Trabajo | Comprobaciones principales |
+| --- | --- |
+| Backend Build | Validación de flujos, restauración de .NET, compilación Release, pruebas .NET, publicación del BFF combinado, verificación del paquete, suma de comprobación y carga del artefacto |
+| Frontend Lint and Build | Instalación limpia de npm, ESLint, pruebas Vitest y compilación de producción con TypeScript y Vite |
+
+### Backend y artefacto de entrega
+
+El trabajo del backend instala .NET 10 y Node 22, y después:
+
+1. Ejecuta las pruebas internas del validador del perfil de publicación de Azure.
+2. Ejecuta [`validate-production-workflow.mjs`](../../scripts/validate-production-workflow.mjs) para comprobar las invariantes de control de entrega.
+3. Descarga un binario de `actionlint` fijado mediante suma de comprobación y valida todos los archivos de flujo.
+4. Restaura y compila la solución .NET en modo Release.
+5. Ejecuta las pruebas de integración del backend.
+6. Ejecuta `dotnet publish` para el proyecto de API.
+7. Verifica que la salida contenga el DLL de la API y `wwwroot/index.html`.
+8. Empaqueta la salida como `hoa-bff-{SHA del commit}.tar.gz`.
+9. Genera una suma SHA-256 y carga ambos archivos con una retención de 30 días.
+
+`dotnet publish` vuelve a compilar el frontend porque [`HoaCommunityEvents.API.csproj`](../backend/src/API/HoaCommunityEvents.API.csproj) incluye la salida de Vite dentro de `wwwroot`. El trabajo separado del frontend demuestra su calidad de forma independiente; el paso de publicación demuestra que el paquete combinado final realmente se puede construir.
+
+### Por qué CI vuelve a ejecutarse después de incorporar los cambios
+
+La CI de la solicitud demuestra que el commit propuesto supera sus comprobaciones. Después de incorporarlo, una ejecución de CI activada por el envío verifica el commit resultante exacto de `main`. Producción solo acepta un artefacto procedente de una ejecución de CI exitosa, activada por un envío, para el SHA actual de `main`; nunca confía en un artefacto de una solicitud de cambios ni de una bifurcación externa.
+
+### Implementación en producción
+
+[`deploy-api-azure.yml`](../../.github/workflows/deploy-api-azure.yml) separa la implementación, o CD, de la CI normal. Una CI exitosa de `main` puede iniciar la preparación del artefacto, pero no modifica producción automáticamente. La implementación real requiere ejecutar manualmente el flujo con `approve_production=true`.
+
+```text
+prepare -> production_preflight -> database_gate -> deploy
+```
+
+- `prepare` confirma que el commit siga siendo el `main` actual, selecciona la ejecución exacta y confiable de CI, descarga su artefacto, verifica la suma y comprueba los archivos esperados de la API y React.
+- `production_preflight` vuelve a comprobar la vigencia de la entrega y valida que el perfil de publicación configurado pertenezca al App Service de producción previsto.
+- `database_gate` requiere que `PRODUCTION_MIGRATION_MODE` sea `workflow` o `external`. El modo `workflow` aplica las migraciones de EF Core; el modo `external` registra que la base de datos fue gestionada y aprobada fuera del flujo.
+- `deploy` vuelve a comprobar la vigencia, descarga y verifica otra vez el mismo artefacto, y lo envía a Azure App Service sin volver a compilarlo.
+
+La [acción reutilizable `verify-release-freshness`](../../.github/actions/verify-release-freshness/action.yml) confirma repetidamente que el SHA aprobado siga siendo el actual y pertenezca a la ejecución exitosa de CI seleccionada. Esto impide que un commit posterior de `main` vuelva obsoleta una aprobación anterior sin detectarlo.
+
+### Pruebas básicas de producción
+
+Después de la implementación, el flujo verifica:
+
+- Que `/health` devuelva HTTP `200`.
+- Que `/` devuelva HTML.
+- Que una ruta profunda de React devuelva HTML.
+- Que `/api/security/csrf` devuelva HTTP `200`.
+
+Estas comprobaciones demuestran que el proceso implementado, la entrada de la SPA, el comportamiento de rutas profundas y un endpoint básico de la API responden. Una prueba fallida marca el flujo como fallido, pero no revierte automáticamente la implementación.
+
+### Diseño de seguridad
+
+Los flujos utilizan acciones de terceros fijadas a SHA completos, permisos mínimos para el token de GitHub, artefactos identificados por commit, verificación SHA-256, confirmación explícita para producción, secretos limitados por entorno y comprobaciones repetidas de vigencia. La cadena de conexión SQL solo se proporciona al paso de migración cuando se selecciona el modo de migración dentro del flujo.
+
+[`bootstrap-master-admin.yml`](../../.github/workflows/bootstrap-master-admin.yml) es un flujo separado de operaciones de producción que se ejecuta manualmente. No forma parte de la CI ni de la implementación normal.
+
+### Límites actuales de CI
+
+El flujo normal de CI no ejecuta actualmente:
+
+- Pruebas integrales de Playwright.
+- Pruebas contra Azure SQL real.
+- Cargas reales a Cloudinary.
+- Comprobaciones SSE en producción.
+- Análisis de vulnerabilidades de dependencias ni un umbral de cobertura.
+- Reversión automática de la implementación ni ensayos de restauración de la base de datos.
+
+Por tanto, CI proporciona evidencia sólida del código fuente, la compilación, la integración, el empaquetado y el contrato del flujo. Por sí sola, no demuestra que todos los servicios externos de producción o los procedimientos de recuperación funcionen.
 
 ## Lecturas adicionales
 
