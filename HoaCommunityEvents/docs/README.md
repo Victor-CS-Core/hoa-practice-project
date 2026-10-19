@@ -5,6 +5,7 @@ Reviewed September 10, 2026 against local source and workflow definitions. Live 
 | Read this | Purpose |
 | --- | --- |
 | [Codebase guide](HOA-CODEBASE-GUIDE.md) | Technologies, source folders, security mechanisms, and request flows |
+| [Architecture FAQ](ARCHITECTURE-FAQ.md) | Short answers to common questions about the frontend, backend, security, storage, builds, tests, and live updates |
 | [Presenter cheat sheet](PRESENTER-CHEAT-SHEET.md) | A meeting-length explanation of the architecture |
 | [B1 deployment runbook](B1-DIRECT-DEPLOYMENT.md) | Prepare, approve, verify, and recover a combined-app release |
 | [Recorded release status](RELEASE-STATUS.md) | Deployed, verified, failed, waived, and untested work |
